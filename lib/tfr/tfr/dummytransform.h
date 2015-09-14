@@ -33,9 +33,9 @@ public:
 class DummyTransform: public Transform
 {
 public:
-    const TransformDesc* transformDesc() const;
-    pChunk operator()( Signal::pMonoBuffer b );
-    Signal::pMonoBuffer inverse( pChunk chunk );
+    const TransformDesc* transformDesc() const override;
+    pChunk operator()( Signal::pMonoBuffer b ) override;
+    Signal::pMonoBuffer inverse( pChunk chunk ) override;
 
 private:
     DummyTransformDesc desc;

@@ -19,7 +19,7 @@ Signal::pBuffer BufferSource::BufferSourceOperation::
     {
         // Need to clear data before merging with buffer. The easiest way to clear is to requires read access. Could also just zero the affect samples.
         // "should" allocate in the same memory as buffer uses.
-        for (unsigned c=0; c<r->number_of_channels (); ++c)
+        for (int c=0; c<r->number_of_channels (); ++c)
             CpuMemoryStorage::ReadOnly<1>(r->getChannel (c)->waveform_data ());
     }
     *r |= *buffer_;
@@ -155,7 +155,7 @@ void BufferSource::
         test()
 {
     pBuffer b(new Buffer(Interval(60,70), 40, 7));
-    for (unsigned c=0; c<b->number_of_channels (); ++c)
+    for (int c=0; c<b->number_of_channels (); ++c)
     {
         float *p = b->getChannel (c)->waveform_data ()->getCpuMemory ();
         for (int i=0; i<b->number_of_samples (); ++i)
@@ -174,7 +174,7 @@ void BufferSource::
     EXCEPTION_ASSERT_EQUALS (b->number_of_channels (), d->number_of_channels ());
     EXCEPTION_ASSERT_EQUALS (b->number_of_samples (), d->number_of_samples ());
     EXCEPTION_ASSERT_EQUALS (r->getInterval (), d->getInterval ());
-    for (unsigned c=0; c<b->number_of_channels (); ++c)
+    for (int c=0; c<b->number_of_channels (); ++c)
     {
         float *bp = b->getChannel (c)->waveform_data ()->getCpuMemory ();
         float *dp = d->getChannel (c)->waveform_data ()->getCpuMemory ();

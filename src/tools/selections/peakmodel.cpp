@@ -3,13 +3,12 @@
 // tools
 #include "tools/renderview.h"
 #include "tools/support/brushpaintkernel.h"
-#include "tools/support/operation-composite.h"
+#include "filters/support/operation-composite.h"
 
 // Sonic AWE
 #include "tfr/cwt.h"
 #include "heightmap/collection.h"
 #include "heightmap/block.h"
-#include "heightmap/render/glblock.h"
 #include "heightmap/blocklayout.h"
 
 // gpumisc
@@ -87,7 +86,7 @@ float PeakModel::
     Heightmap::pBlock block = c->getBlock( ref );
     if (!block)
         return 0;
-    DataStorage<float>::ptr blockData = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat();
+    DataStorage<float>::ptr blockData = GlTextureRead(*block->texture ()).readFloat();
     float* data = blockData->getCpuMemory();
 
     Heightmap::BlockLayout block_size = c->block_layout();
@@ -114,7 +113,7 @@ void PeakModel::
     c = &*write_ptr;
 
     Heightmap::BlockLayout block_size = c->block_layout();
-    Heightmap::Region r = Heightmap::RegionFactory(block_size)(ref);
+    Heightmap::Region r = Heightmap::RegionFactory(block_size).getVisible (ref);
     unsigned h = block_size.texels_per_column ();
     unsigned w = block_size.texels_per_row ();
     unsigned y0 = (pos.scale-r.a.scale)/r.scale()*(h-1) + .5f;
@@ -427,14 +426,14 @@ void PeakModel::
                              PropagationState prevState, float prevVal
                              )
 {
-    Heightmap::Region r = Heightmap::RegionFactory(c->block_layout ())(ref);
+    Heightmap::Region r = Heightmap::RegionFactory(c->block_layout ()).getVisible (ref);
     if (r.b.scale > 1 || r.a.scale >= 1)
         return;
 
     Heightmap::pBlock block = c->getBlock( ref );
     if (!block)
         return;
-    DataStorage<float>::ptr blockData = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat();
+    DataStorage<float>::ptr blockData = GlTextureRead(*block->texture ()).readFloat();
     float* data = blockData->getCpuMemory();
 
     PeakAreaP area = getPeakArea(ref);
@@ -598,7 +597,7 @@ void PeakModel::
             ref = ref.sibblingTop();
             y -= h;
 
-            Heightmap::Region r = Heightmap::RegionFactory(c->block_layout ())(ref);
+            Heightmap::Region r = Heightmap::RegionFactory(c->block_layout ()).getVisible (ref);
             if (r.a.scale >= 1 || r.b.scale > 1 )
             {
                 this->classifictions.clear();
@@ -617,7 +616,7 @@ void PeakModel::
                 return;
             }
 
-            DataStorage<float>::ptr blockData = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat();
+            DataStorage<float>::ptr blockData = GlTextureRead(*block->texture ()).readFloat();
             data = blockData->getCpuMemory();
 
             PeakAreaP area = getPeakArea(ref);

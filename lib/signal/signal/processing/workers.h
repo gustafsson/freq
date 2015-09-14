@@ -1,21 +1,17 @@
 #ifndef SIGNAL_PROCESSING_WORKERS_H
 #define SIGNAL_PROCESSING_WORKERS_H
 
-#include "worker.h"
-#include "ischedule.h"
-#include "signal/computingengine.h"
-#include "bedroom.h"
-
+#include "signal/processing/ischedule.h"
+#include "signal/processing/worker.h"
+#include "shared_state.h"
 #include <vector>
 #include <map>
 
 namespace Signal {
 namespace Processing {
 
-class BedroomSignalAdapter;
-
 /**
- * @brief The Schedule class should start and stop computing engines as they
+ * @brief The Workers class should start and stop computing engines as they
  * are added and removed.
  *
  * A started engine is a thread that uses class Worker which queries a GetTask
@@ -26,24 +22,24 @@ class BedroomSignalAdapter;
  * It should wake up sleeping workers when any work is done to see if they can
  * help out on what's left.
  */
-class Workers: public QObject
+class Workers final
 {
-    Q_OBJECT
 public:
     typedef shared_state<Workers> ptr;
+    typedef std::vector<Signal::ComputingEngine::ptr> Engines;
+    typedef std::map<Signal::ComputingEngine::ptr, std::exception_ptr > DeadEngines;
+    typedef std::map<Signal::ComputingEngine::ptr, Worker::ptr> EngineWorkerMap;
 
     // Appended to exceptions created by clean_dead_workers and thrown by rethrow_one_worker_exception
     typedef boost::error_info<struct crashed_engine_tag, Signal::ComputingEngine::ptr> crashed_engine;
     typedef boost::error_info<struct crashed_engine_typename_tag, std::string> crashed_engine_typename;
 
-    typedef std::map<Signal::ComputingEngine::ptr, Worker::ptr> EngineWorkerMap;
-
-    Workers(ISchedule::ptr schedule, Bedroom::ptr bedroom);
+    Workers(IWorkerFactory::ptr&& workerfactory);
     ~Workers();
 
     // Throw exception if already added.
     // This will spawn a new worker thread for this computing engine.
-    Worker::ptr addComputingEngine(Signal::ComputingEngine::ptr ce);
+    void addComputingEngine(Signal::ComputingEngine::ptr ce);
 
     /**
      * Prevents the worker for this ComputingEngine to get new work from the
@@ -56,9 +52,9 @@ public:
      */
     void removeComputingEngine(Signal::ComputingEngine::ptr ce);
 
-    typedef std::vector<Signal::ComputingEngine::ptr> Engines;
     const Engines& workers() const;
     size_t n_workers() const;
+    double activity() const;
     const EngineWorkerMap& workers_map() const;
 
     /**
@@ -66,23 +62,8 @@ public:
      * It is only valid to call this method from the same thread as they were
      * added.
      */
-    typedef std::map<Signal::ComputingEngine::ptr, std::exception_ptr > DeadEngines;
     DeadEngines clean_dead_workers();
     void rethrow_any_worker_exception();
-
-    /**
-     * @brief terminate_workers terminates all worker threads and doesn't
-     * return until all threads have been terminated.
-     *
-     * Use of this function is discouraged because it doesn't allow threads
-     * to clean up any resources nor to release any locks.
-     *
-     * The thread might not terminate until it activates the OS scheduler by
-     * entering a lock or going to sleep.
-     *
-     * Returns true if all threads were terminated within 'timeout'.
-     */
-    bool terminate_workers(int timeout=1000);
 
     /**
      * @brief remove_all_engines will ask all workers to not start any new
@@ -92,25 +73,22 @@ public:
      */
     bool remove_all_engines(int timeout=0) const;
 
-    bool wait(int timeout=1000);
+    bool wait(int timeout=1000) const;
+
+    IWorkerFactory* workerfactory() const { return workerfactory_.get (); }
 
     static void print(const DeadEngines&);
 
-signals:
-    void worker_quit(std::exception_ptr, Signal::ComputingEngine::ptr);
-
 private:
-    ISchedule::ptr schedule_;
-    BedroomSignalAdapter* notifier_;
+    IWorkerFactory::ptr workerfactory_;
 
     Engines workers_;
-
     EngineWorkerMap workers_map_;
 
     void updateWorkers();
 
 public:
-    static void test();
+    static void test(std::function<IWorkerFactory::ptr(ISchedule::ptr)> workerfactoryfactory);
 };
 
 } // namespace Processing

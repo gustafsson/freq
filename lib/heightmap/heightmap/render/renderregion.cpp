@@ -1,64 +1,116 @@
 #include "renderregion.h"
 
 #include "unused.h"
-#include "gl.h"
+#include "glstate.h"
 #include "glPushContext.h"
+#include "GlException.h"
+#include "log.h"
+
+#include <QOpenGLShaderProgram>
 
 namespace Heightmap {
 namespace Render {
 
-RenderRegion::RenderRegion(Region r)
+RenderRegion::
+        RenderRegion()
     :
-      r(r)
+      vbo_(0)
 {
+}
+
+
+RenderRegion::
+        ~RenderRegion()
+{
+    if (!QOpenGLContext::currentContext ()) {
+        Log ("%s: destruction without gl context leaks vbos %d and %d") % __FILE__ % vbo_;
+        return;
+    }
+
+    if (vbo_)
+        glDeleteBuffers (1,&vbo_);
 }
 
 
 void RenderRegion::
-        render()
+        render(const glProjecter& gl_projecter, Region r, bool drawcross)
 {
-    // if (!renderBlock(...) && (0 == "render red warning cross" || render_settings->y_scale < yscalelimit))
-    //float y = _frustum_clip.projectionPlane[1]*.05;
-    float y = 0.05f;
+    GlException_CHECK_ERROR();
 
-    UNUSED(glPushMatrixContext mc)( GL_MODELVIEW );
+    float y = 0.5f;
 
-    glTranslatef(r.a.time, 0, r.a.scale);
-    glScalef(r.time(), 1, r.scale());
+    if (!program_) {
+        program_ = ShaderResource::loadGLSLProgramSource(
+                                           "attribute highp vec4 vertices;"
+                                           "uniform highp mat4 modelviewproj;"
+                                           "void main() {"
+                                           "    gl_Position = modelviewproj*vertices;"
+                                           "}",
 
-    UNUSED(glPushAttribContext attribs);
+                                           "uniform lowp vec4 color;"
+                                           "void main() {"
+                                           "    gl_FragColor = color;"
+                                           "}");
 
-    glDisable(GL_TEXTURE_2D);
-    glDisable(GL_BLEND);
-    glDisable(GL_COLOR_MATERIAL);
-    glDisable(GL_LIGHTING);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glColor4f( 0.8f, 0.2f, 0.2f, 0.5f );
-    glLineWidth(2);
+        static float values[] = {
+            // cross_values
+            0, 0, 0,
+            1, 0, 1,
+            1, 0, 0,
+            0, 0, 1,
+            0, 0, 0,
+            1, 0, 0,
+            1, 0, 1,
+            0, 0, 1,
 
-    glBegin(GL_LINE_STRIP);
-        glVertex3f( 0, 0, 0 );
-        glVertex3f( 1, 0, 1 );
-        glVertex3f( 1, 0, 0 );
-        glVertex3f( 0, 0, 1 );
-        glVertex3f( 0, 0, 0 );
-        glVertex3f( 1, 0, 0 );
-        glVertex3f( 1, 0, 1 );
-        glVertex3f( 0, 0, 1 );
-    glEnd();
-    glColor4f( 0.2f, 0.8f, 0.8f, 0.5f );
-    glBegin(GL_LINE_STRIP);
-        glVertex3f( 0, y, 0 );
-        glVertex3f( 1, y, 1 );
-        glVertex3f( 1, y, 0 );
-        glVertex3f( 0, y, 1 );
-        glVertex3f( 0, y, 0 );
-        glVertex3f( 1, y, 0 );
-        glVertex3f( 1, y, 1 );
-        glVertex3f( 0, y, 1 );
-    glEnd();
+            // nocross_values
+            0, 0, 0,
+            1, 0, 0,
+            1, 0, 1,
+            0, 0, 1,
+            0, 0, 0
+        };
+
+        glGenBuffers (1,&vbo_);
+        GlState::glBindBuffer (GL_ARRAY_BUFFER, vbo_);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(tvector<3,GLfloat>)*13, values, GL_STATIC_DRAW);
+        GlState::glUseProgram (program_->programId());
+    }
+
+    if (!program_->isLinked ())
+        return;
+
+    GlState::glUseProgram (program_->programId());
+
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+    GlState::glEnable(GL_BLEND);
+    GlState::glEnableVertexAttribArray (0);
+    glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, 0 );
+
+    glProjecter proj = gl_projecter;
+    proj.translate (vectord(r.a.time, 0, r.a.scale));
+    proj.scale (vectord(r.time(), 1, r.scale()));
+
+    program_->setUniformValue("color", 0.8, 0.2, 0.2, 0.5);
+    program_->setUniformValue("modelviewproj",
+                              QMatrix4x4(GLmatrixf(proj.mvp ()).transpose ().v ()));
+    int value_offs = drawcross ? 0 : 8;
+    int n_values = drawcross ? 8 : 5;
+    GlState::glDrawArrays(GL_LINE_STRIP, value_offs, n_values);
+
+    proj.translate (vectord(0, y, 0));
+    program_->setUniformValue("color", 0.2, 0.8, 0.8, 0.5);
+    program_->setUniformValue("modelviewproj",
+                              QMatrix4x4(GLmatrixf(proj.mvp()).transpose ().v ()));
+    GlState::glDrawArrays(GL_LINE_STRIP, value_offs, n_values);
+
+    GlState::glDisableVertexAttribArray (0);
+    GlState::glDisable(GL_BLEND);
+    GlState::glUseProgram (0);
+    GlState::glBindBuffer (GL_ARRAY_BUFFER, 0);
+
+    GlException_CHECK_ERROR();
 }
-
 
 } // namespace Render
 } // namespace Heightmap

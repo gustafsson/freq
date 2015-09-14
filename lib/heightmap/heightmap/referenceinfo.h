@@ -16,8 +16,20 @@ class RegionFactory {
 public:
     RegionFactory(const BlockLayout& block_size);
 
-    Region operator()(const Reference& ref) const;
+    /**
+     * @brief getOverlapping produces the outer boundaries of all texels in the region, neighbouring references always overlap.
+     * @param ref A reference to the region, it is interpreted in the coordinate system specified by block_size.
+     * @return the region denotes the outer boundareis of the texels.
+     * This is used as borders in an orthographic projection with the target texture as PBO.
+     */
+    Region getOverlapping(const Reference& ref) const;
 
+    /**
+     * @brief getVisibleRegion produces regions where neighbouring references are adjacent.
+     * @param ref A reference to the region, it is interpreted in the coordinate system specified by block_size.
+     * @return the region denotes the center of the texels.
+     */
+    Region getVisible(const Reference& ref) const;
 private:
     const BlockLayout block_size_;
 };
@@ -36,22 +48,16 @@ public:
 
     ReferenceInfo(const Reference&, const BlockLayout&, const VisualizationParams::const_ptr&);
 
-    Region region() const;
     long double sample_rate() const;
     bool containsPoint(Position p) const;
 
     // returns false if the given BoundsCheck is out of bounds
     bool boundsCheck(BoundsCheck) const;
 
-    /**
-      Creates a SamplesIntervalDescriptor describing the entire range of the referenced block, including
-      invalid samples.
-      */
     Signal::Interval getInterval() const;
     Signal::Interval spannedElementsInterval(const Signal::Interval& I, Signal::Interval& spannedBlockSamples) const;
 
     Reference reference() const;
-
 
     std::string toString() const;
 
@@ -69,7 +75,7 @@ private:
     const BlockLayout block_layout_;
     const VisualizationParams::const_ptr visualization_params_;
     const Reference& reference_;
-    const Region r;
+    const Region visible_region_;
 };
 
 } // namespace Heightmap

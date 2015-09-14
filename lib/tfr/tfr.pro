@@ -9,13 +9,19 @@ win32:CONFIG += debug_and_release
 CONFIG += staticlib warn_on
 CONFIG += c++11 buildflags
 CONFIG += tmpdir
+CONFIG += precompile_header_with_all_headers
+
+PWD = $$_PRO_FILE_PWD_
 
 SOURCES += \
-    tfr/*.c \
-    tfr/*.cpp \
+    $$PWD/tfr/*.c \
+    $$PWD/tfr/*.cpp \
 
 HEADERS += \
-    tfr/*.h \
+    $$PWD/tfr/*.h \
+    $$PWD/tfr/*.inc \
+
+PCH_HEADERS = $$PWD/tfr/*.h
 
 INCLUDEPATH += ../backtrace ../gpumisc ../signal
 win32: INCLUDEPATH += ../sonicawe-winlib

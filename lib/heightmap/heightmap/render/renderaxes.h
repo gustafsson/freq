@@ -4,6 +4,8 @@
 #include "rendersettings.h"
 #include "frustumclip.h"
 #include "heightmap/freqaxis.h"
+#include "tvector.h"
+#include "glyphs.h"
 
 #include "glprojection.h"
 
@@ -12,34 +14,44 @@
 namespace Heightmap {
 namespace Render {
 
-class Axes
+class RenderAxes
 {
 public:
-    virtual std::vector<GLvector> getClippedFrustum()=0;
-};
+    struct Vertex {
+        tvector<4,GLfloat> position;
+        tvector<4,GLfloat> color;
+    };
 
-class RenderAxes: public Axes
-{
-public:
-    RenderAxes(
-            RenderSettings& render_settings,
-            glProjection* gl_projection,
-            Render::FrustumClip* frustum_clip,
-            FreqAxis display_scale);
+    struct AxesElements {
+        std::vector<GlyphData> glyphs;
+        std::vector<Vertex> vertices;
+        std::vector<Vertex> orthovertices;
+    };
 
-    void drawAxes( float T );
+    RenderAxes();
+    ~RenderAxes();
 
-    // Axes
-    std::vector<GLvector> getClippedFrustum();
+    void drawAxes( const RenderSettings* render_settings,
+                   const glProjection* gl_projection,
+                   FreqAxis display_scale, float T );
 
 private:
-//    void frustumMinMaxT( float& min_t, float& max_t);
-    std::vector<GLvector> clippedFrustum;
+    void getElements( RenderAxes::AxesElements& ae, float T );
+    void drawElements( const AxesElements& );
 
-    RenderSettings& render_settings;
-    glProjection* gl_projection;
-    Render::FrustumClip* frustum_clip;
+    const RenderSettings* render_settings;
+    const glProjection* gl_projection;
     FreqAxis display_scale;
+    AxesElements ae_;
+    std::unique_ptr<QOpenGLShaderProgram> program_, orthoprogram_;
+    IGlyphs* glyphs_;
+    GLuint orthobuffer_=0, vertexbuffer_=0;
+    size_t orthobuffer_size_=0, vertexbuffer_size_=0;
+
+    int uni_ProjectionMatrix=-1, uni_ModelViewMatrix=-1,
+        attrib_Vertex=-1, attrib_Color=-1,
+        uni_OrthoProjectionMatrix=-1,
+        attrib_OrthoVertex=-1, attrib_OrthoColor=-1;
 };
 
 } // namespace Render

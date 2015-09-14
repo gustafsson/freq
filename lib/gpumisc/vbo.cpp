@@ -2,6 +2,7 @@
 #include "vbo.h"
 #include "tasktimer.h"
 #include "datastorage.h" // getMemorySizeText
+#include "glstate.h"
 
 #ifdef USE_CUDA
 #include "CudaException.h"
@@ -26,10 +27,54 @@ Vbo::Vbo(size_t size, unsigned vbo_type, unsigned access_pattern, void* data)
 }
 
 
+Vbo::Vbo(Vbo &&b)
+{
+    this->_sz = b._sz;
+    this->_vbo = b._vbo;
+
+#ifdef USE_CUDA
+    this->_registered = b._registered;
+#endif
+    this->_vbo_type = b._vbo_type;
+
+    b._sz = 0;
+    b._vbo = 0;
+
+#ifdef USE_CUDA
+    b._registered = 0;
+#endif
+    b._vbo_type = 0;
+}
+
+
+Vbo&Vbo::operator =(Vbo &&b)
+{
+    clear ();
+
+    this->_sz = b._sz;
+    this->_vbo = b._vbo;
+
+#ifdef USE_CUDA
+    this->_registered = b._registered;
+#endif
+    this->_vbo_type = b._vbo_type;
+
+    b._sz = 0;
+    b._vbo = 0;
+
+#ifdef USE_CUDA
+    b._registered = 0;
+#endif
+    b._vbo_type = 0;
+    return *this;
+}
+
+
 Vbo::~Vbo()
 {
     clear();
 }
+
 
 Vbo::
         operator GLuint() const
@@ -72,9 +117,9 @@ void Vbo::
 
     // create buffer object
     glGenBuffers(1, &_vbo);
-    glBindBuffer(vbo_type, _vbo);
+    GlState::glBindBuffer(vbo_type, _vbo);
     glBufferData(vbo_type, size, data, access_pattern);
-    glBindBuffer(vbo_type, 0);
+    GlState::glBindBuffer(vbo_type, 0);
 
     TIME_VBO TaskInfo("Got vbo %u", _vbo) ;
 

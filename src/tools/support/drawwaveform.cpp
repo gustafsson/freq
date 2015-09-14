@@ -12,8 +12,10 @@ namespace Tools {
 
 DrawWaveform::
         DrawWaveform()
+#ifdef LEGACY_OPENGL
             :
             _enqueueGcDisplayList( false )
+#endif
 {
 }
 
@@ -21,6 +23,7 @@ DrawWaveform::
 void DrawWaveform::
         drawWaveform_chunk_directMode( Signal::pBuffer chunk)
 {
+#ifdef LEGACY_OPENGL
     TaskTimer tt(__FUNCTION__);
     DataStorageSize n = chunk->getChannel (0)->waveform_data()->size();
     const float* data = chunk->getChannel (0)->waveform_data()->getCpuMemory();
@@ -38,7 +41,7 @@ void DrawWaveform::
      float s = 1/max;
      */
     float s = 1;
-    //glEnable(GL_BLEND);
+    //GlState::glEnable (GL_BLEND);
     glDepthMask(false);
     //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -67,7 +70,10 @@ void DrawWaveform::
     }
 
     glDepthMask(true);
-    //glDisable(GL_BLEND);
+    //GlState::glDisable(GL_BLEND);
+#else
+    EXCEPTION_ASSERTX(false, "requires LEGACY_OPENGL");
+#endif
 }
 
 
@@ -80,6 +86,7 @@ template<typename RenderData>
 void DrawWaveform::
         draw_glList( boost::shared_ptr<RenderData> chunk, void (*renderFunction)( boost::shared_ptr<RenderData> ), bool force_redraw )
 {
+#ifdef LEGACY_OPENGL
     // do a cache lookup
     std::map<void*, ListCounter>::iterator itr = _chunkGlList.find(chunk.get());
 
@@ -116,12 +123,16 @@ void DrawWaveform::
 
         glCallList( itr->second.displayList );
     }
+#else
+    EXCEPTION_ASSERTX(false, "requires LEGACY_OPENGL");
+#endif
 }
 
 
 void DrawWaveform::
         gcDisplayList()
 {
+#ifdef LEGACY_OPENGL
     /* remove those display lists that haven't been used since last gc
      (used by draw_glList) */
     for (std::map<void*, ListCounter>::iterator itr = _chunkGlList.begin();
@@ -148,6 +159,9 @@ void DrawWaveform::
     }
 
     _enqueueGcDisplayList = false;
+#else
+    EXCEPTION_ASSERTX(false, "requires LEGACY_OPENGL");
+#endif
 }
 
 } // namespace Support

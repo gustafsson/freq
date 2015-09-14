@@ -17,7 +17,7 @@ public:
 
     pBuffer process( pBuffer b )
     {
-        pBuffer r( new Buffer(b->sample_offset (), b->number_of_samples (), b->sample_rate (), scheme_.size ()));
+        pBuffer r( new Buffer(b->sample_offset (), b->number_of_samples (), b->sample_rate (), (int)scheme_.size ()));
         for (unsigned i=0; i<scheme_.size (); ++i) {
             if (scheme_[i] < b->number_of_channels ())
                 *r->getChannel (i) |= *b->getChannel (scheme_[i]);
@@ -85,13 +85,13 @@ void RerouteChannels::
 void RerouteChannels::
         map(OutputChannel output_channel, SourceChannel source_channel)
 {
-    if ( output_channel >= scheme_.size() )
+    if ( output_channel >= (int)scheme_.size() )
     {
-        unsigned M = scheme_.size();
-        unsigned N = output_channel+1;
+        size_t M = scheme_.size();
+        size_t N = output_channel+1;
         scheme_.resize( N );
 
-        for (unsigned i=M; i<N; ++i)
+        for (size_t i=M; i<N; ++i)
             scheme_[i] = NOTHING;
     }
 

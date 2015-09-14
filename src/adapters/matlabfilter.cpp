@@ -1,5 +1,5 @@
 #include "matlabfilter.h"
-#include "hdf5.h"
+#include "hdf5adapter.h"
 
 #include "tfr/chunk.h"
 #include "signal/computingengine.h"

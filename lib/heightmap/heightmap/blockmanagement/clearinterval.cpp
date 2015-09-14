@@ -1,7 +1,8 @@
 #include "clearinterval.h"
 #include "clearkernel.h"
 #include "resampletexture.h"
-#include "heightmap/render/glblock.h"
+#include "gl.h"
+#include "log.h"
 
 namespace Heightmap {
 namespace Blocks {
@@ -17,6 +18,8 @@ ClearInterval::
 std::list<pBlock> ClearInterval::
         discardOutside(Signal::Interval& I)
 {
+    Log("clearinterval: discardOutside %s") % I;
+
     std::list<pBlock> discarded;
 
     BlockCache::cache_t C = cache_->clone();
@@ -36,21 +39,29 @@ std::list<pBlock> ClearInterval::
         }
         else
         {
-            // clear partial block
-            if( I.first <= blockInterval.first && I.last < blockInterval.last )
-            {
-                Region ir = block->getRegion ();
-                ResampleTexture rt(block->glblock->glTexture ()->getOpenGlTextureId ());
-                ResampleTexture::Area A(ir.a.time, ir.a.scale, ir.b.time, ir.b.scale);
-                GlFrameBuffer::ScopeBinding sb = rt.enable(A);
-                float t = I.last / block->block_layout ().targetSampleRate();
-                A.x1 = t;
+#if 0 // this update into an existing texture might collide with updateconsumer
+#ifdef LEGACY_OPENGL
+            Region ir = block->getOverlappingRegion ();
+            ResampleTexture rt(*block->texture ());
+            ResampleTexture::Area A(ir.a.time, ir.a.scale, ir.b.time, ir.b.scale);
+            GlFrameBuffer::ScopeBinding sb = rt.enable(A);
+            float t = I.last / block->block_layout ().targetSampleRate();
+            A.x1 = t;
+            if (A.x1<A.x2)
                 rt.drawColoredArea (A, 0.f);
-                (void)sb; // RAII
-            }
+
+            t = I.first / block->block_layout ().targetSampleRate();
+            A.x1 = ir.a.time;
+            A.x2 = t;
+            if (A.x1<A.x2)
+                rt.drawColoredArea (A, 0.f);
+            (void)sb; // RAII
+#endif
+#endif
         }
     }
 
+    glFlush();
     return discarded;
 }
 

@@ -12,6 +12,15 @@
 //#define TASKINFO
 #define TASKINFO if(0)
 
+//#define FINISHTASKINFO
+#define FINISHTASKINFO if(0)
+
+//#define LOG_PURGED_CACHES
+#define LOG_PURGED_CACHES if(0)
+
+//#define LOG_NOT_STARTED
+#define LOG_NOT_STARTED if(0)
+
 using namespace boost;
 
 namespace Signal {
@@ -21,16 +30,15 @@ namespace Processing {
 Step::Step(OperationDesc::ptr operation_desc)
     :
         cache_(new Cache),
-        not_started_(Intervals::Intervals_ALL),
         operation_desc_(operation_desc)
 {
 }
 
 
 Signal::OperationDesc::ptr Step::
-        get_crashed() const
+        get_crashed(const_ptr step)
 {
-    return died_;
+    return step.raw ()->died_;
 }
 
 
@@ -40,7 +48,7 @@ Signal::Processing::IInvalidator::ptr Step::
     if (died_)
         return Signal::Processing::IInvalidator::ptr();
 
-    DEBUGINFO TaskInfo ti(boost::format("Marking step \"%s\" as crashed") % operation_name());
+    DEBUGINFO Log("Step: marking \"%s\" as crashed") % operation_name();
 
     died_ = operation_desc_;
     operation_desc_ = Signal::OperationDesc::ptr(new Test::TransparentOperationDesc);
@@ -49,10 +57,22 @@ Signal::Processing::IInvalidator::ptr Step::
 }
 
 
+void Step::
+        undie()
+{
+    if (died_)
+        operation_desc_ = died_;
+    died_.reset ();
+    cache_->clear ();
+    running_tasks.clear ();
+}
+
+
 std::string Step::
         operation_name () const
 {
-    return (operation_desc_?operation_desc_.raw ()->toString ().toStdString ():"(no operation)");
+    Signal::OperationDesc::ptr operation_desc = this->operation_desc_;
+    return (operation_desc?operation_desc.raw ()->toString ().toStdString ():"(no operation)");
 }
 
 
@@ -61,9 +81,10 @@ Intervals Step::
 {
     Intervals I;
 
-    for (RunningTaskMap::value_type ti : running_tasks)
+    for (const auto& ti : running_tasks)
     {
-        I |= ti.second;
+        // to be used with not_started() to determine what to start new tasks on
+        I |= ti.valid_output;
     }
 
     return I;
@@ -86,55 +107,84 @@ Intervals Step::
         deprecated = A;
     }
 
-    DEBUGINFO TaskInfo(format("Step::deprecateCache %2% | %3% on %1%")
+    DEBUGINFO Log("Step: deprecateCache %2% | %3% on %1%")
               % operation_name()
               % deprecated
-              % not_started_);
+              % not_started();
 
-    not_started_ |= deprecated;
+    cache_->invalidate_samples(deprecated);
+
+    Signal::Intervals not_deprecated = ~deprecated;
+    for (auto& v : running_tasks)
+        v.valid_output &= not_deprecated;
 
     return deprecated;
+}
+
+
+size_t Step::
+        purge(Signal::Intervals still_needed, bool aggressive)
+{
+    auto cache = cache_.write ();
+    int C = cache->num_channels ();
+    Signal::Intervals P = cache->purge (still_needed, aggressive);
+    if (P)
+        LOG_PURGED_CACHES Log("Step: discarding %s, only need %s for %s") % P % still_needed % operation_name();
+    return P.count () * C;
 }
 
 
 Intervals Step::
         not_started() const
 {
-    return not_started_;
-}
-
-
-Intervals Step::
-        out_of_date() const
-{
-    Intervals c = currently_processing();
-    //DEBUGINFO TaskInfo(boost::format("Step::out_of_date: %s = %s | %s in %s")
-    //         % (not_started_ | c) % not_started_ % c % operation_name());
-    return not_started_ | c;
+    Intervals I = ~(cache_.read ()->samplesDesc() | currently_processing());
+    LOG_NOT_STARTED Log("Step: %s not started on %s") % I % operation_name();
+    return I;
 }
 
 
 OperationDesc::ptr Step::
-        operation_desc () const
+        operation_desc (const_ptr step)
 {
-    return operation_desc_;
+    return step.raw ()->operation_desc_;
 }
 
 
 int Step::
-        registerTask(Interval expected_output)
+        registerTask(Step::ptr::write_ptr&& step, Signal::Interval expected_output)
 {
-    TASKINFO TaskInfo ti(format("Step::registerTask %2% on %1%")
-              % operation_name()
-              % expected_output);
+    return registerTask (step, expected_output);
+}
 
-    ++task_counter_;
-    if (0 == task_counter_)
-        ++task_counter_;
-    int taskid = task_counter_;
 
-    running_tasks[taskid] = expected_output;
-    not_started_ -= expected_output;
+int Step::
+        registerTask(Step::ptr::write_ptr& step, Interval expected_output)
+{
+    TASKINFO Log("Step registerTask %2% on %1%")
+              % step->operation_name()
+              % expected_output;
+
+    ++step->task_counter_;
+    if (0 == step->task_counter_)
+        ++step->task_counter_;
+    int taskid = step->task_counter_;
+
+    step->running_tasks.emplace_back(taskid,expected_output);
+
+    // enforce ordering of tasks, wait for previous tasks to finish if they affect the same output
+    auto ready = [&](){
+        for (const auto& v : step->running_tasks)
+        {
+            if (v.id == taskid)
+                break;
+            if (v.expected_output & expected_output)
+                return false;
+        }
+        return true;
+    };
+
+    step->wait_for_tasks_.wait(step, ready);
+
     return taskid;
 }
 
@@ -142,60 +192,44 @@ int Step::
 void Step::
         finishTask(Step::ptr step, int taskid, pBuffer result)
 {
-    Interval result_interval;
-    if (result)
-        result_interval = result->getInterval ();
-
-    TASKINFO TaskInfo ti(format("Step::finishTask %2% on %1%")
+    FINISHTASKINFO Log("Step finishTask %2% on %1%")
               % step.raw ()->operation_name()
-              % result_interval);
-
-    if (result) {
-        // Result must have the same number of channels and sample rate as previous cache.
-        // Call deprecateCache(Interval::Interval_ALL) to erase the cache when chainging number of channels or sample rate.
-        step.raw ()->cache_->put (result);
-    }
+              % (result ? result->getInterval () : Signal::Interval());
 
     auto self = step.write ();
-    int matched_task = self->running_tasks.count (taskid);
-    if (1 != matched_task) {
-        Log("C = %d, taskid = %x on %s") % matched_task % taskid % self->operation_name ();
-        EXCEPTION_ASSERT_EQUALS( 1, matched_task );
-    }
 
-    Intervals expected_output = self->running_tasks[ taskid ];
-
-    Intervals update_miss = expected_output - result_interval;
-    self->not_started_ |= update_miss;
-
-    if (!result) {
-        TASKINFO TaskInfo(format("The task was cancelled. Restoring %1% for %2%")
-                 % update_miss
-                 % self->operation_name());
-    } else {
-        if (update_miss) {
-            TaskInfo(format("These samples were supposed to be updated by the task but missed: %1% by %2%")
-                     % update_miss
-                     % self->operation_name());
+    Intervals valid_output;
+    for(auto i = self->running_tasks.begin(); i != self->running_tasks.end(); i++)
+        if (i->id == taskid)
+        {
+            valid_output = i->valid_output;
+            self->running_tasks.erase ( i );
+            break;
         }
-        if (result_interval - expected_output) {
-            // These samples were not supposed to be updated by the task but were calculated anyway
-            TaskInfo(format("Unexpected extras: %1% = (%2%) - (%3%) from %4%")
-                     % (result_interval - expected_output)
-                     % result_interval
-                     % expected_output
-                     % self->operation_name());
 
-            // The samples are still marked as invalid. Would need to remove the
-            // extra calculated samples from not_started_ but that would fail
-            // in a situation where deprecatedCache is called after the task has
-            // been created. So not_started_ can't be modified here (unless calls
-            // to deprecatedCache were tracked).
-        }
-    }
-
-    self->running_tasks.erase ( taskid );
     self.unlock ();
+
+    if (!valid_output)
+        result.reset ();
+
+    if (result)
+      {
+        // Result must have the same number of channels and sample rate as previous cache.
+        // Call deprecateCache(Interval::Interval_ALL) to erase the cache when chainging number of channels or sample rate.
+
+        TASKINFO if (valid_output - step.raw ()->cache_->allocated())
+            Log("Step allocating for %s") % step.raw ()->operation_name ();
+
+        if (valid_output == result->getInterval ())
+            step.raw ()->cache_->put (result);
+        else
+            for (const auto& i : valid_output)
+              {
+                pBuffer b(new Buffer(i, result->sample_rate (), result->number_of_channels ()));
+                *b |= *result;
+                step.raw ()->cache_->put (result);
+              }
+      }
 
     step.raw ()->wait_for_tasks_.notify_all ();
 }
@@ -204,22 +238,19 @@ void Step::
 bool Step::
         sleepWhileTasks(Step::ptr::read_ptr& step, int sleep_ms)
 {
-    DEBUGINFO TaskTimer tt(boost::format("sleepWhileTasks %d") % step->running_tasks.size ());
+    DEBUGINFO TaskTimer tt(boost::format("Step: sleepWhileTasks %d") % step->running_tasks.size ());
 
     // The caller keeps a lock that is released while waiting
     // Wait in a while-loop to cope with spurious wakeups
     if (sleep_ms < 0)
     {
-        while (!step->running_tasks.empty ())
-            step->wait_for_tasks_.wait(step);
+        step->wait_for_tasks_.wait(step, [&](){return step->running_tasks.empty ();});
     }
     else
     {
         std::chrono::milliseconds ms(sleep_ms);
 
-        while (!step->running_tasks.empty ())
-            if (std::cv_status::timeout == step->wait_for_tasks_.wait_for (step, ms))
-                return false;
+        step->wait_for_tasks_.wait_for (step, ms, [&](){return step->running_tasks.empty ();});
     }
 
     return step->running_tasks.empty ();
@@ -233,10 +264,10 @@ bool Step::
 }
 
 
-pBuffer Step::
-        readFixedLengthFromCache(Step::const_ptr ptr, Interval I)
+shared_state<const Signal::Cache> Step::
+        cache(const_ptr step)
 {
-    return ptr.raw ()->cache_.read ()->read (I);
+    return step.raw ()->cache_;
 }
 
 } // namespace Processing
@@ -257,7 +288,7 @@ void Step::
     {
         // Create an OperationDesc
         pBuffer b(new Buffer(Interval(60,70), 40, 7));
-        for (unsigned c=0; c<b->number_of_channels (); ++c)
+        for (int c=0; c<b->number_of_channels (); ++c)
         {
             float *p = b->getChannel (c)->waveform_data ()->getCpuMemory ();
             for (int i=0; i<b->number_of_samples (); ++i)
@@ -271,30 +302,30 @@ void Step::
         Step::ptr s = ws.lock ();
 
         // It should contain information about what's out_of_date and what's currently being updated.
-        int taskid = s->registerTask(b->getInterval ());
+        int taskid = Step::registerTask(s.write (),b->getInterval ());
         EXCEPTION_ASSERT_EQUALS(s->not_started (), ~Intervals(b->getInterval ()));
-        EXCEPTION_ASSERT_EQUALS(s->out_of_date(), Intervals::Intervals_ALL);
+        EXCEPTION_ASSERT_EQUALS(Step::cache (s)->samplesDesc(), Intervals());
         Step::finishTask(s, taskid, b);
-        EXCEPTION_ASSERT_EQUALS(s->out_of_date(), ~Intervals(b->getInterval ()));
+        EXCEPTION_ASSERT_EQUALS(Step::cache (s)->samplesDesc(), Intervals(b->getInterval ()));
 
-        EXCEPTION_ASSERT( *b == *Step::readFixedLengthFromCache (s, b->getInterval ()) );
+        EXCEPTION_ASSERT( *b == *Step::cache (s)->read(b->getInterval ()) );
     }
 
     // A crashed signal processing step should behave as a transparent operation.
     {
         OperationDesc::ptr silence(new Signal::OperationSetSilent(Signal::Interval(2,3)));
-        Step s(silence);
-        EXCEPTION_ASSERT(!s.get_crashed ());
-        EXCEPTION_ASSERT(s.operation_desc ());
-        EXCEPTION_ASSERT(s.operation_desc ().read ()->createOperation (0));
-        EXCEPTION_ASSERT(!dynamic_cast<Test::TransparentOperationDesc*>(s.operation_desc ().raw ()));
-        EXCEPTION_ASSERT(!dynamic_cast<Test::TransparentOperation*>(s.operation_desc ().read ()->createOperation (0).get ()));
-        s.mark_as_crashed_and_get_invalidator ();
-        EXCEPTION_ASSERT(s.get_crashed ());
-        EXCEPTION_ASSERT(s.operation_desc ());
-        EXCEPTION_ASSERT(s.operation_desc ().read ()->createOperation (0));
-        EXCEPTION_ASSERT(dynamic_cast<Test::TransparentOperationDesc*>(s.operation_desc ().raw ()));
-        EXCEPTION_ASSERT(dynamic_cast<Test::TransparentOperation*>(s.operation_desc ().read ()->createOperation (0).get ()));
+        Step::ptr s(new Step(silence));
+        EXCEPTION_ASSERT(!Step::get_crashed (s));
+        EXCEPTION_ASSERT(Step::operation_desc (s));
+        EXCEPTION_ASSERT(Step::operation_desc (s).read ()->createOperation (0));
+        EXCEPTION_ASSERT(!dynamic_cast<Test::TransparentOperationDesc*>(Step::operation_desc (s).raw ()));
+        EXCEPTION_ASSERT(!dynamic_cast<Test::TransparentOperation*>(Step::operation_desc (s).read ()->createOperation (0).get ()));
+        s->mark_as_crashed_and_get_invalidator ();
+        EXCEPTION_ASSERT(Step::get_crashed (s));
+        EXCEPTION_ASSERT(Step::operation_desc (s));
+        EXCEPTION_ASSERT(Step::operation_desc (s).read ()->createOperation (0));
+        EXCEPTION_ASSERT(dynamic_cast<Test::TransparentOperationDesc*>(Step::operation_desc (s).raw ()));
+        EXCEPTION_ASSERT(dynamic_cast<Test::TransparentOperation*>(Step::operation_desc (s).read ()->createOperation (0).get ()));
     }
 }
 

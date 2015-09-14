@@ -1,6 +1,6 @@
 #include "splinemodel.h"
 #include "support/splinefilter.h"
-#include "tools/support/operation-composite.h"
+#include "filters/support/operation-composite.h"
 #include "tools/rendermodel.h"
 #include "tfr/transformoperation.h"
 

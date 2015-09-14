@@ -1,0 +1,6 @@
+# take a pick
+
+qmake -r -spec macx-xcode
+qmake -r -spec macx-xcode CONFIG+=declarative_debug CONFIG+=qml_debug
+~/Qt/5.5/ios/bin/qmake -r -spec macx-xcode CONFIG+=iphoneos CONFIG+=release
+~/Qt/5.5/ios/bin/qmake -r -spec macx-xcode CONFIG+=iphoneos CONFIG+=declarative_debug CONFIG+=qml_debug

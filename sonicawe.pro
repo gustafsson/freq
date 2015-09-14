@@ -7,8 +7,10 @@ SUBDIRS = \
     lib/gpumisc \
     lib/signal \
     lib/tfr \
+    lib/filters \
     lib/heightmap \
     lib/tfrheightmap \
+    lib/heightmapview \
     src
 
 cache()

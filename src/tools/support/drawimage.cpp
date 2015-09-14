@@ -7,6 +7,7 @@
 #include "gl.h"
 #include "glPushContext.h"
 #include "backtrace.h"
+#include "exceptionassert.h"
 
 namespace Tools {
 namespace Support {
@@ -83,7 +84,7 @@ setupVbo()
     if (!postexvbo_)
         postexvbo_.reset(new Vbo( 2*4*2*sizeof(float), GL_ARRAY_BUFFER, GL_STATIC_DRAW ));
 
-    glBindBuffer(postexvbo_->vbo_type(), *postexvbo_);
+    GlState::glBindBuffer(postexvbo_->vbo_type(), *postexvbo_);
     float *p = (float *) glMapBuffer(postexvbo_->vbo_type(), GL_WRITE_ONLY);
 
     for (int y=0; y<2; ++y) for (int x=0; x<2; ++x)
@@ -96,20 +97,21 @@ setupVbo()
     }
 
     glUnmapBuffer(postexvbo_->vbo_type());
-    glBindBuffer(postexvbo_->vbo_type(), 0);
+    GlState::glBindBuffer(postexvbo_->vbo_type(), 0);
 }
 
 
 void DrawImage::
         drawImage(int viewport_width, int viewport_height) const
 {
+#ifdef LEGACY_OPENGL
     glPushAttribContext push_attribs;
 
     glPushMatrixContext push_proj( GL_PROJECTION );
     glLoadIdentity();
     glOrtho( 0, viewport_width, 0, viewport_height, -1, 1);
 
-    glDisable(GL_DEPTH_TEST);
+    GlState::glDisable(GL_DEPTH_TEST);
 
     glPushMatrixContext push_model( GL_MODELVIEW );
 
@@ -124,12 +126,12 @@ void DrawImage::
 void DrawImage::
         directDraw() const
 {
-    glEnable(GL_BLEND);
+    GlState::glEnable (GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_COLOR_MATERIAL);
+    GlState::glDisable(GL_COLOR_MATERIAL);
     glColor4f(1,1,1,1);
 
-    glBindBuffer(GL_ARRAY_BUFFER, *postexvbo_);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, *postexvbo_);
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glTexCoordPointer(2, GL_FLOAT, sizeof(float)*4, 0);
@@ -137,18 +139,21 @@ void DrawImage::
 
     {
         GlTexture::ScopeBinding bindTexture = img_->getScopeBinding();
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
 
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glDisableClientState(GL_VERTEX_ARRAY);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glEnable(GL_DEPTH_TEST);
+    GlState::glEnable (GL_DEPTH_TEST);
+    GlState::glDisable (GL_BLEND);
 
     GlException_CHECK_ERROR();
+#else
+    EXCEPTION_ASSERTX(false, "not implemented");
+#endif // LEGACY_OPENGL
 }
-
 
 } // namespace Support
 } // namespace Tools

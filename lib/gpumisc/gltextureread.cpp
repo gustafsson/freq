@@ -5,21 +5,38 @@
 #include "GlException.h"
 #include "glframebuffer.h"
 
-#include <QApplication>
-#include <QGLWidget>
+#include <QtWidgets> // QApplication
+#include <QtOpenGL> // QGLWidget
 
 // https://www.opengl.org/sdk/docs/man/xhtml/glGetTexImage.xml
 
+#if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
+#define GL_RED GL_RED_EXT
+#endif
 
 GlTextureRead::
-        GlTextureRead(int texture)
+        GlTextureRead(int texture, int width, int height)
     :
-      texture(texture)
+      texture(texture),
+      width(width),
+      height(height)
 {
     EXCEPTION_ASSERT(texture);
 }
 
 
+GlTextureRead::
+        GlTextureRead(const GlTexture& texture)
+    :
+      texture(texture.getOpenGlTextureId ()),
+      width(texture.getWidth ()),
+      height(texture.getHeight ())
+{
+
+}
+
+
+#if 0
 DataStorage<float>::ptr GlTextureRead::
         readFloat(int level, int format)
 {
@@ -55,23 +72,22 @@ DataStorage<float>::ptr GlTextureRead::
     GlFrameBuffer::ScopeBinding fbobinding = fb.getScopeBinding();
     unsigned pbo=0;
     glGenBuffers (1, &pbo);
-    glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo);
+    GlState::glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo);
     glBufferData (GL_PIXEL_PACK_BUFFER, data->numberOfBytes (), NULL, GL_STREAM_READ);
 
     glReadPixels (0, 0, width, height, format, GL_FLOAT, 0);
-    glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
+    GlState::glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
 
-    glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo);
+    GlState::glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo);
     float *src = (float*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
     memcpy(data->getCpuMemory(), src, data->numberOfBytes ());
     glUnmapBuffer(GL_PIXEL_PACK_BUFFER_ARB);
-    glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
+    GlState::glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
     glDeleteBuffers (1, &pbo);
 
 
     // restore
     GlException_SAFE_CALL( glPixelStorei (GL_PACK_ALIGNMENT, pack_alignment) );
-    GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, 0) );
 
     return data;
 }
@@ -112,23 +128,170 @@ DataStorage<unsigned char>::ptr GlTextureRead::
     GlFrameBuffer::ScopeBinding fbobinding = fb.getScopeBinding();
     unsigned pbo=0;
     glGenBuffers (1, &pbo);
-    glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo);
+    GlState::glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo);
     glBufferData (GL_PIXEL_PACK_BUFFER, data->numberOfBytes (), NULL, GL_STREAM_READ);
     glReadPixels (0, 0, width, height, format, GL_UNSIGNED_BYTE, 0);
-    glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
+    GlState::glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
 
-    glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo);
+    GlState::glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo);
     float *src = (float*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
     memcpy(data->getCpuMemory(), src, data->numberOfBytes ());
     glUnmapBuffer(GL_PIXEL_PACK_BUFFER_ARB);
-    glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
+    GlState::glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
     glDeleteBuffers (1, &pbo);
-
 
 
     // restore
     GlException_SAFE_CALL( glPixelStorei (GL_PACK_ALIGNMENT, pack_alignment) );
-    GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, 0) );
+
+    return data;
+}
+
+
+DataStorage<float>::ptr GlTextureRead::
+        readFloatWithReadPixels(int width, int height, int level, int format)
+{
+    GLint pack_alignment=0;
+    width >>= level;
+    height >>= level;
+
+    GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, texture) );
+    GlException_SAFE_CALL( glGetIntegerv (GL_PACK_ALIGNMENT, &pack_alignment) );
+    GlException_SAFE_CALL( glPixelStorei (GL_PACK_ALIGNMENT, 4) );
+
+    EXCEPTION_ASSERT_LESS( 0, width );
+    EXCEPTION_ASSERT_LESS( 0, height );
+
+    int number_of_components = 0;
+    switch(format) {
+    case GL_RGBA: number_of_components = 4; break;
+    case GL_RED: number_of_components = 1; break;
+    default: EXCEPTION_ASSERTX(false, "Unsupported format"); break;
+    }
+
+    DataStorage<float>::ptr data(new DataStorage<float>(width*number_of_components, height));
+
+    // Straightforward, but unstable
+    GlException_SAFE_CALL( glGetTexImage(GL_TEXTURE_2D, level, format, GL_FLOAT, data->getCpuMemory()) );
+
+    // restore
+    GlException_SAFE_CALL( glPixelStorei (GL_PACK_ALIGNMENT, pack_alignment) );
+
+    return data;
+}
+
+
+DataStorage<unsigned char>::ptr GlTextureRead::
+        readByteWithReadPixels(int width, int height, int level, int format)
+{
+    GLint pack_alignment=0;
+    width >>= level;
+    height >>= level;
+
+    GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, texture) );
+    GlException_SAFE_CALL( glGetIntegerv (GL_PACK_ALIGNMENT, &pack_alignment) );
+    GlException_SAFE_CALL( glPixelStorei (GL_PACK_ALIGNMENT, 1) );
+
+    EXCEPTION_ASSERT_LESS( 0, width );
+    EXCEPTION_ASSERT_LESS( 0, height );
+
+    int number_of_components = 0;
+    switch(format) {
+    case GL_RGBA: number_of_components = 4; break;
+    case GL_RED: number_of_components = 1; break;
+    default: EXCEPTION_ASSERTX(false, "Unsupported format"); break;
+    }
+
+    DataStorage<unsigned char>::ptr data(new DataStorage<unsigned char>(width*number_of_components, height));
+
+    // Straightforward, but unstable
+    GlException_SAFE_CALL( glGetTexImage(GL_TEXTURE_2D, level, format, GL_UNSIGNED_BYTE, data->getCpuMemory()) );
+
+    // restore
+    GlException_SAFE_CALL( glPixelStorei (GL_PACK_ALIGNMENT, pack_alignment) );
+
+    return data;
+}
+#endif
+
+
+DataStorage<float>::ptr GlTextureRead::
+        readFloat(int level, int format)
+{
+    GLint pack_alignment=0;
+
+    int width = this->width >> level;
+    int height = this->height >> level;
+
+    GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, texture) );
+    GlException_SAFE_CALL( glGetIntegerv (GL_PACK_ALIGNMENT, &pack_alignment) );
+    GlException_SAFE_CALL( glPixelStorei (GL_PACK_ALIGNMENT, 4) );
+
+    EXCEPTION_ASSERT_LESS( 0, width );
+    EXCEPTION_ASSERT_LESS( 0, height );
+
+    int number_of_components = 0;
+    switch(format) {
+    case GL_RGBA: number_of_components = 4; break;
+    case GL_RED: number_of_components = 1; break;
+    default: EXCEPTION_ASSERTX(false, "Unsupported format"); break;
+    }
+
+    DataStorage<float>::ptr data(new DataStorage<float>(width*number_of_components, height));
+
+    // Read through FBO instead
+    GlFrameBuffer fb(texture, width, height);
+
+    fb.bindFrameBuffer ();
+    glReadPixels (0, 0, width, height, format, GL_FLOAT, data->getCpuMemory());
+    fb.unbindFrameBuffer ();
+
+    // restore
+    GlException_SAFE_CALL( glPixelStorei (GL_PACK_ALIGNMENT, pack_alignment) );
+
+    return data;
+}
+
+
+DataStorage<unsigned char>::ptr GlTextureRead::
+        readByte(int level, int format)
+{
+    // assumes GL_PIXEL_PACK_BUFFER_BINDING is 0
+    GLint pack_alignment=0;
+    int width = this->width >> level;
+    int height = this->height >> level;
+
+    GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, texture) );
+    GlException_SAFE_CALL( glGetIntegerv (GL_PACK_ALIGNMENT, &pack_alignment) );
+    GlException_SAFE_CALL( glPixelStorei (GL_PACK_ALIGNMENT, 1) );
+
+    EXCEPTION_ASSERT_LESS( 0, width );
+    EXCEPTION_ASSERT_LESS( 0, height );
+
+    int number_of_components = 0;
+    switch(format) {
+    case GL_RGBA: number_of_components = 4; break;
+    case GL_RED: number_of_components = 1; break;
+    default: EXCEPTION_ASSERTX(false, "Unsupported format"); break;
+    }
+
+    DataStorage<unsigned char>::ptr data(new DataStorage<unsigned char>(width*number_of_components, height));
+
+
+    // Straightforward, but unstable
+    //GlException_SAFE_CALL( glGetTexImage(GL_TEXTURE_2D, level, format, GL_UNSIGNED_BYTE, data->getCpuMemory()) );
+
+
+    // Read through FBO instead
+    GlFrameBuffer fb(texture, width, height);
+
+    fb.bindFrameBuffer ();
+    glReadPixels (0, 0, width, height, format, GL_UNSIGNED_BYTE, data->getCpuMemory());
+    fb.unbindFrameBuffer ();
+
+
+    // restore
+    GlException_SAFE_CALL( glPixelStorei (GL_PACK_ALIGNMENT, pack_alignment) );
 
     return data;
 }
@@ -190,13 +353,13 @@ void GlTextureRead::
 
         GlTexture src(4, 4, GL_RED, GL_RGBA, GL_FLOAT, srcdata);
 
-        DataStorage<float>::ptr data = GlTextureRead(src.getOpenGlTextureId ()).readFloat (0,GL_RED);
+        DataStorage<float>::ptr data = GlTextureRead(src).readFloat (0,GL_RED);
         compare(srcdata, sizeof(srcdata), data);
 
-        DataStorage<unsigned char>::ptr databyte = GlTextureRead(src.getOpenGlTextureId ()).readByte (0,GL_RED);
+        DataStorage<unsigned char>::ptr databyte = GlTextureRead(src).readByte (0,GL_RED);
         compare(bytes, sizeof(bytes), databyte);
 
-        databyte = GlTextureRead(src.getOpenGlTextureId ()).readByte ();
+        databyte = GlTextureRead(src).readByte ();
         compare(bytesRgba, sizeof(bytesRgba), databyte);
     }
 }

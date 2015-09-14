@@ -3,7 +3,6 @@
 #include "signal/computingengine.h"
 #include "tfr/cepstrum.h"
 #include "tfr/stft.h"
-#include "heightmap/render/glblock.h"
 #include "heightmap/update/tfrblockupdater.h"
 
 #include "demangle.h"
@@ -60,11 +59,14 @@ MergeChunk::ptr CepstrumBlockFilterDesc::
 #include "neat_math.h"
 #include "signal/computingengine.h"
 #include "detectgdb.h"
+#include "heightmap/render/blocktextures.h"
+#include "heightmap/blockmanagement/blockupdater.h"
 
-#include <QApplication>
-#include <QGLWidget>
+#include <QtWidgets> // QApplication
+#include <QtOpenGL> // QGLWidget
 
 namespace Heightmap {
+using namespace BlockManagement;
 namespace TfrMappings {
 
 void CepstrumBlockFilter::
@@ -108,9 +110,9 @@ void CepstrumBlockFilter::
             return ref;
         }();
 
-        Heightmap::pBlock block( new Heightmap::Block(ref, bl, vp));
-        GlTexture::ptr gltexture(new GlTexture(bl.texels_per_row (), bl.texels_per_column ()));
-        block->glblock.reset( new Render::GlBlock( gltexture ));
+        Render::BlockTextures::Scoped bt(4,4);
+        BlockUpdater::ptr updater(new BlockUpdater);
+        pBlock block( new Block(ref, bl, vp, updater.get()));
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;

@@ -11,7 +11,7 @@
 #include "shared_state_traits_backtrace.h"
 
 // QString
-#include <QString>
+#include <QtCore> // QString
 
 namespace Signal {
 
@@ -24,12 +24,18 @@ class OperationDesc;
 /**
  * @brief The Operation class should describe the interface for performing signal processing on signal data.
  *
+ * Operation is recreated for each new task.
+ *
  * 'process' should only be called from one thread.
  */
 class SignalDll Operation
 {
 public:
     typedef std::shared_ptr<Operation> ptr;
+
+    Operation(){}
+    Operation(const Operation&)=delete;
+    Operation&operator=(const Operation&)=delete;
 
     /**
       Virtual housekeeping.
@@ -43,6 +49,11 @@ public:
      * be equal to a value returned by 'OperationDesc::requiredInterval(...)' param 'I'.
      * @return processed data. Returned buffer interval must be equal to expectedOutput in:
      * 'OperationDesc::requiredInterval(b->getInterval(), &expectedOutput)'
+     *
+     * Note: process must check that the given interval is valid and may return
+     *       an empty buffer if it isn't. This may typically happen if settings
+     *       are changed after the call to requiredInterval but before the call
+     *       to process()
      */
     virtual Signal::pBuffer process(Signal::pBuffer b) = 0;
 

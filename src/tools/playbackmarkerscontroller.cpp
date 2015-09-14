@@ -1,6 +1,7 @@
 #include "playbackmarkerscontroller.h"
-#include "renderview.h"
-#include "rendermodel.h"
+#include "tools/support/renderviewinfo.h"
+#include "tools/support/toolselector.h"
+#include "tools/rendermodel.h"
 #include "heightmap/render/renderer.h"
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
@@ -10,11 +11,13 @@
 namespace Tools {
 
 PlaybackMarkersController::
-        PlaybackMarkersController( PlaybackMarkersView* view, RenderView* render_view )
+        PlaybackMarkersController( PlaybackMarkersView* view, RenderView* render_view, Sawe::Project* project, Tools::Support::ToolSelector* tool_selector )
     :
     vicinity_( 10 ),
     render_view_(render_view),
-    view_(view)
+    view_(view),
+    project_(project),
+    tool_selector_(tool_selector)
 {
     setupGui();
 
@@ -27,7 +30,7 @@ void PlaybackMarkersController::
         enableMarkerTool(bool active)
 {
     if (active)
-        render_view_->toolSelector()->setCurrentTool( this, active );
+        tool_selector_->setCurrentTool( this, active );
 
     setMouseTracking(active);
 
@@ -52,7 +55,7 @@ void PlaybackMarkersController::
         model()->setCurrentMaker( itr );
     }
 
-    render_view_->setPosition( Heightmap::Position( *itr, render_view_->model->_qz) );
+    render_view_->model->setPosition( Heightmap::Position( *itr, render_view_->model->camera->q[2]) );
     render_view_->redraw();
 }
 
@@ -78,7 +81,7 @@ void PlaybackMarkersController::
 //        pos = render_view_->model->project()->worker.length();
     }
 
-    render_view_->setPosition( Heightmap::Position( pos, render_view_->model->_qz) );
+    render_view_->model->setPosition( Heightmap::Position( pos, render_view_->model->camera->q[2]) );
     render_view_->redraw();
 }
 
@@ -88,7 +91,8 @@ void PlaybackMarkersController::
 {
     e->accept();
 
-    RenderView &r = *render_view_;
+    Support::RenderViewInfo r(render_view_->model);
+
     bool success;
     Heightmap::Position click = r.getPlanePos( e->localPos(), &success);
     if (!success)
@@ -98,8 +102,8 @@ void PlaybackMarkersController::
     // clamp
     if (click.time < 0)
         click.time = 0;
-    if (click.time > r.last_length())
-        click.time = r.last_length();
+    if (click.time > r.length())
+        click.time = r.length();
 
 
     PlaybackMarkersModel::Markers::iterator itr = model()->findMaker( click.time );
@@ -109,7 +113,7 @@ void PlaybackMarkersController::
         {
             // No markers created, create one
             model()->addMarker( click.time );
-            r.model->project()->setModified();
+            project_->setModified();
         }
     }
     else
@@ -144,7 +148,7 @@ void PlaybackMarkersController::
 void PlaybackMarkersController::
         mouseMoveEvent ( QMouseEvent * e )
 {
-    Tools::RenderView &r = *render_view_;
+    Support::RenderViewInfo r(render_view_->model);
     bool success;
     Heightmap::Position click = r.getPlanePos( e->localPos(), &success);
     if (!success)
@@ -191,7 +195,7 @@ void PlaybackMarkersController::
 void PlaybackMarkersController::
         setupGui()
 {
-    Ui::SaweMainWindow* main = render_view_->model->project()->mainWindow();
+    Ui::SaweMainWindow* main = project_->mainWindow();
     Ui::MainWindow* ui = main->getItems();
 
     // Connect enabled/disable actions,

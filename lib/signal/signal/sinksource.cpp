@@ -318,7 +318,7 @@ pBuffer SinkSource::
     pBuffer n(new Buffer(validFetch, b->sample_rate(), b->number_of_channels ()));
     *n |= *b;
 
-    if (0 == "check non-zero data")
+    if (/* DISABLES CODE */ (0) == "check non-zero data")
     {
         float *p = b->getChannel (0)->waveform_data ()->getCpuMemory ();
         float *q = n->getChannel (0)->waveform_data ()->getCpuMemory ();

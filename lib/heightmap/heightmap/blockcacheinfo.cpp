@@ -1,6 +1,6 @@
 #include "blockcacheinfo.h"
 
-#include "render/glblock.h"
+#include "render/blocktextures.h"
 #include "tasktimer.h"
 
 
@@ -9,22 +9,15 @@ namespace Heightmap {
 unsigned long BlockCacheInfo::
         cacheByteSize(const BlockCache::cache_t& cache)
 {
-    // For each block there may be both a slope map and heightmap. Also there
-    // may be both a texture and a vbo, and possibly a mapped cuda copy.
-    //
-    // But most of the blocks will only have a heightmap vbo, and none of the
-    // others.
+    if (cache.empty ())
+        return 0;
 
-    unsigned long sumsize = 0;
+    pBlock b = cache.begin ()->second;
+    unsigned bytes_per_block =
+            Render::BlockTextures::allocated_bytes_per_element() *
+            b->block_layout().texels_per_block ();
 
-    for (const BlockCache::cache_t::value_type& b : cache)
-        {
-        if (b.second->glblock)
-            sumsize += b.second->glblock->allocated_bytes_per_element()
-                    * b.second->block_layout().texels_per_block ();
-        }
-
-    return sumsize;
+    return cache.size () * bytes_per_block;
 }
 
 

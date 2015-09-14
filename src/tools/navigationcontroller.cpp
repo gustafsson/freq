@@ -1,13 +1,14 @@
 #include "navigationcontroller.h"
 
 // Sonic AWE
-#include "renderview.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
 #include "heightmap/render/renderer.h"
 #include "tools/commands/movecameracommand.h"
 #include "tools/commands/zoomcameracommand.h"
 #include "tools/commands/rotatecameracommand.h"
+#include "tools/support/renderviewinfo.h"
+#include "tools/support/toolselector.h"
 
 // Qt
 #include <QMouseEvent>
@@ -21,10 +22,15 @@
 namespace Tools
 {
 
+using Support::RenderViewInfo;
+using Support::RenderCamera;
+
 NavigationController::
-        NavigationController(RenderView* view)
+        NavigationController(RenderView* view, Sawe::Project* project, Support::ToolSelector* tool_selector)
             :
             _view(view),
+            _project(project),
+            _tool_selector(tool_selector),
             zoom_only_(false)
 {
     connectGui();
@@ -44,7 +50,7 @@ void NavigationController::
         receiveToggleNavigation(bool active)
 {
     if (active || zoom_only_ == false)
-        _view->toolSelector()->setCurrentTool( this, active );
+        _tool_selector->setCurrentTool( this, active );
     if (active)
         zoom_only_ = false;
 }
@@ -54,7 +60,7 @@ void NavigationController::
         receiveToggleZoom(bool active)
 {
     if (active || zoom_only_ == true)
-        _view->toolSelector()->setCurrentTool( this, active );
+        _tool_selector->setCurrentTool( this, active );
     if (active)
         zoom_only_ = true;
 }
@@ -63,7 +69,7 @@ void NavigationController::
 void NavigationController::
         moveUp()
 {
-    moveCamera(0, 0.1f/_view->model->zscale);
+    moveCamera(0, 0.1f/_view->model->camera->zscale);
     _view->redraw();
 }
 
@@ -71,7 +77,7 @@ void NavigationController::
 void NavigationController::
         moveDown()
 {
-    moveCamera(0, -0.1f/_view->model->zscale);
+    moveCamera(0, -0.1f/_view->model->camera->zscale);
     _view->redraw();
 }
 
@@ -79,7 +85,7 @@ void NavigationController::
 void NavigationController::
         moveLeft()
 {
-    moveCamera(-0.1f/_view->model->xscale, 0);
+    moveCamera(-0.1f/_view->model->camera->xscale, 0);
     _view->redraw();
 }
 
@@ -87,7 +93,7 @@ void NavigationController::
 void NavigationController::
         moveRight()
 {
-    moveCamera(0.1f/_view->model->xscale, 0);
+    moveCamera(0.1f/_view->model->camera->xscale, 0);
     _view->redraw();
 }
 
@@ -248,13 +254,14 @@ void NavigationController::
             else
                 prev.setY( prev.y() + s*e->delta() );
 
-            Heightmap::Position last = _view->getPlanePos( prev, &success1);
-            Heightmap::Position current = _view->getPlanePos( e->pos(), &success2);
+            Heightmap::Position last = RenderViewInfo(_view->model).getPlanePos( prev, &success1);
+            Heightmap::Position current = RenderViewInfo(_view->model).getPlanePos( e->pos(), &success2);
             if (success1 && success2)
             {
+                const RenderCamera c = *_view->model->camera.read ();
                 if (e->modifiers().testFlag(Qt::ControlModifier))
-                    zoomCamera( 4*(current.time - last.time)*_view->model->xscale/_view->model->_pz,
-                                4*(current.scale - last.scale)*_view->model->zscale/_view->model->_pz,
+                    zoomCamera( 4*(current.time - last.time)*c.xscale / c.p[2],
+                                4*(current.scale - last.scale)*c.zscale / c.p[2],
                                 0 );
                 else
                     moveCamera( last.time - current.time, last.scale - current.scale);
@@ -288,7 +295,7 @@ void NavigationController::
     mouseReleaseEvent(e);
 
     //TaskTimer("NavigationController mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
-    Tools::RenderView &r = *_view;
+    RenderViewInfo r(_view->model);
 
     int x = e->x(), y = e->y();
 //    TaskTimer tt("moving");
@@ -327,8 +334,9 @@ void NavigationController::
         Heightmap::Position current = r.getPlanePos( e->localPos (), &success2);
         if (success1 && success2)
         {
-            zoomCamera( 4*(current.time - last.time)*_view->model->xscale/_view->model->_pz,
-                        4*(current.scale - last.scale)*_view->model->zscale/_view->model->_pz,
+            const RenderCamera c = *_view->model->camera.read ();
+            zoomCamera( 4*(current.time - last.time)*c.xscale/c.p[2],
+                        4*(current.scale - last.scale)*c.zscale/c.p[2],
                         0 );
         }
     }
@@ -379,7 +387,7 @@ void NavigationController::
 void NavigationController::
         connectGui()
 {
-    Ui::SaweMainWindow* main = _view->model->project()->mainWindow();
+    Ui::SaweMainWindow* main = _project->mainWindow();
     Ui::MainWindow* ui = main->getItems();
 
     //connect(ui->actionToggleNavigationToolBox, SIGNAL(toggled(bool)), ui->toolBarOperation, SLOT(setVisible(bool)));
@@ -402,13 +410,13 @@ void NavigationController::
     one_action_at_a_time_->addActionItem( ui->actionActivateNavigation );
     one_action_at_a_time_->addActionItem( ui->actionZoom );
 
-    _view->tool_selector->default_tool = this;
+    _tool_selector->default_tool = this;
 
     QList<QKeySequence> shortcuts = ui->actionActivateNavigation->shortcuts();
     shortcuts.push_back( Qt::Key_Escape );
     ui->actionActivateNavigation->setShortcuts( shortcuts );
 
-    _view->toolSelector()->setCurrentToolCommand( this );
+    _tool_selector->setCurrentToolCommand( this );
     ui->actionActivateNavigation->setChecked(true);
 
     bindKeyToSlot( main, "Up", this, SLOT(moveUp()) );
@@ -439,7 +447,7 @@ void NavigationController::
         moveCamera( float dt, float ds )
 {
     Tools::Commands::pCommand cmd( new Tools::Commands::MoveCameraCommand(_view->model, dt, ds ));
-    _view->model->project()->commandInvoker()->invokeCommand( cmd );
+    _project->commandInvoker()->invokeCommand( cmd );
 }
 
 
@@ -447,7 +455,7 @@ void NavigationController::
         zoomCamera( float dt, float ds, float dz )
 {
     Tools::Commands::pCommand cmd( new Tools::Commands::ZoomCameraCommand(_view->model, dt, ds, dz*0.005 ));
-    _view->model->project()->commandInvoker()->invokeCommand( cmd );
+    _project->commandInvoker()->invokeCommand( cmd );
 }
 
 
@@ -455,7 +463,7 @@ void NavigationController::
         rotateCamera( float dx, float dy )
 {
     Tools::Commands::pCommand cmd( new Tools::Commands::RotateCameraCommand(_view->model, dx, dy ));
-    _view->model->project()->commandInvoker()->invokeCommand( cmd );
+    _project->commandInvoker()->invokeCommand( cmd );
 }
 
 

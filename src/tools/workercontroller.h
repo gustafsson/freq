@@ -9,7 +9,7 @@ class WorkerController : public QObject
 {
     Q_OBJECT
 public:
-    WorkerController(WorkerView* view, class RenderView* renderview, class TimelineView* timelineview);
+    WorkerController(WorkerView* view, class RenderView* renderview, class TimelineView* timelineview, Sawe::Project* project);
 
 signals:
 

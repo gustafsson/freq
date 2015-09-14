@@ -5,7 +5,7 @@ See class comment #GlTexture.
 #pragma once
 
 #include "releaseaftercontext.h"
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 // It's not necessary to include the whole glew.h here just to get 
 // the constant value of GL_RGBA, which is used as the default value
@@ -26,6 +26,7 @@ See class comment #GlTexture.
 #endif
 #endif
 
+
 /**
 GlTexture is a wrapper for an OpenGL texture (refered to as just 
 "texture") to manage the texture in an object oriented manner (mainly
@@ -35,7 +36,7 @@ construction and destruction and keeping track of texture id).
 */
 class GlTexture: public boost::noncopyable {
 public:
-    typedef boost::shared_ptr<GlTexture> ptr;
+    typedef std::shared_ptr<GlTexture> ptr;
 
 	/**
 	Creates a new OpenGL texture and allocates memory for a given
@@ -55,7 +56,7 @@ public:
      * @brief GlTexture maps an existing gl texture
      * @param textureId
      */
-    GlTexture(unsigned int textureId);
+    GlTexture(unsigned int textureId, int width, int height, bool adopt=false);
 
     void reset(unsigned short width, unsigned short height, unsigned int pixelFormat=GL_RGBA, unsigned int internalFormat=GL_RGBA, unsigned type=GL_UNSIGNED_BYTE, void* data = 0);
 
@@ -64,26 +65,12 @@ public:
 	*/
 	~GlTexture();
 
-    typedef ReleaseAfterContext<GlTexture> ScopeBinding;
-
     /**
     Binds this texture with glBindTexture and enables 2D texturing
     with glEnable. Then removes the binding and disables 2D texturing
     when the object goes out of scope.
     */
-    ScopeBinding getScopeBinding();
-
-    /**
-	Binds this texture with glBindTexture and enables 2D texturing 
-	with glEnable.
-	*/
-    void bindTexture2D();
-
-	/**
-    Removes the binding with glBindTexture and disables 2D texturing
-	with glDisable.
-	*/
-    static void unbindTexture2D();
+    void bindTexture();
 
 	/**
 	Returns the OpenGL texture id for this texture. To be used with
@@ -100,6 +87,14 @@ public:
 	Returns the height of the texture.
 	*/
     unsigned short getHeight() const { return height; }
+
+    /**
+    getMinFilter returns the min_filter previously stored by storeMinFilter.
+    This is used to check if the mipmap levels have been enabled for this texture.
+    The texture must be bound when calling setMinFilter.
+     */
+    unsigned int getMinFilter() { return min_filter; }
+    void setMinFilter(unsigned int f);
 
 private:
     /**
@@ -118,5 +113,5 @@ private:
     unsigned int textureId;
     unsigned int ownTextureId;
 
-    void unbindTexture2Dwrap();
+    unsigned int min_filter=0;
 };

@@ -4,6 +4,7 @@
                 // be included on windows
 #include "tasktimer.h"
 #include "computationkernel.h"
+#include "glstate.h"
 
 #ifdef USE_CUDA
 // cuda
@@ -54,7 +55,7 @@ void MappedVboVoid::
     EXCEPTION_ASSERT( !_is_mapped );
 
     DataStorageSize sizeInBytes = datap->sizeInBytes();
-    EXCEPTION_ASSERT( datap->numberOfBytes() == _vbo->size() );
+    EXCEPTION_ASSERT_EQUALS( datap->numberOfBytes(), _vbo->size() );
 
 #ifdef USE_CUDA
     void* g_data=0;
@@ -85,10 +86,21 @@ void MappedVboVoid::
     #endif
 #else
 
-    glBindBuffer(_vbo->vbo_type(), *_vbo);
+    GlState::glBindBuffer(_vbo->vbo_type(), *_vbo);
+#if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
+//    #ifndef GL_WRITE_ONLY
+//        #define GL_WRITE_ONLY 0x88B9 // from gl.h
+//    #endif
+    void* data = glMapBufferOES(_vbo->vbo_type(), GL_WRITE_ONLY);
+//    void* data = glMapBufferRange (_vbo->vbo_type(), 0, _vbo->size (),
+//                                   GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+#elif defined(GL_ES_VERSION_3_0)
+    void* data = glMapBufferRange(_vbo->vbo_type(), 0, _vbo->size (), GL_MAP_WRITE_BIT);
+#else
     void* data = glMapBuffer(_vbo->vbo_type(), GL_WRITE_ONLY);
+#endif
     _is_mapped = 0!=data;
-    glBindBuffer(_vbo->vbo_type(), 0);
+    GlState::glBindBuffer(_vbo->vbo_type(), 0);
 
 
     if (!_is_mapped)
@@ -141,9 +153,13 @@ void MappedVboVoid::
         datap->AccessStorage<CpuMemoryStorage>( true, false );
 
         // sync from mem to vbo
-        glBindBuffer(_vbo->vbo_type(), *_vbo);
+        GlState::glBindBuffer(_vbo->vbo_type(), *_vbo);
+#if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
+        glUnmapBufferOES(_vbo->vbo_type());
+#else
         glUnmapBuffer(_vbo->vbo_type());
-        glBindBuffer(_vbo->vbo_type(), 0);
+#endif
+        GlState::glBindBuffer(_vbo->vbo_type(), 0);
 
         // release resources
         mapped_gl_mem.reset();

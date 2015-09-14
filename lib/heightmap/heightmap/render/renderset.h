@@ -5,20 +5,22 @@
 #include "heightmap/render/renderinfo.h"
 
 #include <boost/unordered_set.hpp>
+#include <unordered_map>
 
 namespace Heightmap {
 namespace Render {
 
 /**
  * @brief The RenderSet class should compute which references that cover the
- * visible heightmap with sufficient resolution, as judged by RenderInfoI.
+ * visible heightmap with sufficient resolution, as judged by RenderInfo.
  */
 class RenderSet
 {
 public:
-    typedef boost::unordered_set<Reference> references_t;
+    typedef std::unordered_map<Reference,LevelOfDetail> references_t;
+    static references_t makeSet(Reference, LevelOfDetail lod = true);
 
-    RenderSet(RenderInfoI* render_info, float L);
+    RenderSet(RenderInfo* render_info, float L);
 
 
     /**
@@ -40,7 +42,7 @@ public:
     Reference       computeRefAt( Heightmap::Position p, Reference entireHeightmap ) const;
 
 private:
-    RenderInfoI*    render_info;
+    RenderInfo*     render_info;
     float           L;
 
     references_t    computeChildrenRenderSet( Reference ref );

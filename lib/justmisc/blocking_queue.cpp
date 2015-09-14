@@ -43,7 +43,7 @@ void blocking_queue_test::
         for (thread& t : producers)
             t.join ();
 
-        q.abort_on_empty ();
+        q.close ();
 
         int S = 0;
         for (future<int>& f : consumers)

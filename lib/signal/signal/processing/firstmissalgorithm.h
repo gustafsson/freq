@@ -3,7 +3,6 @@
 
 #include "task.h"
 #include "dag.h"
-#include "workers.h"
 #include "signal/computingengine.h"
 #include "ischedulealgorithm.h"
 
@@ -44,7 +43,6 @@ public:
             Signal::Intervals needed=Intervals::Intervals_ALL,
             Signal::IntervalType center=Interval::IntervalType_MIN,
             Signal::IntervalType preferred_size=Interval::IntervalType_MAX,
-            Workers::ptr workers=Workers::ptr(),
             Signal::ComputingEngine::ptr worker=Signal::ComputingEngine::ptr()) const;
 
 public:

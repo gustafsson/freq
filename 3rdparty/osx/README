@@ -1,0 +1,7 @@
+brew install boost
+brew install flac --with-libogg
+brew install qt5
+
+build against:
+/usr/local/lib
+/usr/local/include

@@ -1,13 +1,9 @@
 #include "rescalewidget.h"
 
-#include <QPaintEvent>
-#include <QPainter>
-#include <QApplication>
-#include <QBitmap>
-#include <QTimer>
+#include <QtWidgets> // QApplication
 
 #include "sawe/project.h"
-#include "tools/renderview.h"
+#include "tools/support/renderviewinfo.h"
 #include "tools/commands/zoomcameracommand.h"
 #include "gl.h"
 
@@ -19,9 +15,10 @@ namespace Tools {
 namespace Widgets {
 
 RescaleWidget::
-        RescaleWidget (RenderView*v)
+        RescaleWidget (RenderView*v, Tools::Commands::CommandInvoker* commandInvoker)
     :   HudGlWidget(v),
         view_(v),
+        commandInvoker_(commandInvoker),
         scalex_(1.f),
         scaley_(1.f),
         image_(":/icons/muchdifferent.png"),
@@ -132,6 +129,7 @@ void RescaleWidget::
 {
     if ( 0 == "draw 2D widget region with OpenGL")
     {
+#ifdef LEGACY_OPENGL
         glColor4f (1,0,0,0.5);
         glBegin (GL_TRIANGLE_STRIP);
         glVertex2f (0,0);
@@ -141,6 +139,9 @@ void RescaleWidget::
         glEnd ();
 
         image_.directDraw();
+#else
+        EXCEPTION_ASSERTX(false, "requires LEGACY_OPENGL");
+#endif
     }
 }
 
@@ -192,8 +193,9 @@ void RescaleWidget::
 {
     bool success1, success2;
 
-    Heightmap::Position last = view_->getPlanePos( mapToParent(dragSource_), &success1);
-    Heightmap::Position current = view_->getPlanePos( mapToParent(lastPos_), &success2);
+    Tools::Support::RenderViewInfo r(view_->model);
+    Heightmap::Position last = r.getPlanePos( mapToParent(dragSource_), &success1);
+    Heightmap::Position current = r.getPlanePos( mapToParent(lastPos_), &success2);
 
     QPointF d = lastPos_ - dragSource_;
     float dx = d.x() / width();
@@ -207,12 +209,13 @@ void RescaleWidget::
 
     if (success1 && success2)
     {
+        const Tools::Support::RenderCamera c = *view_->model->camera.read ();
         float r = DIRECT_RESCALING ? 4 : .1;
-        float dt = r*(current.time - last.time)*view_->model->xscale/view_->model->_pz;
-        float ds = r*(current.scale - last.scale)*view_->model->zscale/view_->model->_pz;
+        float dt = r*(current.time - last.time)*c.xscale/c.p[2];
+        float ds = r*(current.scale - last.scale)*c.zscale/c.p[2];
 
         Tools::Commands::pCommand cmd( new Tools::Commands::ZoomCameraCommand(view_->model, dt, ds, 0.f ));
-        view_->model->project()->commandInvoker()->invokeCommand( cmd );
+        commandInvoker_->invokeCommand( cmd );
     }
 
     //dragSource_ = event->pos();

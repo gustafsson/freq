@@ -1,15 +1,15 @@
 #include "blockfactory.h"
-#include "tasktimer.h"
-#include "heightmap/render/glblock.h"
+#include "heightmap/render/blocktextures.h"
 
+#include "tasktimer.h"
 #include "GlException.h"
 #include "computationkernel.h"
+#include "gl.h"
+
+#include <float.h> // FLT_MAX
 
 //#define TIME_BLOCKFACTORY
 #define TIME_BLOCKFACTORY if(0)
-
-//#define INFO_BLOCKFACTORY
-#define INFO_BLOCKFACTORY if(0)
 
 
 using namespace boost;
@@ -19,50 +19,42 @@ namespace Heightmap {
 namespace BlockManagement {
 
 BlockFactory::
-        BlockFactory(BlockLayout bl, VisualizationParams::const_ptr vp)
+        BlockFactory()
     :
-      block_layout_(bl),
-      visualization_params_(vp),
-      _free_memory(availableMemoryForSingleAllocation()),
-      recently_created_(Signal::Intervals::Intervals_ALL),
-      created_count_(0)
+      block_layout_( 2, 2, FLT_MAX ),
+      updater_(new BlockUpdater)
 {
-    EXCEPTION_ASSERT(visualization_params_);
+
+}
+
+
+BlockFactory& BlockFactory::
+        reset(BlockLayout bl, VisualizationParams::const_ptr vp)
+{
+    block_layout_ = bl;
+    visualization_params_ = vp;
+    return *this;
 }
 
 
 pBlock BlockFactory::
-        createBlock( const Reference& ref, GlTexture::ptr tex )
+        createBlock( const Reference& ref )
 {
+    EXCEPTION_ASSERT(visualization_params_);
     TIME_BLOCKFACTORY TaskTimer tt(format("New block %s") % ReferenceInfo(ref, block_layout_, visualization_params_));
 
     pBlock block( new Block(
                      ref,
                      block_layout_,
-                     visualization_params_) );
-    block->glblock.reset (new Render::GlBlock(tex));
-
-    recently_created_ |= block->getInterval ();
+                     visualization_params_,
+                     updater_.get()) );
 
     //setDummyValues(block);
 
+    if (!block->texture ())
+        return pBlock();
+
     return block;
-}
-
-
-Signal::Intervals BlockFactory::
-        recently_created()
-{
-    Signal::Intervals r = recently_created_;
-    recently_created_.clear ();
-    return r;
-}
-
-
-void BlockFactory::
-        next_frame()
-{
-    created_count_ = 0;
 }
 
 
@@ -79,14 +71,15 @@ void BlockFactory::
         }
     }
 
-    block->glblock->updateTexture (&p[0], p.size ());
+    block->texture ()->bindTexture ();
+    GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, samples, scales, GL_RED, GL_FLOAT, &p[0]) );
 }
 
 } // namespace BlockManagement
 } // namespace Heightmap
 
-#include <QApplication>
-#include <QGLWidget>
+#include <QtWidgets> // QApplication
+#include <QtOpenGL> // QGLWidget
 #include "neat_math.h"
 
 namespace Heightmap {
@@ -105,6 +98,7 @@ void BlockFactory::
     // It should create new blocks to make them ready for receiving heightmap data and rendering.
     {
         BlockLayout bl(4,4,4);
+        Render::BlockTextures::Scoped bt_raii(bl.texels_per_row (), bl.texels_per_column ());
         VisualizationParams::const_ptr vp(new VisualizationParams);
         BlockCache::ptr cache(new BlockCache);
 
@@ -116,15 +110,14 @@ void BlockFactory::
         r.log2_samples_size = Reference::Scale( floor_log2( max_sample_size.time ), floor_log2( max_sample_size.scale ));
         r.block_index = Reference::Index(0,0);
 
-        GlTexture::ptr tex(new GlTexture(128,128));
-        pBlock block = BlockFactory(bl, vp).createBlock(r, tex);
+        pBlock block = BlockFactory().reset (bl, vp).createBlock(r);
         cache->insert (block);
 
         EXCEPTION_ASSERT(block);
         EXCEPTION_ASSERT(cache->find(r));
         EXCEPTION_ASSERT(cache->find(r) == block);
 
-        pBlock block3 = BlockFactory(bl, vp).createBlock(r.bottom (), tex);
+        pBlock block3 = BlockFactory().reset(bl, vp).createBlock(r.bottom ());
         cache->insert (block3);
 
         EXCEPTION_ASSERT(block3);

@@ -1,7 +1,7 @@
 #include "glinfo.h"
 
 #include <sstream>
-#include <QGLWidget>
+#include <QtOpenGL> // QGLFormat
 
 using namespace std;
 
@@ -71,17 +71,22 @@ string glinfo::
 {
     stringstream ss;
 
-    ss << "vendor: " << string((char*)glGetString(GL_VENDOR)) << endl
-       << "renderer: " << glGetString(GL_RENDERER) << endl
-       << "version: " << glGetString(GL_VERSION) << endl
-       << "shading language: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endl
-       << "extensions/capabilities/caps: " << glGetString(GL_EXTENSIONS) << endl;
+    auto n = [](GLenum name) {
+                const GLubyte*p = glGetString(name);
+                return p ? (const char*)p : "(null)";
+    };
+
+    ss << "vendor: " << n(GL_VENDOR) << endl
+       << "renderer: " << n(GL_RENDERER) << endl
+       << "version: " << n(GL_VERSION) << endl
+       << "shading language: " << n(GL_SHADING_LANGUAGE_VERSION) << endl
+       << "extensions/capabilities/caps: " << n(GL_EXTENSIONS) << endl;
 
     return ss.str();
 }
 
 
-#include <QApplication>
+#include <QtWidgets> // QApplication
 #include "exceptionassert.h"
 
 void glinfo::

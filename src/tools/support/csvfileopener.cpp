@@ -58,6 +58,7 @@ Signal::OperationDesc::ptr CsvfileOpener::
 #include <QDir>
 #include <QFile>
 #include "test/randombuffer.h"
+#include "signal/computingengine.h"
 #include <fstream>
 
 namespace Tools {
@@ -77,7 +78,7 @@ void CsvfileOpener::
         for (int s=0; s<buffer->number_of_samples (); s++)
         {
             // Make a messy csv file, random spaces and random delimiters
-            for (unsigned c=0; c<buffer->number_of_channels (); c++) {
+            for (int c=0; c<buffer->number_of_channels (); c++) {
                 Signal::pMonoBuffer mono = buffer->getChannel (c);
                 float *p = mono->waveform_data ()->getCpuMemory ();
                 if ((s+c)%3)
@@ -123,7 +124,7 @@ void CsvfileOpener::
             EXCEPTION_ASSERT_EQUALS(buffer->number_of_samples (), b2->number_of_samples ());
 
             float maxdiff = 0;
-            for (unsigned c=0; c<buffer->number_of_channels (); c++)
+            for (int c=0; c<buffer->number_of_channels (); c++)
             {
                 Signal::pMonoBuffer mono1 = buffer->getChannel (c);
                 Signal::pMonoBuffer mono2 = b2->getChannel (c);

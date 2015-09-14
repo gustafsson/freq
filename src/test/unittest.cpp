@@ -19,10 +19,10 @@
 #include "filters/normalize.h"
 #include "filters/rectangle.h"
 #include "filters/timeselection.h"
+#include "filters/support/operation-composite.h"
 #include "tools/support/audiofileopener.h"
 #include "tools/support/csvfileopener.h"
 #include "tools/support/chaininfo.h"
-#include "tools/support/operation-composite.h"
 #include "tools/support/renderoperation.h"
 #include "tools/support/renderviewupdateadapter.h"
 #include "tools/support/heightmapprocessingpublisher.h"
@@ -84,12 +84,10 @@ int UnitTest::
         RUNTEST(Test::TaskTimerTiming);
         RUNTEST(Test::RandomBuffer);
         RUNTEST(Test::PrintBuffer);
-        RUNTEST(Signal::Buffer);
-        RUNTEST(Signal::BufferSource);
         RUNTEST(Tfr::FreqAxis);
         RUNTEST(Gauss);
         // PortAudio complains if testing Microphone in the end
-        RUNTEST(Adapters::MicrophoneRecorderDesc);
+        RUNTEST(Adapters::MicrophoneRecorder);
         RUNTEST(Filters::Selection);
         RUNTEST(Filters::EnvelopeDesc);
         RUNTEST(Filters::Normalize);

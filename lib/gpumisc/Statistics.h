@@ -1,3 +1,5 @@
+#pragma once
+
 #include "datastorage.h"
 #include "cpumemorystorage.h"
 #include "tasktimer.h"

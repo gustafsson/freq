@@ -121,6 +121,8 @@ public:
 							 const char* callerMessage = 0);
 };
 
+#ifdef _DEBUG
+
 /**
 GlException_CHECK_ERROR() uses <code>check_error(const char* 
 fileMacro, int lineMacro)</code> and fills the arguments with 
@@ -148,3 +150,13 @@ a call (to a function that may set glGetError()).
 	call; \
 	GlException_CHECK_ERROR_MSG( #call ); \
 	} while(false)
+
+#else
+
+// don't call glGet* in release builds, not even glGetError
+// OpenGL ES Programming Guide for iOS - Avoid Querying OpenGL ES State
+#define GlException_CHECK_ERROR()
+#define GlException_CHECK_ERROR_MSG(x)
+#define GlException_SAFE_CALL(x) x
+
+#endif

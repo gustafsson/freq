@@ -1,7 +1,7 @@
 #ifndef SIGNAL_PROCESSING_INOTIFIER_H
 #define SIGNAL_PROCESSING_INOTIFIER_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace Signal {
 namespace Processing {
@@ -9,8 +9,8 @@ namespace Processing {
 class INotifier
 {
 public:
-    typedef boost::shared_ptr<INotifier> ptr;
-    typedef boost::weak_ptr<INotifier> weak_ptr;
+    typedef std::shared_ptr<INotifier> ptr;
+    typedef std::weak_ptr<INotifier> weak_ptr;
 
     virtual ~INotifier() {}
 

@@ -1,7 +1,9 @@
 #ifndef RENDERCONTROLLER_H
 #define RENDERCONTROLLER_H
 
-#include "renderview.h"
+#include "tools/renderview.h"
+#include "sawe/project.h"
+#include "tools/support/toolselector.h"
 
 #include <QWidget>
 #include <QPointer>
@@ -16,13 +18,14 @@ namespace Ui { class ComboBoxAction; class MainWindow; }
 
 namespace Tools
 {
+    class GraphicsView;
     namespace Widgets { class ValueSlider; }
 
-    class SaweDll RenderController: public QObject // This should not be a QWidget. User input is handled by tools.
+    class SaweDll RenderController: public QObject
     {
         Q_OBJECT
     public:
-        RenderController( QPointer<RenderView> view );
+        RenderController( QPointer<RenderView> view, Sawe::Project* project );
         ~RenderController();
 
         RenderModel*        model();
@@ -31,6 +34,9 @@ namespace Tools
         void                setBlockFilter(Heightmap::MergeChunkDesc::ptr mcdp, Tfr::TransformDesc::ptr transform_desc);
         void                stateChanged();
         void                emitAxisChanged();
+
+        Tools::Support::ToolSelector* tool_selector;
+        GraphicsView* graphicsview;
 
         Ui::ComboBoxAction* transform;
         Ui::ComboBoxAction* hz_scale;
@@ -77,10 +83,6 @@ namespace Tools
         void receiveSetTransform_Cwt();
         void receiveSetTransform_Stft();
         void receiveSetTransform_Cwt_phase();
-#ifdef USE_CUDA
-        void receiveSetTransform_Cwt_reassign();
-#endif
-        void receiveSetTransform_Cwt_ridge();
         void receiveSetTransform_Cwt_weight();
         void receiveSetTransform_Cepstrum();
 
@@ -115,6 +117,7 @@ namespace Tools
         float currentTransformMinHz();
 
         QPointer<RenderView> view;
+        Sawe::Project* project;
 
         // GUI stuff
         // These are never used outside setupGui, but they are named here
@@ -131,6 +134,8 @@ namespace Tools
         Widgets::ValueSlider* yscale;
         Widgets::ValueSlider* ybottom;
         Widgets::ValueSlider* tf_resolution;
+
+        Heightmap::Update::UpdateQueue::ptr update_queue;
 
         void setupGui();
         void windowLostFocus();

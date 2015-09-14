@@ -16,3 +16,4 @@ release
 tmp
 Makefile
 qtc-gdbmacros
+libgpumisc.h

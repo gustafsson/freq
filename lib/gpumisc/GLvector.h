@@ -4,6 +4,11 @@
 #include "gl.h"
 
 #include "tvector.h"
-typedef tvector<3,GLdouble> GLvector;
+#include "tmatrix.h"
+
+typedef tvector<3,GLfloat> GLvectorf;
+typedef tmatrix<4,GLfloat> GLmatrixf;
+typedef tvector<3,double> vectord;
+typedef tmatrix<4,double> matrixd;
 
 #endif // GLVECTOR_H

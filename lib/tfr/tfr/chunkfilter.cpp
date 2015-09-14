@@ -1,4 +1,5 @@
 #include "chunkfilter.h"
+#include "tfr/transform.h"
 
 #include "demangle.h"
 
@@ -31,6 +32,13 @@ ChunkFilterDesc::ptr ChunkFilterDesc::
     EXCEPTION_ASSERTX(false, vartype(*this) + "::copy not implemented");
 
     return ChunkFilterDesc::ptr();
+}
+
+
+QString ChunkFilterDesc::
+        toString() const
+{
+    return (vartype(*this) + " on " + transform_desc_->toString ()).c_str();
 }
 
 

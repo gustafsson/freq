@@ -35,55 +35,67 @@ void UpdateProducer::
         operator()( Tfr::ChunkAndInverse& pchunk )
 {
     Heightmap::TfrMapping::Collections C = tfrmap_.read ()->collections();
+    if (pchunk.channel >= (int)C.size())
+        return; // ignore, this happens when loading a new file while old things are still being processed
+
     EXCEPTION_ASSERT_LESS(pchunk.channel, (int)C.size());
     EXCEPTION_ASSERT_LESS_OR_EQUAL(0, pchunk.channel);
 
-    BlockCache::ptr cache = C[pchunk.channel].raw ()->cache();
+    BlockCache::ptr cache = Collection::cache (C[pchunk.channel]);
     Signal::Interval chunk_interval = pchunk.chunk->getCoveredInterval();
     std::vector<pBlock> intersecting_blocks = BlockQuery(cache).getIntersectingBlocks( chunk_interval, false, 0);
 
     if (intersecting_blocks.empty ())
     {
-        Log("Discarding chunk since there are no longer any intersecting_blocks with %s")
+        Log("updateproducer: Discarding chunk since there are no longer any intersecting_blocks with %s")
                  % chunk_interval;
         return;
     }
 
-    DEBUG_INFO TaskTimer tt(boost::format("Channel %d. %s updating %s") % pchunk.channel % vartype(*merge_chunk_.get ()) % chunk_interval);
+    DEBUG_INFO TaskTimer tt(boost::format("updateproducer: channel %d. %s updating %s, %s")
+                            % pchunk.channel % pchunk.t->transformDesc ()->toString ()
+                            % chunk_interval % vartype(*merge_chunk_.get ()));
     std::vector<std::future<void>> F;
 
-    for (Update::IUpdateJob::ptr job : merge_chunk_->prepareUpdate (pchunk, intersecting_blocks))
+    auto jobs = merge_chunk_->prepareUpdate (pchunk, intersecting_blocks);
+
+    for (const Update::IUpdateJob::ptr& job : jobs)
     {
         // Use same or different intersecting_blocks
 //        intersecting_blocks = BlockQuery(cache).getIntersectingBlocks( job->getCoveredInterval (), false, 0);
-        job->getCoveredInterval ();
+//        job->getCoveredInterval ();
 
         auto f = update_queue_->push( job, intersecting_blocks );
         F.push_back (std::move(f));
     }
 
-    // Wait for these to finish
-    // If this worker thread doesn't wait it might produce jobs faster than
-    // they can be consumed.
-    try
-    {
-        for (std::future<void>& f : F)
-            f.get();
-    }
-    catch (const std::logic_error&)
-    {
-        // The queue may be emptied before the task has been processed
-        //Log("Discarded job: %s") % chunk_interval;
-    }
+    // Could wait for these to finish if the workers produce jobs faster than
+    // they can be consumed. But this should hardly ever be an issue. Besides,
+    // blocking the worker will prevent a bedroom wakeup that signals that this
+    // task is done. Which is necessary if UpdateConsumer runs in the
+    // renderthread instead of a separate thread.
+    //
+    // However, if the UpdateConsumer runs in its own thread it will produce a
+    // signal to update the target view when a job is finished.
 
-    // The target view will be refreshed when a job is finished
+//    try
+//    {
+//        for (std::future<void>& f : F)
+//            f.get();
+//    }
+//    catch (const std::logic_error&)
+//    {
+//        pchunk.abort = true;
+//        // The queue may be emptied before the task has been processed
+//        //Log("Discarded job: %s") % chunk_interval;
+//    }
 }
 
 
 void UpdateProducer::
-        set_number_of_channels(unsigned C)
+        set_number_of_channels(unsigned)
 {
-    EXCEPTION_ASSERT_EQUALS((int)C, tfrmap_.read ()->channels());
+    // whatever
 }
 
 
@@ -110,14 +122,21 @@ Tfr::pChunkFilter UpdateProducerDesc::
     return Tfr::pChunkFilter( new UpdateProducer(update_queue_, tfrmap_, merge_chunk));
 }
 
+
+QString UpdateProducerDesc::
+        toString() const
+{
+    return ("View " + transformDesc()->toString ()).c_str();
+}
+
 } // namespace Update
 } // namespace Heightmap
 
 #include "signal/computingengine.h"
 #include "tfr/stft.h"
 
-#include <QApplication>
-#include <QGLWidget>
+#include <QtWidgets> // QApplication
+#include <QtOpenGL> // QGLWidget
 
 namespace Heightmap {
 namespace Update {
@@ -180,7 +199,7 @@ void UpdateProducer::
         MergeChunk::ptr merge_chunk( merge_chunk_mock = new MergeChunkMock );
         BlockLayout bl(4, 4, SampleRate(4));
         Heightmap::TfrMapping::ptr tfrmap(new Heightmap::TfrMapping(bl, ChannelCount(1)));
-        tfrmap.write ()->length( 1 );
+        tfrmap.write ()->lengthSamples( 1*bl.sample_rate () );
         UpdateQueue::ptr update_queue(new UpdateQueue::ptr::element_type);
         UpdateProducer cbf( update_queue, tfrmap, merge_chunk );
 

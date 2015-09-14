@@ -16,6 +16,10 @@ class thread_pool
 public:
     thread_pool(const char* name=0);
     thread_pool(int N, const char* name=0);
+    thread_pool(const thread_pool&)=delete;
+    thread_pool& operator=(const thread_pool&)=delete;
+    thread_pool(thread_pool&&)=default;
+    thread_pool& operator=(thread_pool&&)=default;
     ~thread_pool();
 
     void addTask(std::packaged_task<void()>&& task)
@@ -23,6 +27,7 @@ public:
         queue_.push (std::move(task));
     }
 
+    // The return value may be fetched by a future.
     template<class F>
     void addTask(std::packaged_task<F()>&& task)
     {
@@ -32,6 +37,23 @@ public:
                     task();
                 }
         ));
+    }
+
+    size_t thread_count () const { return threads_.size (); }
+
+    /**
+     * Waits for the queue to become empty and returns the size of the queue.
+     */
+    template <class Rep, class Period>
+    int wait_for(const std::chrono::duration<Rep, Period>& d) {
+        return queue_.wait_for(d);
+    }
+
+    /**
+     * Waits for the queue to become empty and returns the size of the queue.
+     */
+    int wait() {
+        return queue_.wait();
     }
 
 private:

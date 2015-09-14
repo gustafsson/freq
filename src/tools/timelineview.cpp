@@ -4,10 +4,12 @@
 #include "toolfactory.h"
 #include "ui/mainwindow.h"
 #include "rendercontroller.h"
-
+#include "tools/support/drawcollections.h"
+#include "tools/support/toolselector.h"
 // Sonic AWE lib
 #include "sawe/application.h"
 #include "heightmap/render/renderer.h"
+#include "heightmap/render/renderfrustum.h"
 
 // gpumisc
 #include "computationkernel.h"
@@ -15,6 +17,7 @@
 #include "glPushContext.h"
 #include "glframebuffer.h"
 #include "gluunproject.h"
+#include "glstate.h"
 
 // boost
 #include <boost/assert.hpp>
@@ -82,14 +85,9 @@ Heightmap::Position TimelineView::
     pos.setY( height - 1 - pos.y() );
 
     int r = devicePixelRatio ();
-    GLvector win_coord( r*pos.x(), r*pos.y(), 0.1);
+    vectord win_coord( r*pos.x(), r*pos.y(), 0.1);
 
-    GLvector world_coord = gluUnProject(
-            win_coord,
-            modelview_matrix,
-            projection_matrix,
-            viewport_matrix,
-            success);
+    vectord world_coord = gl_projection.gluUnProject (win_coord, success);
 
     return Heightmap::Position( world_coord[0], world_coord[2] );
 }
@@ -145,23 +143,28 @@ void TimelineView::
     glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
     glClearDepth(1.0f);
 
-    glEnable(GL_DEPTH_TEST);
+    GlState::glEnable (GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
+#ifdef LEGACY_OPENGL
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
+#endif // LEGACY_OPENGL
 
     {   // Antialiasing
-        glEnable(GL_LINE_SMOOTH);
-        glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-        glDisable(GL_POLYGON_SMOOTH);
-        glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+        // This is not a recommended method for anti-aliasing. Use Multisampling instead.
+        // https://www.opengl.org/wiki/Common_Mistakes#glEnable.28GL_POLYGON_SMOOTH.29
+        //GlState::glEnable (GL_LINE_SMOOTH);
+        //glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+        //GlState::glDisable(GL_POLYGON_SMOOTH);
+        //glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
         glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-        glEnable(GL_BLEND);
     }
 
+#ifdef LEGACY_OPENGL
     glShadeModel(GL_SMOOTH);
-    glDisable(GL_LIGHTING);
-    glDisable(GL_COLOR_MATERIAL);
+    GlState::glDisable(GL_LIGHTING);
+    GlState::glDisable(GL_COLOR_MATERIAL);
+#endif // LEGACY_OPENGL
 
     initializeTimeline();
 }
@@ -201,18 +204,21 @@ void TimelineView::
 
     glViewport( x, y, _width = width, _height = height );
 
+#ifdef LEGACY_OPENGL
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(0,1,0,1, -10,10);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+#endif // LEGACY_OPENGL
 }
 
 
 void TimelineView::
         paintGL()
 {
+#ifdef LEGACY_OPENGL
     if (!_timeline_fbo || !_timeline_bar_fbo)
     {
         initializeTimeline();
@@ -223,7 +229,7 @@ void TimelineView::
 
     TIME_PAINTGL TaskTimer tt("TimelineView::paintGL");
 
-    _length = std::max( 1.f, _render_view->model->renderer->render_settings.last_axes_length );
+    _length = std::max( 1.f, _render_view->model->render_settings.last_axes_length );
     if (_length < 60*10)
         _barHeight = 0;
     else
@@ -247,7 +253,7 @@ void TimelineView::
             if (_xoffs<0) _xoffs = 0;
             if (_xoffs>_length-_length/_xscale) _xoffs = _length-_length/_xscale;
 
-            if (_render_view->model->renderer->render_settings.left_handed_axes)
+            if (_render_view->model->render_settings.left_handed_axes)
             {
                 glViewport( 0, _height*_barHeight, _width, _height*(1-_barHeight) );
             }
@@ -257,19 +263,19 @@ void TimelineView::
             }
             setupCamera( false );
 
-            glGetDoublev(GL_MODELVIEW_MATRIX, modelview_matrix);
-            glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix);
-            glGetIntegerv(GL_VIEWPORT, viewport_matrix);
+            glGetDoublev(GL_MODELVIEW_MATRIX, gl_projection.modelview.v ());
+            glGetDoublev(GL_PROJECTION_MATRIX, gl_projection.projection.v ());
+            glGetIntegerv(GL_VIEWPORT, gl_projection.viewport.v);
 
             {
                 glPushMatrixContext mc(GL_MODELVIEW);
 
-                _render_view->drawCollections( _timeline_fbo.get(), 0 );
+                Support::DrawCollections(_render_view->model).drawCollections( gl_projection, _timeline_fbo.get(), 0 );
 
                 // TODO what should be rendered in the timelineview?
                 // Not arbitrary tools but
                 // _project->tools().selection_view.drawSelection();
-                _render_view->model->renderer->drawFrustum();
+                Heightmap::Render::RenderFrustum(*_render_view->model->gl_projection.read ()).drawFrustum();
 
                 emit painting();
             }
@@ -280,7 +286,7 @@ void TimelineView::
             // Draw little bar for entire signal at the bottom of the timeline
             //glPushMatrixContext mc(GL_MODELVIEW);
 
-            if (_render_view->model->renderer->render_settings.left_handed_axes)
+            if (_render_view->model->render_settings.left_handed_axes)
             {
                 glViewport( 0, 0, (GLint)_width, (GLint)_height*_barHeight );
             }
@@ -290,7 +296,7 @@ void TimelineView::
             }
             setupCamera( true );
 
-            _render_view->drawCollections( _timeline_bar_fbo.get(), 0 );
+            Support::DrawCollections(_render_view->model).drawCollections( gl_projection, _timeline_bar_fbo.get(), 0 );
 
             glViewport( 0, 0, (GLint)_width, (GLint)_height );
             setupCamera( true );
@@ -322,7 +328,7 @@ void TimelineView::
                 glVertex3f(x4,1,1);
             glEnd();
 
-            _render_view->model->renderer->drawFrustum();
+            Heightmap::Render::RenderFrustum(*_render_view->model->gl_projection.read ()).drawFrustum();
         }
 
         GlException_CHECK_ERROR();
@@ -342,6 +348,7 @@ void TimelineView::
         TaskTimer("TimelineView::paintGL SWALLOWED GLEXCEPTION\n%s", x.what()).suppressTiming();
         Sawe::Application::global_ptr()->clearCaches();
     }
+#endif // LEGACY_OPENGL
 }
 
 
@@ -357,7 +364,7 @@ void TimelineView::
 {
     // Make sure that the camera focus point is within the timeline
     {
-        float t = _render_view->model->renderer->render_settings.camera[0];
+        float t = _render_view->model->camera.read ()->q[0];
         float new_t = -1;
 
         switch(0) // Both 1 and 2 might feel annoying, don't do them :)
@@ -378,19 +385,21 @@ void TimelineView::
 
             if (0<=new_t)
             {
-                float f = _render_view->model->renderer->render_settings.camera[2];
-                _render_view->setPosition( Heightmap::Position( new_t, f) );
+                float f = _render_view->model->camera.read ()->q[2];
+                _render_view->model->setPosition( Heightmap::Position( new_t, f) );
+                redraw ();
             }
             break;
         }
     }
 
+#ifdef LEGACY_OPENGL
     glLoadIdentity();
 
     glRotatef( 90, 1, 0, 0 );
     glRotatef( 180, 0, 1, 0 );
 
-    if (!_render_view->model->renderer->render_settings.left_handed_axes)
+    if (!_render_view->model->render_settings.left_handed_axes)
     {
         glTranslatef(-0.5f,0,0);
         glScalef(-1,1,1);
@@ -404,6 +413,7 @@ void TimelineView::
         glScalef(_xscale, 1, 1);
         glTranslatef(-_xoffs, 0, 0);
     }
+#endif // LEGACY_OPENGL
 }
 
 

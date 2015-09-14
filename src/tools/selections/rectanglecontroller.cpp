@@ -8,7 +8,7 @@
 #include "sawe/project.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
-#include "tools/renderview.h"
+#include "tools/support/renderviewinfo.h"
 
 // gpumisc
 #include "tasktimer.h"
@@ -91,7 +91,7 @@ namespace Tools { namespace Selections
         if (e->button() == selection_button_)
         {
             view_->visible = true;
-            Tools::RenderView &r = *selection_controller_->render_view();
+            Tools::Support::RenderViewInfo r(selection_controller_->render_view()->model);
 
             bool success;
             selectionStart = r.getPlanePos( e->localPos (), &success);
@@ -130,7 +130,7 @@ namespace Tools { namespace Selections
     {
         if (e->buttons().testFlag( selection_button_ ))
         {
-            Tools::RenderView &r = *selection_controller_->render_view();
+            Tools::Support::RenderViewInfo r(selection_controller_->render_view()->model);
 
             bool success;
             Heightmap::Position p = r.getPlanePos( e->localPos (), &success);

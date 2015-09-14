@@ -3,6 +3,7 @@
 #include "GlException.h"
 #include "gl.h"
 #include "exceptionassert.h"
+#include "log.h"
 
 GlTexture::GlTexture()
 :	width( 0 ),
@@ -33,24 +34,15 @@ GlTexture::GlTexture(unsigned short width, unsigned short height,
     reset(width, height, pixelFormat, internalFormat, type, data);
 }
 
-GlTexture::GlTexture(unsigned int textureId)
-    :	width( 0 ),
-        height( 0 ),
+GlTexture::GlTexture(unsigned int textureId, int width, int height, bool adopt)
+    :	width( width ),
+        height( height ),
         textureId( textureId ),
-        ownTextureId( 0 )
+        ownTextureId( adopt ? textureId : 0 )
 {
     EXCEPTION_ASSERT_LESS(0u, textureId);
-    int width=0, height=0;
-    glBindTexture (GL_TEXTURE_2D, textureId);
-    GlException_SAFE_CALL( glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width) );
-    GlException_SAFE_CALL( glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height) );
-    glBindTexture (GL_TEXTURE_2D, 0);
-    this->width = width;
-    this->height = height;
     EXCEPTION_ASSERT_LESS(0, width);
     EXCEPTION_ASSERT_LESS(0, height);
-    EXCEPTION_ASSERT_EQUALS(this->width, width);
-    EXCEPTION_ASSERT_EQUALS(this->height, height);
 }
 
 void GlTexture::
@@ -69,52 +61,37 @@ void GlTexture::
     if (0==width)
         return;
 
-	bindTexture2D();
+    glBindTexture( GL_TEXTURE_2D, textureId);
 
 	GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE) );
 	GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE) );
     //GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR) );
-    GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
+    setMinFilter (GL_LINEAR);
     GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
     int gl_max_texture_size = 0;
     glGetIntegerv (GL_MAX_TEXTURE_SIZE, &gl_max_texture_size);
     EXCEPTION_ASSERT_LESS(width, gl_max_texture_size);
     EXCEPTION_ASSERT_LESS(height, gl_max_texture_size);
     GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, pixelFormat, type, data) );
-
-	unbindTexture2D();
 }
 
 GlTexture::~GlTexture() {
-    // GlException_CHECK_ERROR(); // Windows generates some error prior to this call, why?
-	//GlException_SAFE_CALL( glDeleteTextures(1, &textureId) );
-
     if (ownTextureId) {
-        glDeleteTextures(1, &ownTextureId); // Any GL call "seems to be" an invalid operation on Windows after/during destruction. Might be the result of something else that is broken...
-        glGetError();
+        if (!QOpenGLContext::currentContext ()) {
+            Log ("%s: destruction without gl context leaks tex %d") % __FILE__ % ownTextureId;
+            return;
+        }
 
-        ownTextureId = 0;
+        glDeleteTextures(1, &ownTextureId);
     }
 }
 
-GlTexture::ScopeBinding GlTexture::getScopeBinding()
+void GlTexture::bindTexture()
 {
-    bindTexture2D();
-    return ScopeBinding(*this, &GlTexture::unbindTexture2Dwrap);
+    GlException_SAFE_CALL( glBindTexture( GL_TEXTURE_2D, textureId) );
 }
 
-void GlTexture::bindTexture2D() {
-    GlException_CHECK_ERROR();
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture( GL_TEXTURE_2D, textureId);
-    GlException_CHECK_ERROR();
-}
-
-void GlTexture::unbindTexture2D() {
-    glBindTexture( GL_TEXTURE_2D, 0);
-    glDisable(GL_TEXTURE_2D);
-}
-
-void GlTexture::unbindTexture2Dwrap() {
-    unbindTexture2D();
+void GlTexture::setMinFilter (unsigned int f)
+{
+    GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter=f) );
 }

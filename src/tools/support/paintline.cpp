@@ -10,7 +10,7 @@ void PaintLine::
 {
     if (0==N)
         return;
-
+#ifdef LEGACY_OPENGL
     GlException_CHECK_ERROR();
 
     ToolGlBrush tgb;
@@ -35,6 +35,7 @@ void PaintLine::
     glLineWidth(0.5f);
 
     GlException_CHECK_ERROR();
+#endif // LEGACY_OPENGL
 }
 
 } // namespace Support

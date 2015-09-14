@@ -3,3 +3,4 @@
 Makefile
 signal-unittest
 *.a
+libsignal.h

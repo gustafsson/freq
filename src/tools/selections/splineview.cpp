@@ -36,10 +36,10 @@ void SplineView::
 void SplineView::
         drawSelectionSpline()
 {
+#ifdef LEGACY_OPENGL
     float y = 1;
 
     Support::ToolGlBrush tgb(enabled);
-
     if (!model_->v.empty())
     {
         glBegin(GL_TRIANGLE_STRIP);
@@ -64,6 +64,7 @@ void SplineView::
         glEnd();
         glLineWidth(0.5f);
     }
+#endif // LEGACY_OPENGL
 }
 
 

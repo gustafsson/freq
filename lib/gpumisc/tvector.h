@@ -7,6 +7,12 @@ hmm, I'm going to need a matrix class for rotating vectors quite soon...
 
 #include <cmath>
 
+/**
+  See tvectorstring.h
+
+  TODO is "for(int i=N; i--;)" faster than "for(int i=0; i<N; i++)"?
+  Isn't linear access faster?
+*/
 template<int N, typename type=float, typename baseType = type>
 class tvector
 {
@@ -16,19 +22,26 @@ public:
 
     type v[N];
 	tvector( ) { for(int i=N; i--;) v[i] = 0; }
-	template<typename t2>
-	tvector( const tvector<N, t2> &a ) { for(int i=N; i--;) v[i] = a[i]; }
+    tvector( tvector &&a ) = default;
+    tvector( const tvector &a ) = default;
+    template<typename t2>
+    explicit tvector( const tvector<N, t2> &a ) { for(int i=N; i--;) v[i] = a[i]; }
 	tvector( const baseType *a ) { for(int i=N; i--;) v[i] = a[i]; }
 	tvector( const type& x );
 	tvector( const type& x, const type& y );
 	tvector( const type& x, const type& y, const type& z );
         tvector( const type& x, const type& y, const type& z, const type& w );
+    tvector& operator=( tvector &&a ) = default;
+    tvector& operator=( const tvector &a ) = default;
         const type& operator[](const unsigned n) const { return v[n];}
         type& operator[](const unsigned n){ return v[n];}
         bool operator==(const tvector &b) const {
                 bool r = true;
                 for(int i=N; i--;) r &= v[i] == b[i];
                 return r;
+        }
+        bool operator!=(const tvector &b) const {
+            return !(*this==b);
         }
         tvector operator-(tvector const& b) const {
         tvector r;
@@ -47,18 +60,27 @@ public:
                 for(int i=N; i--;) r[i] = v[i] / b[i];
 		return r;
 	}
-	template<typename t2>
-	tvector operator+(const tvector<N,t2>& b) const {
+    template<typename t2>
+    tvector operator+(const tvector<N,t2>& b) const {
                 tvector r;
                 for(int i=N; i--;) r[i] = v[i] + b[i];
-		return r;
-	}
-	tvector operator*(type b) const {
+        return r;
+    }
+    template<typename t2>
+    tvector& operator+=(const tvector<N,t2>& b) {
+        for(int i=N; i--;) v[i] += b[i];
+        return *this;
+    }
+    tvector operator*(type b) const {
                 tvector r;
                 for(int i=N; i--;) r[i] = v[i] * b;
-		return r;
-	}
-	tvector operator-() const {
+        return r;
+    }
+    tvector operator*=(type b) {
+        for(int i=N; i--;) v[i] *= b;
+        return *this;
+    }
+    tvector operator-() const {
                 tvector r;
                 for(int i=N; i--;) r[i] = -v[i];
 		return r;
@@ -114,6 +136,8 @@ public:
 
 template<>
 inline tvector<2, int>::tvector( const int& x, const int& y ) { v[0] = x, v[1] = y; }
+template<>
+inline tvector<4, int>::tvector( const int& x, const int& y, const int& z, const int& w ) { v[0] = x, v[1] = y; v[2] = z; v[3] = w; }
 template<>
 inline tvector<2, unsigned>::tvector( const unsigned& x, const unsigned& y ) { v[0] = x, v[1] = y; }
 template<>

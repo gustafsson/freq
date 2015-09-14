@@ -1,7 +1,9 @@
-SAWEROOT = $$system(echo $$_PRO_FILE_PWD_ | perl -pe \'s|(.*?sonicawe)/.*|\\1|\')
+# SAWEROOT = $$system(echo $$_PRO_FILE_PWD_ | perl -pe \'s|(.*?sonicawe)/.*|\\1|\')
+isEmpty(SAWEROOT): SAWEROOT = ..
 
 QT += opengl
 QT += network
+QT += widgets
 
 INCLUDEPATH += \
     $$SAWEROOT/lib/gpumisc \
@@ -9,8 +11,10 @@ INCLUDEPATH += \
     $$SAWEROOT/lib/justmisc \
     $$SAWEROOT/lib/signal \
     $$SAWEROOT/lib/tfr \
+    $$SAWEROOT/lib/filters \
     $$SAWEROOT/lib/heightmap \
     $$SAWEROOT/lib/tfrheightmap \
+    $$SAWEROOT/lib/heightmapview \
     $$SAWEROOT/src \
 
 unix:!macx {
@@ -30,13 +34,15 @@ LIBS += \
     -L$$SAWEROOT/lib/sonicawe-ubuntulib/lib \
     -lportaudiocpp -lportaudio \
     -lhdf5 -lhdf5_hl \
-    -L$$SAWEROOT/lib/justmisc -ljustmisc \
-    -L$$SAWEROOT/lib/backtrace -lbacktrace \
-    -L$$SAWEROOT/lib/gpumisc -lgpumisc \
-    -L$$SAWEROOT/lib/signal -lsignal \
-    -L$$SAWEROOT/lib/tfr -ltfr \
-    -L$$SAWEROOT/lib/heightmap -lheightmap \
-    -L$$SAWEROOT/lib/tfrheightmap -ltfrheightmap \
+    -L../lib/justmisc -ljustmisc \
+    -L../lib/backtrace -lbacktrace \
+    -L../lib/gpumisc -lgpumisc \
+    -L../lib/signal -lsignal \
+    -L../lib/tfr -ltfr \
+    -L../lib/filters -lfilters \
+    -L../lib/heightmap -lheightmap \
+    -L../lib/tfrheightmap -ltfrheightmap \
+    -L../lib/heightmapview -lheightmapview \
 
 QMAKE_LFLAGS += -Wl,-rpath=\'\$\${ORIGIN}\'
 }
@@ -51,13 +57,15 @@ LIBS += -lsndfile \
     -lboost_serialization-mt \
     -lboost_system-mt \
     -lboost_thread-mt \
-    -L$$SAWEROOT/lib/justmisc -ljustmisc \
-    -L$$SAWEROOT/lib/backtrace -lbacktrace \
-    -L$$SAWEROOT/lib/gpumisc -lgpumisc \
-    -L$$SAWEROOT/lib/signal -lsignal \
-    -L$$SAWEROOT/lib/tfr -ltfr \
-    -L$$SAWEROOT/lib/heightmap -lheightmap \
-    -L$$SAWEROOT/lib/tfrheightmap -ltfrheightmap \
+    -L../lib/justmisc -ljustmisc \
+    -L../lib/backtrace -lbacktrace \
+    -L../lib/gpumisc -lgpumisc \
+    -L../lib/signal -lsignal \
+    -L../lib/tfr -ltfr \
+    -L../lib/filters -lfilters \
+    -L../lib/heightmap -lheightmap \
+    -L../lib/tfrheightmap -ltfrheightmap \
+    -L../lib/heightmapview -lheightmapview \
 
 # macports
 exists(/opt/local/include/): INCLUDEPATH += /opt/local/include/

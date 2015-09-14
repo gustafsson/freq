@@ -117,15 +117,16 @@ public:
     void clear();
 
 
-    Signal::Intervals needed_samples(Signal::UnsignedIntervalType& smallest_length);
+    Signal::Intervals needed_samples() const;
     Signal::Intervals recently_created();
+    Signal::Intervals missing_data();
 
 
     /**
-      next_frame garbage collects blocks that have been deleted since the last call.
+      frame_begin garbage collects blocks that have been deleted since the last call.
       increments frame_number()
       */
-    void     next_frame();
+    void     frame_begin();
 
 
     /**
@@ -142,14 +143,14 @@ public:
 
 
     pBlock      getBlock( const Reference& ref );
-    void        createMissingBlocks(const Render::RenderSet::references_t& R);
+    void        createMissingBlocks(const Render::RenderSet::references_t& R, bool use_mipmap);
     int         runGarbageCollection( bool aggressive=false );
 
 
     unsigned long cacheByteSize() const;
     unsigned    cacheCount() const;
     void        printCacheSize() const;
-    BlockCache::ptr cache() const; // thread-safe
+    static BlockCache::ptr cache(Collection::ptr C);
     void        discardOutside(Signal::Interval I);
     bool        failed_allocation();
 
@@ -159,7 +160,7 @@ public:
     BlockLayout block_layout() const;
     VisualizationParams::const_ptr visualization_params() const;
 
-    void length(float length);
+    void length(double length);
     void block_layout(BlockLayout block_layout);
     void visualization_params(VisualizationParams::const_ptr visualization_params);
 
@@ -170,9 +171,13 @@ private:
     bool failed_allocation_ = false;
 
     BlockCache::ptr cache_;
+    std::set<pBlock> to_remove_;
     std::unique_ptr<BlockManagement::BlockFactory> block_factory_;
     std::unique_ptr<BlockManagement::BlockInitializer> block_initializer_;
-    Render::BlockTextures::ptr block_textures_;
+
+    Signal::Intervals
+        recently_created_,
+        missing_data_, missing_data_next_; // "double buffered", waiting for glFlush
 
     bool
         _is_visible;
@@ -180,7 +185,7 @@ private:
     unsigned
         _frame_counter;
 
-    float
+    double
         _prev_length;
 
     Position

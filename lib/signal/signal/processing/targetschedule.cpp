@@ -1,9 +1,10 @@
 // Include QObject and Boost.Foreach in that order to prevent conflicts with Qt foreach
-#include <QObject>
+#include <QtCore> // QObject
 #include <boost/foreach.hpp>
 
 #include "targetschedule.h"
 #include "tasktimer.h"
+#include "log.h"
 
 //#define DEBUGINFO
 #define DEBUGINFO if(0)
@@ -19,10 +20,10 @@ TargetSchedule::
     :
       targets(targets),
       g(g),
-      algorithm(algorithm)
+      algorithm(std::move(algorithm))
 {
     BOOST_ASSERT(g);
-    BOOST_ASSERT(algorithm);
+    BOOST_ASSERT(this->algorithm);
 }
 
 
@@ -33,60 +34,88 @@ Task TargetSchedule::
     // Lock the graph from writing during getTask
     auto dag = g.read();
 
-    TargetState targetstate = prioritizedTarget();
-    TargetNeeds::State& state = targetstate.second;
-    Step::ptr& step = targetstate.first;
-    if (!step) {
-        DEBUGINFO TaskInfo("No target needs anything right now");
-        return Task();
+    auto T = this->targets->getTargets();
+
+    while (!T.empty())
+    {
+        TargetState targetstate = prioritizedTarget(T);
+        TargetNeeds::State& state = targetstate.second;
+        Step::ptr& step = targetstate.first;
+        if (!step) {
+            DEBUGINFO TaskInfo("targetschedule: No target needs anything right now");
+            return Task();
+        }
+
+        DEBUGINFO TaskTimer tt(boost::format("targetschedule: getTask(%s, center: %g)") % state.needed_samples % state.work_center);
+
+        GraphVertex vertex = dag->getVertex(step);
+        EXCEPTION_ASSERT(vertex);
+
+        Task task = algorithm->getTask(
+                dag->g(),
+                vertex,
+                state.needed_samples,
+                state.work_center,
+                state.preferred_update_size,
+                engine);
+
+        if (!task) {
+            for (auto i = T.begin(); i!=T.end();)
+            {
+                if ((*i)->step ().lock () == step)
+                    i = T.erase(i);
+                else
+                    i++;
+            }
+        }
+        else
+        {
+            DEBUGINFO Log("targetschedule: task->expected_output() = %s") % task.expected_output();
+            return task;
+        }
     }
 
-    DEBUGINFO TaskTimer tt(boost::format("getTask(%s,%g)") % state.needed_samples % state.work_center);
-
-    GraphVertex vertex = dag->getVertex(step);
-    EXCEPTION_ASSERT(vertex);
-
-    Task task = algorithm.read ()->getTask(
-            dag->g(),
-            vertex,
-            state.needed_samples,
-            state.work_center,
-            state.preferred_update_size,
-            Workers::ptr(),
-            engine);
-
-    DEBUGINFO if (task)
-        TaskInfo(boost::format("task->expected_output() = %s") % task.expected_output());
-
-    return task;
+    return Task();
 }
 
 
 TargetSchedule::TargetState TargetSchedule::
-        prioritizedTarget() const
+        prioritizedTarget(const Targets::TargetNeedsCollection& T)
 {
     TargetState r;
 
-    r.second.last_request = neg_infin;
+    double most_urgent = 0;
 
-    for (const TargetNeeds::ptr& t: targets->getTargets())
+    for (const TargetNeeds::ptr& t: T)
     {
         auto step = t->step ().lock ();
         if (!step)
             continue;
 
-        Signal::Intervals step_needed = step.read()->not_started();
-        if (!step_needed)
+        Signal::Intervals not_started = step.read()->not_started();
+        if (!not_started)
             continue;
 
         TargetNeeds::State state = t->state ();
-        state.needed_samples &= step_needed;
+        //double needed = state.needed_samples.count ();
+        state.needed_samples &= not_started;
+        double missing = state.needed_samples.count ();
 
-        if (r.second.last_request < state.last_request && state.needed_samples)
+        DEBUGINFO Log("targetschedule: %s (prio %g) not_started %s, needs %s")
+                % Step::operation_desc (step)->toString().toStdString() % state.prio % not_started % state.needed_samples;
+
+        double urgency = missing*exp(state.prio);
+        if (urgency > most_urgent)
         {
+            most_urgent = urgency;
             r.first = step;
             r.second = state;
         }
+    }
+
+    DEBUGINFO {
+        if (r.first) Log("targetschedule: looking at %s") % Step::operation_desc (r.first)->toString().toStdString();
+        else Log("targetschedule: nothing of interest");
     }
 
     return r;
@@ -109,15 +138,13 @@ public:
             Signal::Intervals needed,
             Signal::IntervalType,
             Signal::IntervalType,
-            Workers::ptr,
             Signal::ComputingEngine::ptr) const
     {
-        Step::ptr step(new Step(Signal::OperationDesc::ptr()));
-        return Task(step.write(), step,
-                                  std::vector<Step::const_ptr>(),
-                                  Signal::Operation::ptr(),
-                                  needed.spannedInterval (),
-                                  Signal::Interval());
+        return Task(Step::ptr(new Step(Signal::OperationDesc::ptr())),
+                    std::vector<Step::const_ptr>(),
+                    Signal::Operation::ptr(),
+                    needed.spannedInterval (),
+                    Signal::Interval());
     }
 };
 
@@ -136,7 +163,7 @@ void TargetSchedule::
         Targets::ptr targets(new Targets(notifier));
         Signal::ComputingEngine::ptr engine;
 
-        TargetSchedule targetschedule(dag, algorithm, targets);
+        TargetSchedule targetschedule(dag, std::move(algorithm), targets);
 
         // It should not return a task without a target
         EXCEPTION_ASSERT(!targetschedule.getTask (engine));
@@ -179,7 +206,7 @@ void TargetSchedule::
         targetneeds->updateNeeds(Signal::Interval(),0,10,1);
         targetneeds2->updateNeeds(Signal::Interval(5,6),0,10,0);
 
-        TargetSchedule targetschedule(dag, algorithm, targets);
+        TargetSchedule targetschedule(dag, std::move(algorithm), targets);
         Task task = targetschedule.getTask (engine);
         EXCEPTION_ASSERT(task);
         EXCEPTION_ASSERT_EQUALS(task.expected_output(), Signal::Interval(5,6));

@@ -5,7 +5,8 @@
 #include "reversegraph.h"
 #include "graphinvalidator.h"
 #include "bedroomnotifier.h"
-#include "workers.h"
+#include "signal/qteventworker/qteventworkerfactory.h"
+#include "signal/cvworker/cvworkerfactory.h"
 
 // backtrace
 #include "demangle.h"
@@ -14,6 +15,7 @@
 
 #include <boost/foreach.hpp>
 #include <boost/graph/breadth_first_search.hpp>
+#include <boost/optional/optional_io.hpp>
 
 using namespace boost;
 
@@ -30,14 +32,16 @@ Chain::ptr Chain::
     Targets::ptr targets(new Targets(notifier));
 
     IScheduleAlgorithm::ptr algorithm(new FirstMissAlgorithm());
-    ISchedule::ptr targetSchedule(new TargetSchedule(dag, algorithm, targets));
-    Workers::ptr workers(new Workers(targetSchedule, bedroom));
-
-    // Add the 'single instance engine' thread.
-    workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr());
+    ISchedule::ptr targetSchedule(new TargetSchedule(dag, std::move(algorithm), targets));
+    Workers::ptr workers(new Workers(IWorkerFactory::ptr(new CvWorker::CvWorkerFactory(targetSchedule, bedroom))));
+//    Workers::ptr workers(new Workers(IWorkerFactory::ptr(new QtEventWorker::QtEventWorkers(targetSchedule, bedroom))));
 
     // Add worker threads to occupy all kernels
-    for (int i=0; i<QThread::idealThreadCount (); i++) {
+    int reserved_threads = 0;
+    reserved_threads++; // OpenGL rendering
+    reserved_threads++; // 1 ComputingCpu
+    workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr(new Signal::ComputingCpu));
+    for (int i=0; i<QThread::idealThreadCount ()-reserved_threads; i++) {
         workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr(new Signal::ComputingCpu));
     }
 
@@ -60,9 +64,6 @@ bool Chain::
     if (!workers_)
         return true;
 
-    TaskTimer tt("Chain::close(%d)", timeout);
-    // Targets::TargetNeedsCollection T = targets_.read ()->getTargets();
-
     // Ask workers to not start anything new
     workers_.read ()->remove_all_engines(0);
 
@@ -70,7 +71,13 @@ bool Chain::
     bedroom_->close();
 
     // Wait 1.0 s for workers to finish
-    bool r = workers_.read ()->remove_all_engines(timeout);
+    bool r = workers_.read ()->remove_all_engines(timeout/10);
+
+    if (!r) {
+        TaskTimer tt("Chain::close(%d)", timeout);
+        r = workers_.read ()->remove_all_engines(timeout*9/10);
+        if (!r) TaskInfo("Failed to remove all engines");
+    }
 
     // Suppress output
     workers_.write ()->clean_dead_workers();
@@ -90,9 +97,36 @@ bool Chain::
 
 
 TargetMarker::ptr Chain::
-        addTarget(Signal::OperationDesc::ptr desc, TargetMarker::ptr at)
+        addTarget(Signal::OperationDesc::ptr desc)
 {
-    Step::ptr::weak_ptr step = createBranchStep(*dag_.write (), desc, at);
+    Step::ptr step(new Step(desc));
+    dag_->appendStep (step);
+
+    TargetNeeds::ptr target_needs = targets_->addTarget(step);
+
+    TargetMarker::ptr marker(new TargetMarker {target_needs, dag_});
+
+    return marker;
+}
+
+
+TargetMarker::ptr Chain::
+        addTargetBefore(Signal::OperationDesc::ptr desc, TargetMarker::ptr at)
+{
+    Step::ptr::weak_ptr step = createBranchStep(*dag_.write (), desc, at, true);
+
+    TargetNeeds::ptr target_needs = targets_->addTarget(step);
+
+    TargetMarker::ptr marker(new TargetMarker {target_needs, dag_});
+
+    return marker;
+}
+
+
+TargetMarker::ptr Chain::
+        addTargetAfter(Signal::OperationDesc::ptr desc, TargetMarker::ptr at)
+{
+    Step::ptr::weak_ptr step = createBranchStep(*dag_.write (), desc, at, false);
 
     TargetNeeds::ptr target_needs = targets_->addTarget(step);
 
@@ -113,7 +147,7 @@ IInvalidator::ptr Chain::
 
     desc.write ()->setInvalidator( graph_invalidator );
 
-    graph_invalidator.read ()->deprecateCache (Signal::Interval::Interval_ALL);
+    graph_invalidator->deprecateCache (Signal::Interval::Interval_ALL);
 
     return graph_invalidator;
 }
@@ -144,10 +178,31 @@ void Chain::
 
     BOOST_FOREACH(Step::ptr s, steps_to_remove) {
         GraphInvalidator::deprecateCache (*dag, s, Signal::Interval::Interval_ALL);
+        TaskInfo("chain: removing %s", Step::operation_desc (s)->toString().toStdString().c_str());
         dag->removeStep (s);
     }
 
     bedroom_->wakeup();
+}
+
+
+void Chain::
+        removeOperation(Signal::OperationDesc::ptr operation)
+{
+    auto dag = dag_.write ();
+
+    const Graph& g = dag->g();
+    std::set<Step::ptr> S;
+    BOOST_FOREACH(GraphVertex u, vertices(g)) {
+        if (Step::operation_desc(g[u]) == operation)
+            S.insert (g[u]);
+    }
+
+    for(Step::ptr step:S)
+    {
+        GraphInvalidator::deprecateCache(*dag, step, Signal::Interval::Interval_ALL);
+        dag->removeStep(step);
+    }
 }
 
 
@@ -162,7 +217,7 @@ public:
     void discover_vertex(GraphVertex u, const Graph & g)
     {
         Step::ptr step( g[u] );
-        Signal::OperationDesc::ptr o = step.raw ()->operation_desc();
+        Signal::OperationDesc::ptr o = Step::operation_desc(step);
         Signal::OperationDesc::Extent x = o.read ()->extent ();
 
         // TODO This doesn't really work with merged paths
@@ -215,6 +270,20 @@ Targets::ptr Chain::
 }
 
 
+shared_state<const Dag> Chain::
+        dag() const
+{
+    return dag_;
+}
+
+
+Bedroom::ptr Chain::
+        bedroom() const
+{
+    return bedroom_;
+}
+
+
 void Chain::
         resetDefaultWorkers()
 {
@@ -228,11 +297,11 @@ void Chain::
         if (d.second)
             TaskInfo(boost::format("%s crashed") % (d.first.get() ? vartype(*d.first.get()) : "ComputingEngine(null)"));
 
-    Workers::EngineWorkerMap engines = workers->workers_map();
+    const Workers::EngineWorkerMap& engines = workers->workers_map();
     if (!engines.empty ())
     {
         TaskInfo ti("Couldn't remove all old workers");
-        for (auto e : engines)
+        for (const auto& e : engines)
             TaskInfo(boost::format("%s") % (e.first.get() ? vartype(*e.first.get()) : "ComputingEngine(null)"));
     }
 
@@ -240,13 +309,20 @@ void Chain::
         workers->addComputingEngine(Signal::ComputingEngine::ptr());
 
     int cpu_workers = 0;
-    for (auto e : engines)
+    for (const auto& e : engines)
         if (dynamic_cast<Signal::ComputingEngine*>(e.first.get()))
             cpu_workers++;
 
     // Add worker threads to occupy all kernels
     for (int i=cpu_workers; i<QThread::idealThreadCount (); i++)
         workers->addComputingEngine(Signal::ComputingEngine::ptr(new Signal::ComputingCpu));
+
+    auto dag = dag_.write ();
+    BOOST_FOREACH (GraphVertex v, vertices(dag->g()))
+    {
+        Step::ptr s = dag->g()[v];
+        s->undie();
+    }
 }
 
 
@@ -263,17 +339,16 @@ Chain::
 
 
 Step::ptr::weak_ptr Chain::
-        createBranchStep(Dag& dag, Signal::OperationDesc::ptr desc, TargetMarker::ptr at)
+        createBranchStep(Dag& dag, Signal::OperationDesc::ptr desc, TargetMarker::ptr at, bool addbefore)
 {
-    GraphVertex vertex = NullVertex ();
-    if (at) {
-        Step::ptr target_step = at->step().lock();
-        EXCEPTION_ASSERTX (target_step, "target step has been removed");
+    Step::ptr target_step = at->step().lock();
+    EXCEPTION_ASSERTX (target_step, "target step has been removed");
 
-        vertex = dag.getVertex (target_step);
-        if (!vertex)
-            return Step::ptr::weak_ptr();
+    GraphVertex vertex = dag.getVertex (target_step);
+    if (!vertex)
+        return Step::ptr::weak_ptr();
 
+    if (addbefore) {
         BOOST_FOREACH(const GraphEdge& e, in_edges(vertex, dag.g ())) {
             // Pick one of the sources on random and append to that one
             vertex = source(e, dag.g ());
@@ -307,14 +382,14 @@ Step::ptr::weak_ptr Chain::
     return step;
 }
 
-
 } // namespace Processing
 } // namespace Signal
+
 
 #include "test/operationmockups.h"
 #include "test/randombuffer.h"
 #include "signal/buffersource.h"
-#include <QApplication>
+#include <QtWidgets> // QApplication
 
 namespace Signal {
 namespace Processing {
@@ -353,7 +428,7 @@ void Chain::
     {
         Timer t;
         Chain::createDefaultChain ();
-        EXCEPTION_ASSERT_LESS (t.elapsed (), 0.01);
+        EXCEPTION_ASSERT_LESS (t.elapsed (), 0.03);
     }
 
     // It should make the signal processing namespace easy to use with a clear
@@ -364,23 +439,22 @@ void Chain::
         Signal::OperationDesc::ptr target_desc(new OperationDescChainMock);
         Signal::OperationDesc::ptr source_desc(new Signal::BufferSource(Test::RandomBuffer::smallBuffer ()));
 
-        TargetMarker::ptr null;
-        TargetMarker::ptr target = chain.write ()->addTarget(target_desc, null);
+        TargetMarker::ptr target = chain->addTarget(target_desc);
 
         // Should be able to add and remove an operation multiple times
-        chain.write ()->addOperationAt(source_desc, target);
-        chain.write ()->removeOperationsAt(target);
-        chain.write ()->addOperationAt(source_desc, target);
-        chain.write ()->extent(target); // will fail unless indices are reordered
+        chain->addOperationAt(source_desc, target);
+        chain->removeOperationsAt(target);
+        chain->addOperationAt(source_desc, target);
+        chain->extent(target); // will fail unless indices are reordered
         EXCEPTION_ASSERT_EQUALS (chain->dag_.read ()->g().num_edges(), 1u);
         EXCEPTION_ASSERT_EQUALS (chain->dag_.read ()->g().num_vertices(), 2u);
-        chain.write ()->removeOperationsAt(target);
+        chain->removeOperationsAt(target);
 
 
         // Should create an invalidator when adding an operation
-        IInvalidator::ptr invalidator = chain.write ()->addOperationAt(source_desc, target);
+        IInvalidator::ptr invalidator = chain->addOperationAt(source_desc, target);
 
-        EXCEPTION_ASSERT_EQUALS (chain.read ()->extent(target).interval, Signal::Interval(3,5));
+        EXCEPTION_ASSERT_EQUALS (chain->extent(target).interval.get_value_or (Signal::Interval()), Signal::Interval(3,5));
 
         TargetNeeds::ptr needs = target->target_needs();
         needs->updateNeeds(Signal::Interval(4,6));
@@ -388,14 +462,14 @@ void Chain::
         //target->sleep();
 
         // This will remove the step used by invalidator
-        chain.write ()->removeOperationsAt(target);
+        chain->removeOperationsAt(target);
 
         // So using invalidator should not do anything (would throw an
         // exception if OperationDescChainMock::affectedInterval was called)
-        invalidator.write ()->deprecateCache(Signal::Interval(9,11));
+        invalidator->deprecateCache(Signal::Interval(9,11));
 
         usleep(4000);
-        chain.read ()->workers()->rethrow_any_worker_exception();
+        chain->workers()->rethrow_any_worker_exception();
 
         chain = Chain::ptr ();
         EXCEPTION_ASSERT_LESS(t.elapsed (), 0.03);

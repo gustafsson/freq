@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Main.qml</file>
+        <file>Heightmap.qml</file>
+        <file>app.qml</file>
+        <file>LayoutSplitter.qml</file>
+        <file>TransformSettings.qml</file>
+    </qresource>
+</RCC>

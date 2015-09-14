@@ -1,6 +1,7 @@
 #include "waveupdater.h"
 #include "heightmap/update/waveformblockupdater.h"
-#include "fbo2block.h"
+#include "heightmap/blockmanagement/blockupdater.h"
+#include "heightmap/render/blocktextures.h"
 #include "wave2fbo.h"
 #include "lazy.h"
 #include "log.h"
@@ -32,7 +33,7 @@ namespace OpenGL {
 class WaveUpdaterPrivate
 {
 public:
-    Fbo2Block fbo2block;
+    Wave2Fbo wave2fbo;
 };
 
 
@@ -55,61 +56,37 @@ void WaveUpdater::
         processJobs( queue<UpdateQueue::Job>& jobs )
 {
     // Select subset to work on, must consume jobs in order
-    vector<UpdateQueue::Job> myjobs;
     while (!jobs.empty ())
     {
         UpdateQueue::Job& j = jobs.front ();
-        if (dynamic_cast<const WaveformBlockUpdater::Job*>(j.updatejob.get ()))
-        {
-            myjobs.push_back (move(j)); // Steal it
-            jobs.pop ();
-        }
-        else
+        auto job = dynamic_cast<const WaveformBlockUpdater::Job*>(j.updatejob.get ());
+        if (!job)
             break;
-    }
 
-    // Prepare Wave2Fbo
-    unordered_map<Signal::pMonoBuffer,lazy<Wave2Fbo>> wave2fbo;
-    for (const UpdateQueue::Job& j : myjobs)
-    {
-        auto job = dynamic_cast<const WaveformBlockUpdater::Job*>(j.updatejob.get ());
-        wave2fbo[job->b] = Wave2Fbo(job->b);
-    }
-
-    // Remap block -> buffer (instead of buffer -> blocks) because we want to draw all
-    // buffers to each block, instead of each buffer to all blocks.
-    //
-    // The chunks must be drawn in order, thus a "vector<Tfr::pMonoBuffer>" is required
-    // to preserve ordering.
-    unordered_map<pBlock, vector<Signal::pMonoBuffer>> buffers_per_block;
-    for (const UpdateQueue::Job& j : myjobs)
-    {
-        auto job = dynamic_cast<const WaveformBlockUpdater::Job*>(j.updatejob.get ());
 
         for (pBlock block : j.intersecting_blocks)
-            buffers_per_block[block].push_back(job->b);
-    }
+        {
+            std::function<bool(const glProjection& M)> draw;
+            if (block->sample_rate () * 10.f < job->b->sample_rate ())
+                draw = p->wave2fbo.prepTriangleStrip (block,job->b);
+            else
+                draw = p->wave2fbo.prepLineStrip (job->b);
 
-    // Draw from all chunks to each block
-    for (auto& f : buffers_per_block)
-    {
-        const pBlock& block = f.first;
-        auto fbo_mapping = p->fbo2block.begin (block);
+            block->updater ()->queueUpdate (block,
+                        [draw] (const glProjection& M) { return draw(M); });
 
-        for (auto& b : f.second)
-            wave2fbo[b]->draw();
+#ifdef PAINT_BLOCKS_FROM_UPDATE_THREAD
+            block->updater ()->processUpdates (false);
+#endif
+        }
 
-        // suppress warning caused by RAII
-        (void)fbo_mapping;
-    }
-
-    for (UpdateQueue::Job& j : myjobs) {
         INFO {
             auto job = dynamic_cast<const WaveformBlockUpdater::Job*>(j.updatejob.get ());
             Log("WaveUpdater finished %s") % job->b->getInterval();
         }
 
         j.promise.set_value ();
+        jobs.pop ();
     }
 }
 

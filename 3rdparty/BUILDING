@@ -1,0 +1,4 @@
+freetype-gl
+-----------
+cmake -D FREETYPE_INCLUDE_DIR_freetype2=/usr/local/include/freetype2 .
+make

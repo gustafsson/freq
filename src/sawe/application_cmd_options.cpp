@@ -12,7 +12,7 @@
 
 // adapters
 #include "adapters/csv.h"
-#include "adapters/hdf5.h"
+#include "adapters/hdf5adapter.h"
 #include "adapters/playback.h"
 
 // gpumisc
@@ -70,7 +70,7 @@ void Application::
     auto td = render_model.transform_descs ().write ();
     Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
     //Signal::pOperation source = render_model.renderSignalTarget->post_sink()->source();
-    Signal::OperationDesc::Extent extent = p->processing_chain().read ()->extent(p->default_target ());
+    Signal::OperationDesc::Extent extent = p->processing_chain()->extent(p->default_target ());
     Signal::IntervalType number_of_samples = extent.interval.get_value_or (Signal::Interval());
     float sample_rate = extent.sample_rate.get_value_or (1);
     unsigned samples_per_chunk_hint = Sawe::Configuration::samples_per_chunk_hint();
@@ -87,7 +87,7 @@ void Application::
 
         Tfr::ChunkFilterDesc::ptr cfd(new Adapters::CsvDesc(QString("sonicawe-%1.csv").arg(get_csv).toStdString()));
         Signal::OperationDesc::ptr o(new Tfr::TransformOperationDesc(cfd));
-        Signal::Processing::TargetMarker::ptr t = p->processing_chain ()->addTarget(o, p->default_target ());
+        Signal::Processing::TargetMarker::ptr t = p->processing_chain ()->addTargetBefore(o, p->default_target ());
         Signal::Processing::TargetNeeds::ptr needs = t->target_needs ();
 
         Signal::Interval I( get_csv*total_samples_per_chunk, (get_csv+1)*total_samples_per_chunk );
@@ -107,7 +107,7 @@ void Application::
 
         Tfr::ChunkFilterDesc::ptr cfd(new Adapters::Hdf5ChunkDesc(QString("sonicawe-%1.h5").arg(get_hdf).toStdString()));
         Signal::OperationDesc::ptr o(new Tfr::TransformOperationDesc(cfd));
-        Signal::Processing::TargetMarker::ptr t = p->processing_chain ()->addTarget(o, p->default_target ());
+        Signal::Processing::TargetMarker::ptr t = p->processing_chain ()->addTargetBefore(o, p->default_target ());
         Signal::Processing::TargetNeeds::ptr needs = t->target_needs ();
 
         Signal::Interval I( get_hdf*total_samples_per_chunk, (get_hdf+1)*total_samples_per_chunk );

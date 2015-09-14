@@ -53,8 +53,9 @@ public:
     Tfr::TransformDesc::ptr transform_desc() const;
     void transform_desc(Tfr::TransformDesc::ptr);
 
-    float length() const;
-    void length(float L);
+    double length() const;
+    Signal::IntervalType lengthSamples() const;
+    void lengthSamples(Signal::IntervalType L);
 
     int channels() const;
     void channels(int value);
@@ -63,13 +64,15 @@ public:
     typedef std::vector<pCollection> Collections;
     Collections collections() const;
 
+    void gc();
 private:
     void updateCollections();
 
     Collections                 collections_;
+    Collections                 old_collections_;
     BlockLayout                 block_layout_;
     VisualizationParams::ptr    visualization_params_;
-    float                       length_;
+    Signal::IntervalType        length_samples_;
 
 public:
     static void test();

@@ -31,6 +31,10 @@ NEAT_MATH_CALL size_t int_div_ceil( const size_t& x, const unsigned& y ) {
     return (x+y-1)/y;
 }
 
+NEAT_MATH_CALL int int_div_ceil( const int& x, const unsigned& y ) {
+    return (x+y-1)/y;
+}
+
 template<typename T>
 NEAT_MATH_CALL T absint(T i) {
     EXCEPTION_ASSERT( i != std::numeric_limits<T>::min() );
@@ -164,6 +168,7 @@ lpo2s(register unsigned int x)
 }
 
 
+#if defined(_MSC_VER) || !defined(DARWIN_NO_CARBON)
 static inline uint32_t log2(uint32_t x) {
   uint32_t y;
 #ifdef _MSC_VER
@@ -172,6 +177,10 @@ static inline uint32_t log2(uint32_t x) {
       bsr eax, x
       mov y, eax
   }
+//#elif defined(DARWIN_NO_CARBON)
+ // Use <cmath> instead
+//  y = 0;
+//  while(x>>=1) y++;
 #else
   asm ( "\tbsr %1, %0\n"
       : "=r"(y)
@@ -180,6 +189,11 @@ static inline uint32_t log2(uint32_t x) {
 #endif
   return y;
 }
+#else
+static inline uint32_t log2(uint32_t x) {
+    return log2(double(x));
+}
+#endif
 
 
 // Quadratic interpolation

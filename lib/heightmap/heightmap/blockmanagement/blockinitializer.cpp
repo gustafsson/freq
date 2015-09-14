@@ -6,6 +6,7 @@
 #include "neat_math.h"
 #include "glframebuffer.h"
 #include "gl.h"
+#include "GlException.h"
 
 //#define TIME_GETBLOCK
 #define TIME_GETBLOCK if(0)
@@ -24,30 +25,30 @@ BlockInitializer::
       visualization_params_(vp),
       cache_(c)
 {
-#ifdef DO_MERGE
-    merger_.reset( new Merge::MergerTexture(cache_, bl) );
-#else
     bool disable_merge = true;
-    merger_.reset( new Merge::MergerTexture(cache_, bl, disable_merge) );
+#ifdef DO_MERGE
+    disable_merge = false;
 #endif
+    merger_.reset( new Merge::MergerTexture(cache_, bl, disable_merge) );
 }
 
 
-void BlockInitializer::
+Signal::Intervals BlockInitializer::
         initBlocks( const std::vector<pBlock>& blocks )
 {
     TIME_GETBLOCK TaskTimer tt(format("BlockInitializer: initBlock %s") % blocks.size ());
     //TIME_GETBLOCK TaskTimer tt(format("BlockInitializer: initBlock %s") % ReferenceInfo(block->reference (), block_layout_, visualization_params_));
 
-    merger_->fillBlocksFromOthers (blocks);
+    return merger_->fillBlocksFromOthers (blocks);
 }
 
 } // namespace BlockManagement
 } // namespace Heightmap
 
+#include "heightmap/render/blocktextures.h"
 
-#include <QGLWidget>
-#include <QApplication>
+#include <QtWidgets> // QApplication
+#include <QtOpenGL> // QGLWidget
 
 namespace Heightmap {
 namespace BlockManagement {
@@ -59,8 +60,19 @@ void BlockInitializer::
     int argc = 1;
     char * argv = &name[0];
     QApplication a(argc,&argv);
+#ifndef LEGACY_OPENGL
+    QGLFormat f = QGLFormat::defaultFormat ();
+    f.setProfile( QGLFormat::CoreProfile );
+    f.setVersion( 3, 2 );
+    QGLFormat::setDefaultFormat (f);
+#endif
     QGLWidget w;
     w.makeCurrent ();
+#ifndef LEGACY_OPENGL
+    GLuint VertexArrayID;
+    GlException_SAFE_CALL( glGenVertexArrays(1, &VertexArrayID) );
+    GlException_SAFE_CALL( glBindVertexArray(VertexArrayID) );
+#endif
 
     // It should initialize new blocks
     {
@@ -78,8 +90,8 @@ void BlockInitializer::
         r.log2_samples_size = Reference::Scale( floor_log2( max_sample_size.time ), floor_log2( max_sample_size.scale ));
         r.block_index = Reference::Index(0,0);
 
-        GlTexture::ptr tex(new GlTexture(128,128));
-        pBlock block = BlockFactory(bl, vp).createBlock(r, tex);
+        Render::BlockTextures::Scoped bt_raii(bl.texels_per_row (), bl.texels_per_column ());
+        pBlock block = BlockFactory ().reset(bl, vp).createBlock(r);
         block_initializer.initBlock (block);
         cache->insert (block);
 
@@ -87,7 +99,7 @@ void BlockInitializer::
         EXCEPTION_ASSERT(cache->find(r));
         EXCEPTION_ASSERT(cache->find(r) == block);
 
-        pBlock block3 = BlockFactory(bl, vp).createBlock(r.bottom (), tex);
+        pBlock block3 = BlockFactory ().reset(bl, vp).createBlock(r.bottom ());
         block_initializer.initBlock (block3);
         cache->insert (block3);
 

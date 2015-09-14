@@ -55,12 +55,17 @@ TfrMapping::
     :
       block_layout_(block_layout),
       visualization_params_(new VisualizationParams),
-      length_( 0 )
+      length_samples_( 0 )
 {
-    LOGINFO TaskInfo ti("TfrMapping. Fs=%g. %d x %d blocks",
+    LOGINFO TaskInfo ti("TfrMapping. Fs=%g. %d x %d blocks. mipmaps=%d. %d channels",
                 block_layout_.targetSampleRate (),
                 block_layout_.texels_per_row(),
-                block_layout_.texels_per_column ());
+                block_layout_.texels_per_column (),
+                block_layout_.mipmaps (),
+                channels);
+
+    if (!Heightmap::Render::BlockTextures::isInitialized ())
+        Heightmap::Render::BlockTextures::init (block_layout.texels_per_row (), block_layout.texels_per_column ()),
 
     this->channels (channels);
 }
@@ -69,10 +74,11 @@ TfrMapping::
 TfrMapping::
         ~TfrMapping()
 {
-    LOGINFO TaskInfo ti("~TfrMapping. Fs=%g. %d x %d blocks. %d channels",
+    LOGINFO TaskInfo ti("~TfrMapping. Fs=%g. %d x %d blocks. mipmaps=%d. %d channels",
                 block_layout_.targetSampleRate (),
                 block_layout_.texels_per_row(),
                 block_layout_.texels_per_column (),
+                block_layout_.mipmaps (),
                 channels ());
 
     collections_.clear();
@@ -97,7 +103,39 @@ void TfrMapping::
                 bl.texels_per_row(),
                 bl.texels_per_column ());
 
+    EXCEPTION_ASSERT_EQUALS(bl.texels_per_row (), block_layout_.texels_per_row ());
+    EXCEPTION_ASSERT_EQUALS(bl.texels_per_column (), block_layout_.texels_per_column ());
+    // if this fails, BlockTextures would have to change size, but block_layout may then
+    // be different in different windows.
+
+    float oldfs = block_layout_.sample_rate ();
     block_layout_ = bl;
+    float fs = block_layout_.sample_rate ();
+
+    if (oldfs != fs)
+    {
+        Heightmap::FreqAxis fa = display_scale ();
+        switch(fa.axis_scale) {
+        case AxisScale_Waveform:
+            fa.setWaveform (-1,1);
+            break;
+        case AxisScale_Linear:
+            fa.setLinear (fs);
+            break;
+        case AxisScale_Logarithmic:
+        {
+            float q = fa.min_hz / fa.max_hz ();
+            fa.setLogarithmic (q*fs/2,fs/2);
+            break;
+        }
+        case AxisScale_Quefrency:
+            fa.setQuefrency (fs, fa.max_frequency_scalar*2);
+            break;
+        default:
+            break;
+        }
+        display_scale( fa );
+    }
 
     updateCollections();
 }
@@ -156,12 +194,10 @@ void TfrMapping::
 
     LOGINFO TaskInfo ti("Target sample rate: %g", v);
 
-    block_layout_ = BlockLayout(
+    block_layout(BlockLayout(
                 block_layout_.texels_per_row (),
                 block_layout_.texels_per_column (),
-                v);
-
-    updateCollections();
+                v, block_layout_.mipmaps ()));
 }
 
 
@@ -198,30 +234,37 @@ void TfrMapping::
 //}
 
 
-float TfrMapping::
+double TfrMapping::
         length() const
 {
-    return length_;
+    return length_samples_ / targetSampleRate();
+}
+
+
+Signal::IntervalType TfrMapping::
+        lengthSamples() const
+{
+    return length_samples_;
 }
 
 
 void TfrMapping::
-        length(float L)
+        lengthSamples(Signal::IntervalType L)
 {
-    if (L == length_)
+    if (L == length_samples_)
         return;
 
-    length_ = L;
+    length_samples_ = L;
 
     for (unsigned c=0; c<collections_.size(); ++c)
-        collections_[c].write ()->length( length_ );
+        collections_[c].write ()->length( length() );
 }
 
 
 int TfrMapping::
         channels() const
 {
-    return collections_.size ();
+    return (int)collections_.size ();
 }
 
 
@@ -237,17 +280,18 @@ void TfrMapping::
 
     LOGINFO TaskInfo ti("Number of channels: %d", v);
 
-    collections_.clear ();
+    for (auto c : collections_)
+        old_collections_.push_back (std::move(c));
 
     Collections new_collections(v);
 
     for (pCollection& c : new_collections)
     {
         c = Heightmap::Collection::ptr( new Heightmap::Collection(block_layout_, visualization_params_));
-        c->length( length_ );
+        c->length( length() );
     }
 
-    collections_ = new_collections;
+    collections_.swap (new_collections);
 }
 
 
@@ -256,6 +300,14 @@ TfrMapping::Collections TfrMapping::
 {
     return collections_;
 }
+
+
+void TfrMapping::
+        gc()
+{
+    old_collections_.clear ();
+}
+
 
 
 void TfrMapping::
@@ -272,8 +324,8 @@ void TfrMapping::
 
 
 #include "tfr/stftdesc.h"
-#include <QApplication>
-#include <QGLWidget>
+#include <QtWidgets> // QApplication
+#include <QtOpenGL> // QGLWidget
 
 namespace Heightmap
 {

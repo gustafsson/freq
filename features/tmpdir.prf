@@ -1,3 +1,5 @@
+message("tmpdir for $$_PRO_FILE_PWD_ with $$QMAKESPEC")
+
 usecuda {
   TMPDIR = $$TMPDIR/cuda
 } else:useopencl {

@@ -2,15 +2,32 @@
     error("Use \"CONFIG += c++11 buildflags\" instead of \"CONFIG += buildflags\"")
 }
 
+message("buildflags for $$_PRO_FILE_PWD_ with $$QMAKESPEC")
+
+CONFIG += legacy-opengl
 win32:CONFIG += debug_and_release
 CONFIG += warn_on
-CONFIG += openmp
-CONFIG(debug, debug|release): QMAKE_CXXFLAGS += -D_DEBUG
-CONFIG(debug, debug|release): DEFINES += SHARED_STATE_NO_TIMEOUT
+!macx-ios*:CONFIG += openmp
+CONFIG(debug, debug|release): DEFINES += _DEBUG
+CONFIG(debug, debug|release): DEFINES += SHARED_STATE_NO_TIMEOUT # don't timeout locks when stepping in a debugger
+CONFIG(release, debug|release): DEFINES += SHARED_STATE_NO_TIMEOUT # use simple locks in release
 
 usecuda {
     DEFINES += SAWE_NO_MUTEX
     DEFINES += THREADCHECKER_NO_CHECK
+}
+
+macx* {
+    # Apply warn_on before disabling specific warnings
+    warn_on {
+        QMAKE_CXXFLAGS += $$QMAKE_CFLAGS_WARN_ON
+        CONFIG -= warn_on
+    }
+
+    QMAKE_CXXFLAGS += -Wno-c++1y-extensions
+    QMAKE_CXXFLAGS += -Wno-unused-parameter
+    QMAKE_CXXFLAGS -= -Wunknown-pragmas
+    QMAKE_CXXFLAGS += -Wno-unknown-pragmas
 }
 
 macx {
@@ -27,15 +44,6 @@ macx {
     #QMAKE_CXXFLAGS += -Wfatal-errors
     #QMAKE_CFLAGS += -Wfatal-errors
     #DEFINES += MAC_OS_X_VERSION_MAX_ALLOWED=1070
-
-    # Apply warn_on before disabling spcific warnings
-    warn_on {
-        QMAKE_CXXFLAGS += $$QMAKE_CFLAGS_WARN_ON
-        CONFIG -= warn_on
-    }
-
-    QMAKE_CXXFLAGS += -Wno-c++1y-extensions
-    QMAKE_CXXFLAGS += -Wno-unused-parameter
 
     CCNAME = $$system(basename $$QMAKE_CC)
     equals(CCNAME, clang) {
@@ -55,6 +63,26 @@ macx {
 #        QMAKE_CXXFLAGS -= -gdwarf-2
 #        QMAKE_CXXFLAGS += -gdwarf-4
 #    }
+
+    equals(CCNAME, clang) {
+        # C++11 doesn't work for 10.7 in Xcode 6.3 (OS X 10.10), but it does work for 10.7 with older versions of Xcode.
+        QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.9
+
+        QMAKE_CFLAGS -= -isysroot $$QMAKE_MAC_SDK_PATH
+        QMAKE_CXXFLAGS -= -isysroot $$QMAKE_MAC_SDK_PATH
+        QMAKE_OBJECTIVE_CFLAGS -= -isysroot $$QMAKE_MAC_SDK_PATH
+        QMAKE_LFLAGS -= -Wl,-syslibroot,$$QMAKE_MAC_SDK_PATH
+
+        QMAKE_CFLAGS -= -mmacosx-version-min=10.7
+        QMAKE_CXXFLAGS -= -mmacosx-version-min=10.7
+        QMAKE_OBJECTIVE_CFLAGS -= -mmacosx-version-min=10.7
+        QMAKE_LFLAGS -= -mmacosx-version-min=10.7
+
+        QMAKE_CFLAGS += -mmacosx-version-min=10.9
+        QMAKE_CXXFLAGS += -mmacosx-version-min=10.9
+        QMAKE_OBJECTIVE_CFLAGS += -mmacosx-version-min=10.9
+        QMAKE_LFLAGS += -mmacosx-version-min=10.9
+    }
 }
 
 win32 {
@@ -93,7 +121,7 @@ win32 {
 }
 
 unix {
-    !macx {
+    !macx* {
         CONFIG(debug, debug|release):QMAKE_CXXFLAGS_DEBUG += -ggdb
         QMAKE_CXX = colorgcc
     }
@@ -109,9 +137,9 @@ unix {
         QMAKE_CXXFLAGS += -fno-omit-frame-pointer
         QMAKE_CFLAGS += -fno-omit-frame-pointer
 
-        # Debug symbols makes stack traces easier to read (even though exact
-        # which line, and even which file is not guaranteed). Anyway it doesn't
-        # seem to slow down exectuion speed.
+        # Debug symbols makes stack traces easier to read (even though not
+        # exact which line nor even which file is guaranteed). Anyway it
+        # doesn't seem to slow down exectuion speed.
         QMAKE_CFLAGS += -g
         QMAKE_CXXFLAGS += -g
     }
@@ -122,6 +150,8 @@ profiling {
     !win32:QMAKE_CXXFLAGS_RELEASE += -pg
     !win32:QMAKE_LFLAGS_RELEASE += -pg
 }
+
+ios: INCLUDEPATH += $$_PRO_FILE_PWD_/../../3rdparty/ios/include
 
 #system("basename '$$QMAKE_CC' | awk 'gsub(/[-+.]/, \"\") {print \"QMAKE_CC_\" $1}'")
 DEFINES += $$system("basename '$$QMAKE_CC' | sed s/[-+.]//g | awk '{print \"QMAKE_CC_\" $1}'")

@@ -2,7 +2,7 @@
 # http://doc.qt.nokia.com/4.7-snapshot/deployment-mac.html
 ####
 
-$cuda_library_path = "/usr/local/cuda/lib"
+$cuda_library_path = "/Developer/NVIDIA/CUDA-5.0/lib"
 $custom_library_path = "/opt/local/lib"
 $custom_library_path = "/usr/local/lib"
 $compiler_library_path = "/opt/local/lib/gcc49"

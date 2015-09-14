@@ -7,6 +7,7 @@
 #pragma once
 
 #include <float.h>
+#include <cmath>
 
 template<typename floater=float>
 class TAni {
@@ -53,7 +54,7 @@ public:
 			t = 0;
 			a = v;
 		}
-		else if( abs(vprim) >= abs(v2primMax) ) // it's currently going too fast for this goal (b)
+        else if( std::abs(vprim) >= std::abs(v2primMax) ) // it's currently going too fast for this goal (b)
 		{
 			a = 2*v-f;
 			// jump vprim to the new peak

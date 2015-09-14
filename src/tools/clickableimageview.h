@@ -7,16 +7,16 @@
 
 class QImage;
 class QGraphicsProxyWidget;
+class QGraphicsScene;
 
 namespace Tools {
-
-class RenderView;
 
 class ClickableImageView : public QWidget
 {
     Q_OBJECT
 public:
-    explicit ClickableImageView(RenderView *parent, QString image=":/icons/muchdifferent.png", QString url="http://muchdifferent.com/?page=signals");
+    // parentwidget = parent->tool_selector->parentTool();
+    explicit ClickableImageView(QGraphicsScene *parent, QWidget* parentwidget, QString image=":/icons/muchdifferent.png", QString url="http://muchdifferent.com/?page=signals");
 
     virtual void mousePressEvent(QMouseEvent*);
     virtual void paintEvent(QPaintEvent *e);

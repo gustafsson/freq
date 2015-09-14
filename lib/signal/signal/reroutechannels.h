@@ -15,8 +15,8 @@ namespace Signal {
 class RerouteChannels : public Signal::OperationDesc
 {
 public:
-    typedef unsigned SourceChannel;
-    typedef unsigned OutputChannel;
+    typedef int SourceChannel;
+    typedef int OutputChannel;
     typedef std::vector<SourceChannel> MappingScheme;
 
     static const SourceChannel NOTHING;

@@ -81,8 +81,7 @@ private:
     RenderView* _render_view;
     int _except_count;
 
-    double modelview_matrix[16], projection_matrix[16];
-    int viewport_matrix[4];
+    glProjection gl_projection;
 
     boost::scoped_ptr<GlFrameBuffer> _timeline_fbo;
     boost::scoped_ptr<GlFrameBuffer> _timeline_bar_fbo;

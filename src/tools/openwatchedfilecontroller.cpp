@@ -1,15 +1,18 @@
 #include "openwatchedfilecontroller.h"
 #include "signal/operationwrapper.h"
+#include "log.h"
 
 #include <QFileSystemWatcher>
 #include <QTimer>
+#include <string.h>
 
 namespace Tools {
 
 class OpenfileWatcher: public FileChangedBase
 {
 public:
-    OpenfileWatcher(QPointer<OpenfileController> openfilecontroller, QString path);
+    OpenfileWatcher(QPointer<OpenfileController> openfilecontroller, QString path, int delay_ms);
+    ~OpenfileWatcher();
 
     void setWrapper(shared_state<Signal::OperationDesc>::weak_ptr wrapper);
     void setWrappedOperationDesc(Signal::OperationDesc::ptr);
@@ -25,6 +28,7 @@ private:
     QFileSystemWatcher watcher_;
     shared_state<Signal::OperationDesc>::weak_ptr operation_;
     QString path_;
+    int delay_ms_;
     QTimer timer_;
 };
 
@@ -36,18 +40,32 @@ public:
 
 
 OpenfileWatcher::
-        OpenfileWatcher(QPointer<OpenfileController> openfilecontroller, QString path)
+        OpenfileWatcher(QPointer<OpenfileController> openfilecontroller, QString path, int delay_ms)
     :
       openfilecontroller_(openfilecontroller),
-      path_(path)
+      path_(path),
+      delay_ms_(delay_ms)
 {
-    watcher_.addPath (path);
+    connect(&watcher_, SIGNAL(fileChanged(QString)), SLOT(fileChanged(QString)));
+    if (watcher_.addPath (path))
+    {
+        // Log("OpenfileWatcher: %s") % path.toStdString ();
+    }
+    else
+        Log("OpenfileWatcher::addPath failed: %s") % path.toStdString ();
+
     timer_.setSingleShot(true);
 
-    connect(&watcher_, SIGNAL(fileChanged(QString)), SLOT(fileChanged(QString)));
     connect(&timer_, SIGNAL(timeout()), SLOT(delayedFileChanged()));
 
     delayedFileChanged ();
+}
+
+
+OpenfileWatcher::
+        ~OpenfileWatcher()
+{
+//    Log("~OpenfileWatcher: %s") % path_.toStdString ();
 }
 
 
@@ -91,15 +109,13 @@ void OpenfileWatcher::
 {
 //    TaskInfo ti(boost::format("File changed: %s") % path.toStdString ());
 
-    timer_.start(250);
+    timer_.start(delay_ms_);
 }
 
 
 void OpenfileWatcher::
         delayedFileChanged ()
 {
-    TaskInfo ti(boost::format("Delayed file changed: %s") % path_.toStdString ());
-
     Signal::OperationDesc::ptr newop = openfilecontroller_->reopen(path_, last_loaded_operation_);
     if (!newop) {
         TaskInfo("Could not open file, ignoring reload");
@@ -113,10 +129,11 @@ void OpenfileWatcher::
 
 
 OpenWatchedFileController::
-        OpenWatchedFileController(QPointer<OpenfileController> openfilecontroller)
+        OpenWatchedFileController(QPointer<OpenfileController> openfilecontroller, int delay_ms)
     :
     QObject(&*openfilecontroller),
-    openfilecontroller_(openfilecontroller)
+    openfilecontroller_(openfilecontroller),
+    delay_ms_(delay_ms)
 {
 }
 
@@ -124,7 +141,7 @@ OpenWatchedFileController::
 Signal::OperationDesc::ptr OpenWatchedFileController::
         openWatched(QString url)
 {
-    QSharedPointer<OpenfileWatcher> w {new OpenfileWatcher(openfilecontroller_, url)};
+    QSharedPointer<OpenfileWatcher> w {new OpenfileWatcher(openfilecontroller_, url, delay_ms_)};
 
     // The file must exist to begin with
     if (w->getWrappedOperationDesc ())
@@ -143,11 +160,7 @@ Signal::OperationDesc::ptr OpenWatchedFileController::
 
 } // namespace Tools
 
-#include <QFile>
-#include <QDir>
-#include <QStandardPaths>
-#include <QApplication>
-#include <QThread>
+#include <QtWidgets> // QApplication
 
 namespace Tools {
 
@@ -209,16 +222,20 @@ void OpenWatchedFileController::
         application.processEvents ();
         EXCEPTION_ASSERT_EQUALS(od.read ()->toString().toStdString(), "foobar");
 
-        QThread::msleep(1);
+        QThread::msleep(1000);
         file.open (QIODevice::WriteOnly);
         file.write ("baz");
         file.close ();
 
         EXCEPTION_ASSERT_EQUALS(od.read ()->toString().toStdString(), "foobar");
-        application.processEvents ();
-        QThread::msleep(300);
-        application.processEvents ();
+        int i = 0;
+        for (i=0;i<1000 && 0!=strcmp(od.read ()->toString().toStdString().c_str(), "baz");i++)
+        {
+            application.processEvents ();
+            QThread::msleep(10);
+        }
         EXCEPTION_ASSERT_EQUALS(od.read ()->toString().toStdString(), "baz");
+        EXCEPTION_ASSERT_LESS (i,100);
 
         file.remove ();
     }

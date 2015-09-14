@@ -24,7 +24,9 @@ private:
         //ListAge age;
     };
     std::map<void*, ListCounter> _chunkGlList;
+#ifdef LEGACY_OPENGL
     bool _enqueueGcDisplayList;
+#endif
 
     template<typename RenderData>
     void draw_glList(

@@ -1,4 +1,5 @@
 #include "glPushContext.h"
+#ifdef LEGACY_OPENGL
 
 #include "GlException.h"
 
@@ -16,3 +17,6 @@ glPushMatrixContext::~glPushMatrixContext() {
     glMatrixMode( GL_MODELVIEW );
 }
 
+#else
+int LEGACY_OPENGL_glPushMatrixContext;
+#endif // LEGACY_OPENGL

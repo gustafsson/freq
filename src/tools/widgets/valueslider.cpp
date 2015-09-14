@@ -1,11 +1,6 @@
 #include "valueslider.h"
 
-#include <QSlider>
-#include <QDialog>
-#include <QLineEdit>
-#include <QEvent>
-#include <QApplication>
-#include <QDesktopWidget>
+#include <QtWidgets> // QApplication, QDesktopWidget, QLineEdit, QSlider, QDialog
 
 #include <math.h>
 #include <boost/math/special_functions/fpclassify.hpp>

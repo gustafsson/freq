@@ -38,6 +38,7 @@ Signal::OperationDesc::ptr AudiofileOpener::
 
 
 #include "adapters/writewav.h"
+#include "signal/computingengine.h"
 
 #include <QStandardPaths>
 #include <QDir>
@@ -56,7 +57,7 @@ void AudiofileOpener::
         QDir tmplocation = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
         std::string filename = tmplocation.filePath("dummywav.wav").toStdString();
         Signal::pBuffer buffer(new Signal::Buffer(2, 10, 10, 3));
-        for (unsigned c=0; c<buffer->number_of_channels (); c++) {
+        for (int c=0; c<buffer->number_of_channels (); c++) {
             Signal::pMonoBuffer mono = buffer->getChannel (c);
             float *p = mono->waveform_data ()->getCpuMemory ();
             for (int s=0; s<mono->number_of_samples (); s++)
@@ -77,7 +78,8 @@ void AudiofileOpener::
         EXCEPTION_ASSERT_EQUALS(od.read ()->toString().toStdString(), filename);
 
         {
-            Signal::Operation::ptr o = od.read ()->createOperation(0);
+            Signal::ComputingEngine::ptr ce(new Signal::DiscAccessThread);
+            Signal::Operation::ptr o = od.read ()->createOperation(ce.get ());
             EXCEPTION_ASSERT(o);
             Signal::OperationDesc::Extent x = od.read ()->extent();
             Signal::pBuffer b(new Signal::Buffer(0, x.interval.get().count(), x.sample_rate.get(), x.number_of_channels.get()));
@@ -87,7 +89,7 @@ void AudiofileOpener::
             EXCEPTION_ASSERT_EQUALS(buffer->number_of_samples (), b2->number_of_samples ());
 
             float maxdiff = 0;
-            for (unsigned c=0; c<buffer->number_of_channels (); c++) {
+            for (int c=0; c<buffer->number_of_channels (); c++) {
                 Signal::pMonoBuffer mono1 = buffer->getChannel (c);
                 Signal::pMonoBuffer mono2 = b2->getChannel (c);
                 float *p1 = mono1->waveform_data ()->getCpuMemory ();

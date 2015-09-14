@@ -2,7 +2,7 @@
 #define HEIGHTMAP_BLOCKFACTORY_H
 
 #include "heightmap/blockcache.h"
-#include "heightmap/render/glblock.h"
+#include "blockupdater.h"
 #include "GlTexture.h"
 
 namespace Heightmap {
@@ -11,44 +11,31 @@ namespace BlockManagement {
 /**
  * @brief The BlockFactory class should create new blocks to make them ready
  * for receiving heightmap data and rendering.
- *
- * TODO should take BlockCache::ConstPtr
  */
 class BlockFactory
 {
 public:
-    BlockFactory(BlockLayout, VisualizationParams::const_ptr);
+    BlockFactory();
+
+    BlockFactory& reset(BlockLayout, VisualizationParams::const_ptr);
 
     /**
       Creates a new block.
       */
-    pBlock              createBlock( const Reference& ref, GlTexture::ptr tex );
+    pBlock              createBlock( const Reference& ref );
 
-    Signal::Intervals   recently_created();
-
-    void                next_frame();
+    BlockUpdater*       updater() { return updater_.get (); }
 
 private:
-    /**
-      Creates a new block.
-      */
-    pBlock              createBlockInternal( const Reference& ref, GlTexture::ptr tex );
-
-
     /**
      * @brief setDummyValues fills a block with dummy values, used for testing.
      * @param block
      */
     void                setDummyValues( pBlock block );
 
-
     BlockLayout block_layout_;
     VisualizationParams::const_ptr visualization_params_;
-    size_t _free_memory;
-
-
-    Signal::Intervals recently_created_;
-    unsigned created_count_;
+    BlockUpdater::ptr updater_;
 
 public:
     static void test();

@@ -10,7 +10,7 @@
 #include "adapters/microphonerecorder.h"
 #include "adapters/networkrecorder.h"
 #include "tools/toolfactory.h"
-#include "tools/support/operation-composite.h"
+#include "filters/support/operation-composite.h"
 #include "tools/commands/commandinvoker.h"
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
@@ -18,6 +18,7 @@
 #include "tools/openwatchedfilecontroller.h"
 #include "tools/support/audiofileopener.h"
 #include "tools/support/csvfileopener.h"
+#include "signal/processing/workers.h"
 
 // Qt
 #include <QFileDialog>
@@ -55,7 +56,7 @@ Project::
     // Instead attempt unnesting of dependencies.
     {
         TaskInfo ti("Closing signal processing chain");
-        processing_chain_.write ()->close();
+        processing_chain_->close();
     }
 
     {
@@ -141,7 +142,7 @@ pProject Project::
 
             pProject p( new Project( "New network recording" ));
             p->createMainWindow ();
-            p->tools ().addRecording (Adapters::Recorder::ptr(new Adapters::NetworkRecorder(url)));
+            p->tools ().addRecording (Signal::Recorder::ptr(new Adapters::NetworkRecorder(url)));
 
             return p;
         }
@@ -268,7 +269,7 @@ pProject Project::
 {
     int device = QSettings().value("inputdevice", -1).toInt();
 
-    Adapters::Recorder::ptr recorder(new Adapters::MicrophoneRecorder(device));
+    Signal::Recorder::ptr recorder(new Adapters::MicrophoneRecorder(device));
 
     Signal::OperationDesc::Extent x;
     const auto d = recorder.raw ()->data ();
@@ -421,8 +422,8 @@ void Project::
     TaskTimer tt("Project::resetCache");
     Application::global_ptr()->clearCaches();
     tools().render_view()->model->resetBlockCaches ();
-    tools().render_view()->model->target_marker ()->target_needs ()->deprecateCache (Signal::Intervals::Intervals_ALL);
     processing_chain_->resetDefaultWorkers();
+    tools().render_view()->model->target_marker ()->target_needs ()->deprecateCache (Signal::Intervals::Intervals_ALL);
     tools().render_view()->redraw();
 }
 
@@ -447,7 +448,7 @@ Signal::OperationDesc::Extent Project::
     Signal::OperationDesc::Extent x;
 
     if (areToolsInitialized())
-        x = processing_chain_.read ()->extent(this->default_target ());
+        x = processing_chain_->extent(this->default_target ());
 
     if (!x.interval.is_initialized ())
         x.interval = Signal::Interval();
@@ -459,11 +460,11 @@ Signal::OperationDesc::Extent Project::
 }
 
 
-float Project::
+double Project::
         length()
 {
     Signal::OperationDesc::Extent x = extent();
-    return x.interval.get ().count() / x.sample_rate.get ();
+    return x.interval.get ().count() / (double)x.sample_rate.get ();
 }
 
 
@@ -527,7 +528,9 @@ pProject Project::
     if (!d)
         return pProject();
 
-    return openOperation(d);
+    pProject p = openOperation(d);
+    p->processing_chain ()->workers()->addComputingEngine(Signal::ComputingEngine::ptr(new Signal::DiscAccessThread));
+    return p;
 }
 
 

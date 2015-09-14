@@ -5,7 +5,7 @@
 #include "project.h"
 
 // Qt
-#include <QApplication>
+#include <QtWidgets> // QApplication
 
 // std
 #include <set>
@@ -61,6 +61,7 @@ private:
     QPointer<QGLWidget> shared_glwidget_;
     static std::string _fatal_error;
     std::set<pProject> _projects;
+    unsigned VertexArrayID;
 };
 
 } // namespace Sawe

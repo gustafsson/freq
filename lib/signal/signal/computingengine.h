@@ -1,7 +1,7 @@
 #ifndef SIGNAL_COMPUTINGENGINE_H
 #define SIGNAL_COMPUTINGENGINE_H
 
-#include <boost/weak_ptr.hpp>
+#include <memory>
 
 namespace Signal {
 
@@ -17,6 +17,7 @@ public:
 class ComputingCpu: public ComputingEngine {};
 class ComputingCuda: public ComputingEngine {};
 class ComputingOpenCL: public ComputingEngine {};
+class DiscAccessThread: public ComputingEngine {};
 
 } // namespace Signal
 

@@ -10,29 +10,19 @@ namespace Render {
 class FrustumClip
 {
 public:
-    FrustumClip(glProjection* gl_projection, bool* left_handed_axes);
+    FrustumClip(const glProjecter& gl_projection, float border_width=0, float border_height=0);
 
-    /**
-     * @brief update
-     * @param w == ?
-     * @param h == ?
-     */
-    void update(float w, float h);
-    const std::vector<GLvector> clippedFrustum() const;
+    const vectord& getCamera() const { return camera; }
 
-    std::vector<GLvector> clipFrustum( GLvector corner[4], GLvector &closest_i ) const;
-    std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &closest_i ) const;
-
-    GLvector projectionPlane, projectionNormal; // for clipFrustum
+    std::vector<vectord> clipFrustum( vectord corner[4], vectord* closest_i=0 ) const;
+    std::vector<vectord> clipFrustum( std::vector<vectord> l, vectord* closest_i=0 ) const;
+    std::vector<vectord> visibleXZ();
 
 private:
-    GLvector rightPlane, rightNormal,
-        leftPlane, leftNormal,
-        topPlane, topNormal,
-        bottomPlane, bottomNormal;
+    vectord camera;
+    tvector<4,double> right, left, top, bottom, far, near;
 
-    glProjection* gl_projection;
-    bool* left_handed_axes;
+    void update(const glProjecter& gl_projection, double w, double h);
 };
 
 } // namespace Render

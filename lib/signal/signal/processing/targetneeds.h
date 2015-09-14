@@ -28,13 +28,13 @@ public:
             typedef shared_state_mutex_notimeout_noshared shared_state_mutex;
         };
 
-        boost::posix_time::ptime last_request;
         Signal::IntervalType work_center;
         Signal::IntervalType preferred_update_size;
         Signal::Intervals needed_samples;
+        double prio;
     };
 
-    TargetNeeds(shared_state<Step>::weak_ptr step_, INotifier::weak_ptr notifier);
+    TargetNeeds(shared_state<Step>::weak_ptr step, INotifier::weak_ptr notifier);
     ~TargetNeeds();
 
     /**
@@ -53,7 +53,7 @@ public:
             const Signal::Intervals& needed_samples,
             Signal::IntervalType center=Signal::Interval::IntervalType_MIN,
             Signal::IntervalType preferred_update_size=Signal::Interval::IntervalType_MAX,
-            int prio=0 );
+            double prio=0 );
 
     /**
      * @brief deprecateCache invalidates
@@ -74,7 +74,6 @@ public:
      * @return
      */
     shared_state<Step>::weak_ptr step() const;
-    boost::posix_time::ptime last_request() const;
     Signal::IntervalType work_center() const;
     Signal::IntervalType preferred_update_size() const;
     Signal::Intervals out_of_date() const;
@@ -83,7 +82,7 @@ public:
     State state() const;
 
     /**
-     * @brief sleep sleeps the caller until all needed_samples have been provided.
+     * @brief sleep sleeps the caller until all needed_samples have been provided (or until the step has crashed).
      * @param sleep_ms number of milliseconds to wait, or -1 to wait indefinitely.
      * @return true if all needed_samples were provided before sleep_ms, false otherwise.
      */

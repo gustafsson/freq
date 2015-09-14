@@ -7,11 +7,13 @@
 #include "tfr/cwt.h"
 #include "configuration.h"
 #include "tools/applicationerrorlogcontroller.h"
+#include "application.h"
 
 // gpumisc
 #include "demangle.h"
 #include "computationkernel.h"
 #include "glinfo.h"
+#include "GlException.h"
 
 // std
 #include <sstream>
@@ -89,11 +91,22 @@ Application::
 :   QApplication(argc, argv),
     default_record_device(-1)
 {
-    QGLFormat glformat;
+    QGLFormat glformat = QGLFormat::defaultFormat ();
+#ifndef LEGACY_OPENGL
+    EXCEPTION_ASSERTX(false, "Sonic AWE uses QPainters which doesn't support OpenGL 4. See legacy-opengl.prf");
+    glformat.setProfile( QGLFormat::CoreProfile );
+    glformat.setVersion( 3, 2 );
+#endif
     bool vsync = false;
     glformat.setSwapInterval(vsync ? 1 : 0);
+    QGLFormat::setDefaultFormat (glformat);
     shared_glwidget_ = new QGLWidget(glformat);
     shared_glwidget_->makeCurrent();
+
+#ifndef LEGACY_OPENGL
+    GlException_SAFE_CALL( glGenVertexArrays(1, &VertexArrayID) );
+    GlException_SAFE_CALL( glBindVertexArray(VertexArrayID) );
+#endif
 
     setOrganizationName("MuchDifferent");
     setOrganizationDomain("muchdifferent.com");
@@ -149,10 +162,11 @@ void Application::
 {
     TaskInfo ti("Version: %s", Sawe::Configuration::version_string().c_str());
     boost::gregorian::date today = boost::gregorian::day_clock::local_day();
+    auto now = boost::posix_time::microsec_clock::local_time();
     boost::gregorian::date_facet* facet(new boost::gregorian::date_facet("%A %B %d, %Y"));
     std::stringstream ss;
     ss.imbue(std::locale(std::cout.getloc(), facet));
-    ss << "Started on " << today;
+    ss << "Started on " << today << " at " << now;
     TaskInfo(boost::format("%s") % ss.str ());
 
     TaskInfo("Build timestamp for %s: %s, %s. Revision %s",

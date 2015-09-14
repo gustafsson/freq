@@ -5,12 +5,8 @@
 #include "tasktimer.h"
 #include "log.h"
 
-#include <boost/date_time/posix_time/posix_time.hpp>
-
 //#define DEBUG_INFO
 #define DEBUG_INFO if(0)
-
-using namespace boost::posix_time;
 
 namespace Signal {
 namespace Processing {
@@ -40,22 +36,21 @@ void TargetNeeds::
         const Signal::Intervals& needed_samples,
         Signal::IntervalType center,
         Signal::IntervalType preferred_update_size,
-        int prio
+        double prio
         )
 {
     EXCEPTION_ASSERT_LESS( 0, preferred_update_size );
 
     auto state = state_.write ();
     Intervals new_samples = needed_samples - state->needed_samples;
-    ptime now = microsec_clock::local_time();
-    state->last_request = now + time_duration(0,0,prio);
     state->needed_samples = needed_samples;
     state->work_center = center;
     state->preferred_update_size = preferred_update_size;
+    state->prio = prio;
 
     state.unlock ();
 
-    DEBUG_INFO TaskInfo(boost::format("needed_samples = %s") % needed_samples);
+    DEBUG_INFO Log("targetneeds: needed_samples = %s") % needed_samples;
 
     Step::const_ptr step = step_.lock ();
     INotifier::ptr notifier = notifier_.lock ();
@@ -74,13 +69,13 @@ void TargetNeeds::
     if (!invalidate)
         return;
 
-    DEBUG_INFO TaskInfo(boost::format("invalidate = %s") % invalidate);
+    DEBUG_INFO Log("targetneeds: invalidate = %s") % invalidate;
 
     if (Step::ptr step = step_.lock ())
         step->deprecateCache(invalidate);
 
     if (INotifier::ptr notifier = notifier_.lock ())
-        if (invalidate & state_.read ()->needed_samples)
+        if (invalidate & needed())
             notifier->wakeup();
 }
 
@@ -89,13 +84,6 @@ Step::ptr::weak_ptr TargetNeeds::
         step() const
 {
     return step_;
-}
-
-
-boost::posix_time::ptime TargetNeeds::
-        last_request() const
-{
-    return state_->last_request;
 }
 
 
@@ -128,7 +116,14 @@ Signal::Intervals TargetNeeds::
 Signal::Intervals TargetNeeds::
         needed() const
 {
-    return state_->needed_samples;
+    Step::const_ptr step = step_.lock ();
+    if (!step)
+        return Signal::Intervals();
+
+    if (Step::get_crashed (step))
+        return Signal::Intervals();
+
+    return state_.write ()->needed_samples;
 }
 
 
@@ -145,10 +140,10 @@ Signal::Intervals TargetNeeds::
     Signal::Intervals out_of_date;
     Step::ptr step = step_.lock ();
     if (step)
-        out_of_date = step.read ()->out_of_date();
+        out_of_date = ~Step::cache (step)->samplesDesc();
 
     Signal::Intervals needed = this->needed ();
-    DEBUG_INFO Log("TargetNeeds::out_of_date: %s = %s & %s")
+    DEBUG_INFO Log("targetneeds: out_of_date: %s = %s & %s")
             % (needed & out_of_date) % needed % out_of_date;
     return needed & out_of_date;
 }
@@ -180,12 +175,12 @@ bool TargetNeeds::
     {
         auto step = pstep.read ();
 
-        if (!(needed() & step->out_of_date ()))
+        if (Step::cache (pstep)->contains(needed()))
             return true;
 
         Step::sleepWhileTasks (step, left(t, sleep_ms));
 
-        if (!(needed() & step->out_of_date ()))
+        if (Step::cache (pstep)->contains(needed()))
             return true;
 
         step.unlock ();
@@ -222,14 +217,14 @@ void TargetNeeds::
         TargetNeeds::ptr target_needs( new TargetNeeds(step, notifier) );
 
         Signal::Intervals initial_valid(0,60);
-        int taskid = step.write ()->registerTask(initial_valid.spannedInterval ());
+        int taskid = Step::registerTask(step.write (), initial_valid.spannedInterval ());
         (void)taskid; // discard
 
-        EXCEPTION_ASSERT_EQUALS( step.read ()->out_of_date(), Interval::Interval_ALL );
+        EXCEPTION_ASSERT_EQUALS( Step::cache (step)->samplesDesc(), Interval() );
         EXCEPTION_ASSERT_EQUALS( step.read ()->not_started(), ~initial_valid );
         EXCEPTION_ASSERT_EQUALS( target_needs->out_of_date(), Interval() );
         target_needs->updateNeeds(Interval(-15,5));
-        EXCEPTION_ASSERT_EQUALS( step.read ()->out_of_date(), Interval::Interval_ALL );
+        EXCEPTION_ASSERT_EQUALS( Step::cache (step)->samplesDesc(), Interval() );
         EXCEPTION_ASSERT_EQUALS( step.read ()->not_started(), ~initial_valid );
         EXCEPTION_ASSERT_EQUALS( target_needs->out_of_date(), Interval(-15,5) );
         EXCEPTION_ASSERT_EQUALS( target_needs->not_started(), Interval(-15,0) );
@@ -242,7 +237,7 @@ void TargetNeeds::
         BedroomNotifier::ptr notifier(new BedroomNotifier(bedroom));
         Step::ptr step(new Step(Signal::OperationDesc::ptr()));
         // Validate a bit Signal::Interval(0,10) of the step
-        int taskid = step.write ()->registerTask(Signal::Interval(0,10));
+        int taskid = Step::registerTask(step.write (), Signal::Interval(0,10));
         Step::finishTask(step, taskid, pBuffer(new Buffer(Interval(0,10),1,1)));
 
         TargetNeeds::ptr target_needs( new TargetNeeds(step, notifier) );

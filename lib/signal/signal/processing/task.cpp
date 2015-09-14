@@ -12,6 +12,9 @@
 //#define TIME_TASK
 #define TIME_TASK if(0)
 
+//#define INFO_TASK_INTERVALS
+#define INFO_TASK_INTERVALS if(0)
+
 namespace Signal {
 namespace Processing {
 
@@ -22,15 +25,31 @@ Task::Task()
 
 
 Task::
-        Task(const shared_state<Step>::write_ptr& step,
+        Task(shared_state<Step>::write_ptr& step,
              Step::ptr stepp,
              std::vector<Step::const_ptr> children,
              Signal::Operation::ptr operation,
              Signal::Interval expected_output,
              Signal::Interval required_input)
     :
-      task_id_(step->registerTask (expected_output)),
+      task_id_(Step::registerTask (step,expected_output)),
       step_(stepp),
+      children_(children),
+      operation_(operation),
+      expected_output_(expected_output),
+      required_input_(required_input)
+{
+}
+
+
+Task::Task (Step::ptr step,
+      std::vector<Step::const_ptr> children,
+      Signal::Operation::ptr operation,
+      Signal::Interval expected_output,
+      Signal::Interval required_input)
+    :
+      task_id_(Step::registerTask (step.write (),expected_output)),
+      step_(step),
       children_(children),
       operation_(operation),
       expected_output_(expected_output),
@@ -94,8 +113,8 @@ void Task::
 
         try {
             Signal::Processing::IInvalidator::ptr i = step_.write ()->mark_as_crashed_and_get_invalidator();
-            EXCEPTION_ASSERT(i);
-            i.read ()->deprecateCache (Signal::Intervals::Intervals_ALL);
+            if (i)
+                i->deprecateCache (Signal::Intervals::Intervals_ALL);
         } catch(const std::exception& y) {
             x << unexpected_exception_info(boost::current_exception());
         }
@@ -108,7 +127,7 @@ void Task::
 void Task::
         run_private()
 {
-    Signal::OperationDesc::ptr od = step_.raw ()->operation_desc ();
+    Signal::OperationDesc::ptr od = Step::operation_desc (step_);
     if (!od)
     {
         cancel ();
@@ -123,14 +142,25 @@ void Task::
     Signal::pBuffer input_buffer, output_buffer;
 
     {
-        TIME_TASK TaskTimer tt(boost::format("expect  %s")
+        INFO_TASK_INTERVALS TaskTimer tt(boost::format("expect  %s")
                                % expected_output());
         input_buffer = get_input();
+        if (!input_buffer)
+        {
+            cancel();
+            return;
+        }
     }
 
     {
-        TIME_TASK TaskTimer tt(boost::format("process %s") % input_buffer->getInterval ());
+        INFO_TASK_INTERVALS TaskTimer tt(boost::format("process %s")
+                               % input_buffer->getInterval ());
         output_buffer = o->process (input_buffer);
+        if (!output_buffer)
+        {
+            cancel();
+            return;
+        }
         finish(output_buffer);
     }
 }
@@ -139,7 +169,7 @@ void Task::
 Signal::pBuffer Task::
         get_input() const
 {
-    Signal::OperationDesc::ptr operation_desc = step_.raw ()->operation_desc ();
+    Signal::OperationDesc::ptr operation_desc = Step::operation_desc (step_);
 
     // Sum all sources
     std::vector<Signal::pBuffer> buffers;
@@ -147,36 +177,30 @@ Signal::pBuffer Task::
 
     Signal::OperationDesc::Extent x = operation_desc.read ()->extent ();
 
-    unsigned num_channels = x.number_of_channels.get_value_or (0);
+    int num_channels = x.number_of_channels.get_value_or (0);
     float sample_rate = x.sample_rate.get_value_or (0.f);
     for (size_t i=0;i<children_.size(); ++i)
     {
-        Signal::pBuffer b = Step::readFixedLengthFromCache(children_[i], required_input_);
-        if (b) {
-            num_channels = std::max(num_channels, b->number_of_channels ());
-            sample_rate = std::max(sample_rate, b->sample_rate ());
-            buffers.push_back ( b );
+        auto cache = Step::cache (children_[i]).read();
+        if (!cache->contains(required_input_))
+        {
+            // The cache has been invalidated since this task was created, abort task.
+            return Signal::pBuffer();
         }
+        Signal::pBuffer b = cache->read(required_input_);
+        num_channels = std::max(num_channels, b->number_of_channels ());
+        sample_rate = std::max(sample_rate, b->sample_rate ());
+        buffers.push_back ( b );
     }
 
-    if (0==num_channels || 0.f==sample_rate) {
-        // Undefined signal. Shouldn't have created this task.
-        Log("required_input = %s") % required_input_;
-        if (children_.empty ()) {
-            EXCEPTION_ASSERT(x.sample_rate.is_initialized ());
-            EXCEPTION_ASSERT(x.number_of_channels.is_initialized ());
-        } else {
-            EXCEPTION_ASSERT_LESS(0u, buffers.size ());
-        }
-        EXCEPTION_ASSERT_LESS(0u, num_channels);
-        EXCEPTION_ASSERT_LESS(0u, sample_rate);
-    }
+    if (buffers.size () == 1)
+        return buffers[0];
 
     Signal::pBuffer input_buffer(new Signal::Buffer(required_input_, sample_rate, num_channels));
 
-    BOOST_FOREACH( Signal::pBuffer b, buffers )
+    for ( Signal::pBuffer b : buffers )
     {
-        for (unsigned c=0; c<num_channels && c<b->number_of_channels (); ++c)
+        for (int c=0; c<num_channels && c<b->number_of_channels (); ++c)
             *input_buffer->getChannel (c) += *b->getChannel(c);
     }
 
@@ -187,6 +211,14 @@ Signal::pBuffer Task::
 void Task::
         finish(Signal::pBuffer b)
 {
+    if (b) {
+        if (expected_output_ != b->getInterval ()) {
+            // something was apparently changed before work could get started
+            // but after the task was created, it's not an issue. Step handles
+            // asynchronous invalidation.
+        }
+    }
+
     if (step_)
     {
         Step::finishTask(step_, task_id_, b);
@@ -198,11 +230,7 @@ void Task::
 void Task::
         cancel()
 {
-    if (step_)
-    {
-        Step::finishTask(step_, task_id_, Signal::pBuffer());
-        step_.reset();
-    }
+    finish(Signal::pBuffer());
 }
 
 } // namespace Processing
@@ -237,11 +265,11 @@ void Task::
         }
 
         // perform a signal processing task
-        Task t(step.write (), step, children, o, expected_output, required_input);
+        Task t(step, children, o, expected_output, required_input);
         t.run ();
 
         Signal::Interval to_read = Signal::Intervals(expected_output).enlarge (2).spannedInterval ();
-        Signal::pBuffer r = Step::readFixedLengthFromCache(step, to_read);
+        Signal::pBuffer r = Step::cache (step)->read(to_read);
         EXCEPTION_ASSERT_EQUALS(b->sample_rate (), r->sample_rate ());
         EXCEPTION_ASSERT_EQUALS(b->number_of_channels (), r->number_of_channels ());
 

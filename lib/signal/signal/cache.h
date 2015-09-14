@@ -19,6 +19,15 @@ class Cache
 public:
     class InvalidBufferDimensions: virtual public boost::exception, virtual public std::exception {};
 
+    // chunkSize 1 << ...
+    // 22 -> 1.8 ms
+    // 21 -> 1.5 ms
+    // 20 -> 1.2 ms -> 4 MB cache chunks
+    // 19 -> 1.2 ms
+    // 18 -> 1.2 ms
+    // 10 -> 1.2 ms
+    static const IntervalType chunkSize = 1<<20;
+
     Cache( );
     Cache( const Cache& b);
     Cache& operator=( const Cache& b);
@@ -55,20 +64,27 @@ public:
     void clear();
 
     /**
-      Insert data into Cache
+      Insert data into Cache, may throw InvalidBufferDimensions.
+      @throw InvalidBufferDimensions if 'fs' and/or 'num_channels' of 'b'
+      does not match what has already been allocated.
       */
     void put( pBuffer b );
 
     /// Get what samples that are described in the containing buffer
-    /// Merely allocated memory doesn't not count in this description.
+    /// Merely allocated memory does not count in this description.
     Intervals samplesDesc() const;
     Interval spannedInterval() const;
+    Intervals allocated() const;
+    /**
+     * @brief contains checks if all of I is covered by the cache
+     * @return samplesDesc().contains(I)
+     */
+    bool contains(const Signal::Intervals& I) const;
     bool empty() const;
 
     void invalidate_samples(const Intervals& I);
-
-    /// Return true if the entire interval I is up to date and can be read from this.
-    bool hasInterval(const Interval& I);
+    Signal::Intervals purge(Signal::Intervals still_needed, bool aggressive);
+    size_t cache_size() const;
 
     /**
      * @brief num_channels is defined as 0 if _cache is empty.
@@ -78,6 +94,7 @@ public:
 
 private:
     std::vector<pBuffer> _cache;
+    std::vector<pBuffer> _discarded;
 
     /**
      * @brief _valid_samples explains the samples that can be fetched from
@@ -86,7 +103,14 @@ private:
      */
     Intervals _valid_samples;
 
-    void allocateCache( Signal::Interval, float fs, int num_channels );
+    /**
+     * @brief allocateCache
+     * @param fs
+     * @param num_channels
+     * @throw InvalidBufferDimensions if fs and/or num_channels doesn't match
+     * what's already been allocated.
+     */
+    void allocateCache( const Signal::Interval&, float fs, int num_channels );
 
     /**
      * @brief findBuffer finds the buffer containing 'sample'.

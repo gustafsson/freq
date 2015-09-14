@@ -1,6 +1,5 @@
 #include "matlaboperation.h"
-#include "hdf5.h"
-#include "recorder.h"
+#include "hdf5adapter.h"
 #include "tools/support/plotlines.h"
 
 #include "tfr/chunk.h"
@@ -137,6 +136,7 @@ bool MatlabOperation::
         }
 
         if (this->plotlines){ // Update plot
+#ifdef LEGACY_OPENGL
             Tools::Support::PlotLines& plotlines = *this->plotlines.get();
 
             if (plot_pts)
@@ -163,6 +163,9 @@ bool MatlabOperation::
                     TaskInfo("Line plot %u now has %u points", id, plotlines.line( id ).data.size());
                 }
             }
+#else
+            EXCEPTION_ASSERTX(false, "requires LEGACY_OPENGL");
+#endif
         }
 
         Interval oldI = sent_data->getInterval();
@@ -171,7 +174,7 @@ bool MatlabOperation::
         Intervals J;
         Interval allequal = oldI & newI;
 
-        for (unsigned c=0; c<ready_data->number_of_channels () && c<sent_data->number_of_channels (); c++)
+        for (int c=0; c<ready_data->number_of_channels () && c<sent_data->number_of_channels (); c++)
         {
             float *oldP = sent_data->getChannel (c)->waveform_data()->getCpuMemory();
             float *newP = ready_data->getChannel (c)->waveform_data()->getCpuMemory();
@@ -395,8 +398,10 @@ void MatlabOperation::
         //DeprecatedOperation::invalidate_samples( Signal::Intervals::Intervals_ALL );
     }
 
+#ifdef LEGACY_OPENGL
     if (plotlines)
         plotlines->clear();
+#endif
 }
 
 

@@ -3,8 +3,8 @@
 
 #include "heightmap/blockcache.h"
 #include "heightmap/block.h"
-
-class GlFrameBuffer;
+#include "GlTexture.h"
+#include "heightmap/render/shaderresource.h"
 
 namespace Heightmap {
 namespace BlockManagement {
@@ -25,25 +25,42 @@ public:
     /**
      * @brief fillBlockFromOthers fills a block with data from other blocks.
      * @param block
+     * @return Intervals that couldn't be merged with details from other blocks.
      */
-    void fillBlockFromOthers( pBlock block ) { fillBlocksFromOthers(std::vector<pBlock>{block}); }
-    void fillBlocksFromOthers( const std::vector<pBlock>& blocks );
+    Signal::Intervals fillBlockFromOthers( pBlock block ) { return fillBlocksFromOthers(std::vector<pBlock>{block}); }
+    Signal::Intervals fillBlocksFromOthers( const std::vector<pBlock>& blocks );
 
 private:
-    BlockCache::const_ptr cache_;
-    std::shared_ptr<GlFrameBuffer> fbo_;
+    const BlockCache::const_ptr cache_;
+    unsigned fbo_;
     unsigned vbo_;
-    BlockLayout block_layout_;
-    unsigned tex_;
+    GlTexture::ptr tex_;
+    const BlockLayout block_layout_;
     const bool disable_merge_;
     BlockCache::cache_t cache_clone;
+    ShaderPtr programp_;
+    unsigned program_;
 
-    void fillBlockFromOthersInternal( pBlock block );
+    // glsl uniforms
+    int qt_Vertex = 0,
+        qt_MultiTexCoord0 = 0,
+        qt_Texture0 = 0,
+        invtexsize = 0,
+        uniProjection = 0,
+        uniModelView = 0;
+
+    void init();
+    Signal::Intervals fillBlockFromOthersInternal( pBlock block );
 
     /**
-      Add block information from another block. Returns whether any information was merged.
+      Add block information from another block
       */
-    bool mergeBlock( const Block& inBlock );
+    void mergeBlock( const Region& ri, int texture );
+
+    /**
+     * @brief clearBlock is an alternative to glClear
+     */
+    void clearBlock( const Region& ri );
 
 public:
     static void test();

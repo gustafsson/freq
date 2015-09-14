@@ -1,8 +1,9 @@
-#include "mergertexture.h"
+﻿#include "mergertexture.h"
 
 #include "heightmap/blockquery.h"
 #include "mergekernel.h"
-#include "heightmap/render/glblock.h"
+#include "heightmap/render/shaderresource.h"
+#include "heightmap/render/blocktextures.h"
 
 #include "tasktimer.h"
 #include "computationkernel.h"
@@ -11,8 +12,16 @@
 #include "datastoragestring.h"
 #include "GlException.h"
 #include "glPushContext.h"
+#include "glprojection.h"
+#include "gluperspective.h"
+#include "glgroupmarker.h"
+#include "glstate.h"
 
 #include <QGLContext>
+
+//#ifdef GL_ES_VERSION_2_0
+#define DRAW_STRAIGHT_ONTO_BLOCK
+//#endif
 
 //#define VERBOSE_COLLECTION
 #define VERBOSE_COLLECTION if(0)
@@ -21,73 +30,178 @@
 #define INFO_COLLECTION if(0)
 
 using namespace Signal;
+using namespace std;
+
+void printUniformInfo(int program)
+{
+    int n_uniforms = 0;
+    int len_uniform = 0;
+    glGetProgramiv (program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &len_uniform);
+    glGetProgramiv (program, GL_ACTIVE_UNIFORMS, &n_uniforms);
+    char name[len_uniform];
+    Log("Found %d uniforms in program") % n_uniforms;
+    for (int i=0; i<n_uniforms; i++) {
+        GLint size;
+        GLenum type;
+        glGetActiveUniform(program,
+            i,
+            len_uniform,
+            0,
+            &size,
+            &type,
+            name);
+        Log("%d: %s, size=%d, type=%d") % i % ((char*)name) % size % type;
+    }
+}
 
 namespace Heightmap {
 namespace BlockManagement {
 namespace Merge {
 
+typedef pair<Region,pBlock> RegionBlock;
+typedef vector<RegionBlock> RegionBlockVector;
+
+RegionBlockVector& operator-=(RegionBlockVector& R, Region t)
+{
+    RegionBlockVector C;
+    C.reserve (R.size ());
+
+    for (auto v : R) {
+        Region r = v.first;
+        if (r.a.time >= t.b.time || r.b.time <= t.a.time || r.a.scale >= t.b.scale || r.b.scale <= t.a.scale) {
+            // keep whole
+            C.push_back (v);
+            continue;
+        }
+
+        if (r.a.scale < t.a.scale) {
+            // keep bottom
+            C.push_back (RegionBlock(Region(Position(r.a.time, r.a.scale),Position(r.b.time,t.a.scale)),v.second));
+        }
+        if (r.b.scale > t.b.scale) {
+            // keep top
+            C.push_back (RegionBlock(Region(Position(r.a.time, t.b.scale),Position(r.b.time,r.b.scale)),v.second));
+        }
+        if (r.a.time < t.a.time) {
+            // keep left
+            C.push_back (RegionBlock(Region(Position(r.a.time, max(r.a.scale,t.a.scale)),Position(t.a.time,min(r.b.scale,t.b.scale))),v.second));
+        }
+        if (r.b.time > t.b.time) {
+            // keep right
+            C.push_back (RegionBlock(Region(Position(t.b.time, max(r.a.scale,t.a.scale)),Position(r.b.time,min(r.b.scale,t.b.scale))),v.second));
+        }
+    }
+
+    return R = C;
+}
+
+
+void testRegionBlockOperator() {
+    // RegionBlockVector& operator-=(RegionBlockVector& R, Region t) should work
+    try {
+        Reference ref;
+        ref.log2_samples_size[0] = -10;
+        ref.log2_samples_size[1] = -10;
+        ref.block_index[0] = 1;
+        ref.block_index[1] = 1;
+
+        BlockLayout bl(128,128,100);
+        RegionFactory rf(bl);
+        auto f = [&rf](Reference r) { return rf.getVisible (r); };
+        RegionBlockVector V = {RegionBlock(f(ref),pBlock())};
+
+        V -= f(ref.left ());
+        EXCEPTION_ASSERT_EQUALS( V.size(), 1u );
+        EXCEPTION_ASSERT_EQUALS( V[0].first, f(ref.right ()) );
+        V -= f(ref.top ());
+        EXCEPTION_ASSERT_EQUALS( V.size(), 1u );
+        EXCEPTION_ASSERT_EQUALS( V[0].first, f(ref.right ().bottom ()) );
+
+        V = {RegionBlock(f(ref),pBlock())};
+        V -= f(ref.right ().top ());
+        EXCEPTION_ASSERT_EQUALS( V.size(), 2u );
+        EXCEPTION_ASSERT_EQUALS( V[0].first, f(ref.bottom ()) );
+        EXCEPTION_ASSERT_EQUALS( V[1].first, f(ref.top ().left ()) );
+
+        V = {RegionBlock(f(ref),pBlock())};
+        V -= f(ref.sibblingLeft ());
+        EXCEPTION_ASSERT_EQUALS( V.size(), 1u );
+        EXCEPTION_ASSERT_EQUALS( V[0].first, f(ref) );
+        V -= f(ref.sibblingRight ());
+        EXCEPTION_ASSERT_EQUALS( V.size(), 1u );
+        EXCEPTION_ASSERT_EQUALS( V[0].first, f(ref) );
+        V -= f(ref.sibbling1 ());
+        V -= f(ref.sibbling2 ());
+        V -= f(ref.sibbling3 ());
+        V -= f(ref.sibblingTop ());
+        V -= f(ref.sibblingBottom ());
+        EXCEPTION_ASSERT_EQUALS( V.size(), 1u );
+        EXCEPTION_ASSERT_EQUALS( V[0].first, f(ref) );
+
+        V -= f(ref.parentHorizontal ());
+        EXCEPTION_ASSERT_EQUALS( V.size(), 0u );
+
+        V = {RegionBlock(f(ref),pBlock())};
+        V -= f(ref.parentHorizontal ().top ());
+        EXCEPTION_ASSERT_EQUALS( V.size(), 1u );
+        EXCEPTION_ASSERT_EQUALS( V[0].first, f(ref.parentHorizontal ().bottom ().right ()) );
+    } catch (...) {
+        Log("%s: %s") % __FUNCTION__ % boost::current_exception_diagnostic_information ();
+        throw;
+    }
+}
+
+
 MergerTexture::
         MergerTexture(BlockCache::const_ptr cache, BlockLayout block_layout, bool disable_merge)
     :
       cache_(cache),
-      block_layout_(block_layout),
+      fbo_(0),
+      vbo_(0),
       tex_(0),
+      block_layout_(block_layout),
       disable_merge_(disable_merge)
 {
-    EXCEPTION_ASSERT(QGLContext::currentContext ());
-
-    glGenTextures(1, &tex_);
-    glBindTexture(GL_TEXTURE_2D, tex_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, block_layout.texels_per_row(), block_layout.texels_per_column (), 0, GL_RED, GL_FLOAT, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    fbo_.reset (new GlFrameBuffer(tex_));
-
-    glGenBuffers (1, &vbo_);
+    EXCEPTION_ASSERT(cache_);
 }
 
 
 MergerTexture::
         ~MergerTexture()
 {
-    glDeleteTextures (1, &tex_);
-    tex_ = 0;
+    if ((vbo_ || fbo_) &&  !QOpenGLContext::currentContext ()) {
+        Log ("%s: destruction without gl context leaks fbo %d and vbo %d") % __FILE__ % fbo_ % vbo_;
+        return;
+    }
 
-    glDeleteBuffers (1, &vbo_);
+    if (vbo_) glDeleteBuffers (1, &vbo_);
     vbo_ = 0;
+
+    if (fbo_) glDeleteFramebuffers(1, &fbo_);
+    fbo_ = 0;
 }
 
 
 void MergerTexture::
-        fillBlocksFromOthers( const std::vector<pBlock>& blocks )
+        init()
 {
-    GlException_CHECK_ERROR();
+    if (vbo_)
+        return;
 
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
+    EXCEPTION_ASSERT(QGLContext::currentContext ());
 
-    float v[4];
-    glGetFloatv(GL_COLOR_CLEAR_VALUE, v);
-    glClearColor (0,0,0,1);
+    glGenFramebuffers(1, &fbo_);
 
-    auto fboBinding = fbo_->getScopeBinding ();
+#ifndef DRAW_STRAIGHT_ONTO_BLOCK
+    // TODO if there's a point in this it should use a renderbuffer instead of a block texture
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawFbo);
+    tex_ = Render::BlockTextures::get1 ();
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, tex_->getOpenGlTextureId (), 0);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, QOpenGLContext::currentContext ()->defaultFramebufferObject ());
+#endif
 
-    glViewport(0, 0, block_layout_.texels_per_row (), block_layout_.texels_per_column () );
-    glMatrixMode (GL_PROJECTION);
-    glPushMatrix ();
-    glMatrixMode (GL_MODELVIEW);
-    glPushMatrix ();
-
-    glPushAttribContext pa(GL_ENABLE_BIT);
-    glDisable (GL_DEPTH_TEST);
-    glDisable (GL_BLEND);
-    glDisable (GL_CULL_FACE);
-    glEnable (GL_TEXTURE_2D);
-
-    struct vertex_format {
-        float x, y, u, v;
-    };
-
+    glGenBuffers (1, &vbo_);
     float vertices[] = {
         0, 0, 0, 0,
         0, 1, 0, 1,
@@ -95,124 +209,225 @@ void MergerTexture::
         1, 1, 1, 1,
     };
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo_);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    //    program_ = ShaderResource::loadGLSLProgram("", ":/shaders/mergertexture.frag");
+//    program_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture0.frag");
+    GlException_SAFE_CALL( programp_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture.frag") );
+    program_ = programp_->programId();
 
-    glVertexPointer(2, GL_FLOAT, sizeof(vertex_format), 0);
-    glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_format), (float*)0 + 2);
+    qt_Vertex = glGetAttribLocation (program_, "qt_Vertex");
+    qt_MultiTexCoord0 = glGetAttribLocation (program_, "qt_MultiTexCoord0");
+    qt_Texture0 = glGetUniformLocation(program_, "qt_Texture0");
+    invtexsize = glGetUniformLocation(program_, "invtexsize");
+    uniProjection = glGetUniformLocation (program_, "qt_ProjectionMatrix");
+    uniModelView = glGetUniformLocation (program_, "qt_ModelViewMatrix");
+}
+
+Signal::Intervals MergerTexture::
+        fillBlocksFromOthers( const std::vector<pBlock>& blocks )
+{
+    GlGroupMarker gpm("MergerTexture");
+    int prev_fbo = 0;
+    glGetIntegerv (GL_FRAMEBUFFER_BINDING, &prev_fbo);
+
+    init ();
+    INFO_COLLECTION TaskTimer tt(boost::format("MergerTexture: fillBlocksFromOthers %s blocks") % blocks.size ());
+
+    GlException_CHECK_ERROR();
+
+    glClearColor (0,0,0,1);
+
+    glViewport(0, 0, block_layout_.texels_per_row (), block_layout_.texels_per_column () );
+
+    GlState::glDisable (GL_DEPTH_TEST, true); // disable depth test before binding framebuffer without depth buffer
+    GlState::glDisable (GL_CULL_FACE);
+
+    struct vertex_format {
+        float x, y, u, v;
+    };
+
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+
+    GlState::glEnableVertexAttribArray (qt_Vertex);
+    GlState::glEnableVertexAttribArray (qt_MultiTexCoord0);
+
+    glVertexAttribPointer (qt_Vertex, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), 0);
+    glVertexAttribPointer (qt_MultiTexCoord0, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), (float*)0 + 2);
+
+    GlState::glUseProgram (program_);
+    if (invtexsize) glUniform2f(invtexsize, 1.0/block_layout_.texels_per_row (), 1.0/block_layout_.texels_per_column ());
+    glUniform1i(qt_Texture0, 0); // GL_TEXTURE0 + i
 
     cache_clone = cache_->clone();
 
-    for (pBlock b : blocks)
-        fillBlockFromOthersInternal (b);
+    Signal::Intervals I;
+
+    {
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_);
+
+        for (pBlock b : blocks)
+            I |= fillBlockFromOthersInternal (b);
+
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, QOpenGLContext::currentContext ()->defaultFramebufferObject ());
+    }
 
     cache_clone.clear ();
 
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    GlState::glDisableVertexAttribArray (qt_MultiTexCoord0);
+    GlState::glDisableVertexAttribArray (qt_Vertex);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glMatrixMode (GL_PROJECTION);
-    glPopMatrix ();
-    glMatrixMode (GL_MODELVIEW);
-    glPopMatrix ();
+    GlState::glEnable (GL_DEPTH_TEST);
+    GlState::glEnable (GL_CULL_FACE);
 
-    glViewport(viewport[0], viewport[1], viewport[2], viewport[3] );
-    glClearColor (v[0],v[1],v[2],v[3]);
+    for (pBlock b : blocks)
+    {
+        // mark texture as updated
+        b->setTexture (b->texture ());
+    }
 
-    (void)fboBinding; // RAII
     GlException_CHECK_ERROR();
+
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, prev_fbo);
+
+    return I;
 }
 
 
-void MergerTexture::
+Signal::Intervals MergerTexture::
         fillBlockFromOthersInternal( pBlock block )
 {
-    INFO_COLLECTION TaskTimer tt(boost::format("MergerTexture: Stubbing new block %s") % block->getRegion ());
+    Signal::Intervals missing_details;
 
-    Region r = block->getRegion ();
+    VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Stubbing new block %s") % block->getVisibleRegion ());
+
+    Region r = block->getOverlappingRegion ();
+
+    matrixd projection;
+    glhOrtho (projection.v (), r.a.time, r.b.time, r.a.scale, r.b.scale, -10, 10);
+
+    glUniformMatrix4fv (uniProjection, 1, false, GLmatrixf(projection).v ());
+
+#ifdef DRAW_STRAIGHT_ONTO_BLOCK
+    glBindTexture (GL_TEXTURE_2D, block->texture ()->getOpenGlTextureId ());
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, block->texture ()->getOpenGlTextureId (), 0);
+#endif
 
     glClear( GL_COLOR_BUFFER_BIT );
-
-    glMatrixMode (GL_PROJECTION);
-    glLoadIdentity ();
-    glOrtho(r.a.time, r.b.time, r.a.scale, r.b.scale, -10,10);
-    glMatrixMode ( GL_MODELVIEW );
+//    clearBlock (r);
 
     if (!disable_merge_)
     {
-        class isRegionLarger{
-        public:
-            bool operator()(const pBlock& a, const pBlock& b) const {
-                const Region ra = a->getRegion ();
-                const Region rb = b->getRegion ();
-                return ra.time ()*ra.scale () > rb.time ()*rb.scale ();
-            }
-        };
-
         // Largest first
-        std::set<pBlock, isRegionLarger> smaller;
-        pBlock smallest_larger;
+        RegionBlockVector largeblocks;
+        RegionBlockVector smallblocks;
 
-        for( const auto& c : cache_clone )
+        for (const auto& c : cache_clone)
         {
             const pBlock& bl = c.second;
+            const Region& r2 = bl->getOverlappingRegion ();
 
-            const Region& r2 = bl->getRegion ();
+            // If r2 doesn't overlap r at all
             if (r2.a.scale >= r.b.scale || r2.b.scale <= r.a.scale )
                 continue;
             if (r2.a.time >= r.b.time || r2.b.time <= r.a.time )
                 continue;
 
-            if (r2.a.scale <= r.a.scale && r2.b.scale >= r.b.scale && r2.a.time <= r.a.time && r2.b.time >= r.b.time)
-            {
-                if (!smallest_larger || isRegionLarger()(smallest_larger, bl))
-                    smallest_larger = bl;
-            }
+            bool is_small_s = r2.scale () <= r.scale ();
+            bool is_small_t = r2.time () <= r.time ();
+            if (is_small_s && is_small_t)
+                smallblocks.push_back (RegionBlock(r2,bl));
             else
-                smaller.insert (bl);
+                largeblocks.push_back (RegionBlock(r2,bl));
         }
 
-        if (smallest_larger)
-            mergeBlock( *smallest_larger );
+        RegionBlockVector missing_details_region{RegionBlock(r,block)};
+        for (auto r : smallblocks) {
+            largeblocks -= r.first;
+            missing_details_region -= r.first;
+        }
 
-        // Merge everything smaller than 'block' in order from largest to smallest
-        for( pBlock bl : smaller )
-            mergeBlock( *bl );
+        double fs = block_layout_.sample_rate ();
+        for (auto v: missing_details_region)
+        {
+            Region r2 = v.first;
+            if (r2.b.time <= 0 || r2.b.scale <= 0 || r2.a.scale >= 1)
+                continue;
+
+            double d = 0.5/v.second->sample_rate();
+            missing_details |= Signal::Interval((r2.a.time-d)*fs, (r2.b.time+d)*fs+1);
+        }
+
+        for (auto v : largeblocks)
+        {
+            auto bl = v.second;
+            mergeBlock( bl->getOverlappingRegion (), bl->texture ()->getOpenGlTextureId () );
+        }
+
+        for (auto v : smallblocks)
+        {
+            auto bl = v.second;
+            mergeBlock( bl->getOverlappingRegion (), bl->texture ()->getOpenGlTextureId () );
+        }
+
+        // mergertexture is buggy, but it's still better than nothing
+        // set "missing_details = block->getInterval ()" to recompute the results
     }
+    else
+        missing_details = block->getInterval ();
 
+#ifdef DRAW_STRAIGHT_ONTO_BLOCK
+    // The texture image will not be detached if the texture is deleted but it
+    // doesn't matter if the texture image is still attached.
+    //   https://www.khronos.org/opengles/sdk/docs/man/xhtml/glFramebufferTexture2D.xml
+    // Call this to detach:
+    //   glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+    //                          GL_TEXTURE_2D, 0, 0);
+#else
     {
-        VERBOSE_COLLECTION TaskTimer tt(boost::format("Filled %s") % block->getRegion ());
+        VERBOSE_COLLECTION TaskTimer tt(boost::format("Filled %s") % block->getOverlappingRegion ());
 
-        GlTexture::ptr t = block->glblock->glTexture ();
-        glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
-        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ());
-        glBindTexture(GL_TEXTURE_2D, 0);
+        GlTexture::ptr t = block->texture ();
+        #ifdef GL_ES_VERSION_2_0
+            GlException_SAFE_CALL( glCopyTextureLevelsAPPLE(t->getOpenGlTextureId (), fbo_->getGlTexture (), 0, 1) );
+        #else
+            glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
+            GlException_SAFE_CALL( glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ()) );
+        #endif
     }
+#endif
+
+    return missing_details;
 }
 
 
-bool MergerTexture::
-        mergeBlock( const Block& inBlock )
+void MergerTexture::
+        clearBlock( const Region& ri )
 {
-    if (!inBlock.glblock || !inBlock.glblock->has_texture ())
-        return false;
+    // Read from zero texture, don't do this. The zero texture is not
+    // "unbound", it's just a usually incomplete texture object and it is an
+    // error to draw with an incomplete texture. Do glClear instead.
+    mergeBlock(ri, 0);
+}
 
-    VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Filling from %s") % inBlock.getRegion ());
 
-    Region ri = inBlock.getRegion ();
-    glLoadIdentity();
-    glTranslatef (ri.a.time, ri.a.scale, 0);
-    glScalef (ri.time (), ri.scale (), 1.f);
+void MergerTexture::
+        mergeBlock( const Region& ri, int texture )
+{
+    VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Filling with %d from %s") % texture % ri);
 
-    glBindTexture( GL_TEXTURE_2D, inBlock.glblock->glTexture ()->getOpenGlTextureId ());
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // Paint new contents over it
-    glBindTexture(GL_TEXTURE_2D, 0);
+    matrixd modelview = matrixd::identity ();
+    modelview *= matrixd::translate (ri.a.time, ri.a.scale, 0);
+    modelview *= matrixd::scale (ri.time (), ri.scale (), 1.f);
 
-    return true;
+    glUniformMatrix4fv (uniModelView, 1, false, GLmatrixf(modelview).v ());
+
+    glBindTexture( GL_TEXTURE_2D, texture);
+    GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // Paint new contents over it
 }
 
 } // namespace Merge
@@ -221,21 +436,18 @@ bool MergerTexture::
 
 
 #include "log.h"
-#include "heightmap/render/glblock.h"
 #include "cpumemorystorage.h"
 #include "heightmap/render/blocktextures.h"
-#include <QApplication>
-#include <QGLWidget>
+#include <QtWidgets> // QApplication
+#include <QtOpenGL> // QGLWidget
 
 namespace Heightmap {
 namespace BlockManagement {
 namespace Merge {
 
 static void clearCache(BlockCache::ptr cache) {
-    for (auto c : cache->clear ())
-    {
-        c.second->glblock.reset();
-    }
+    auto c = cache->clear ();
+    c.clear();
 }
 
 
@@ -246,8 +458,21 @@ void MergerTexture::
     int argc = 1;
     char * argv = &name[0];
     QApplication a(argc,&argv);
+#ifndef LEGACY_OPENGL
+    QGLFormat f = QGLFormat::defaultFormat ();
+    f.setProfile( QGLFormat::CoreProfile );
+    f.setVersion( 3, 2 );
+    QGLFormat::setDefaultFormat (f);
+#endif
     QGLWidget w;
     w.makeCurrent ();
+#ifndef LEGACY_OPENGL
+    GLuint VertexArrayID;
+    GlException_SAFE_CALL( glGenVertexArrays(1, &VertexArrayID) );
+    GlException_SAFE_CALL( glBindVertexArray(VertexArrayID) );
+#endif
+
+    testRegionBlockOperator();
 
     // It should merge contents from other blocks to stub the contents of a new block.
     {
@@ -255,15 +480,14 @@ void MergerTexture::
 
         Reference ref;
         BlockLayout bl(4,4,4);
+        Render::BlockTextures::Scoped bt_raii(bl.texels_per_row (), bl.texels_per_column ());
         VisualizationParams::ptr vp(new VisualizationParams);
 
-        Render::BlockTextures block_textures(bl);
-        block_textures.setCapacityHint (2);
-
         // VisualizationParams has only things that have nothing to do with MergerTexture.
-        pBlock block(new Block(ref,bl,vp));
-        block->glblock.reset( new Render::GlBlock( block_textures.getUnusedTextures (1)[0] ));
+        pBlock block(new Block(ref,bl,vp,0));
+        GlTexture::ptr tex = block->texture ();
 
+        Log("Source overlapping %s, visible %s") % block->getOverlappingRegion () % block->getVisibleRegion ();
         MergerTexture(cache, bl).fillBlockFromOthers(block);
 
         DataStorage<float>::ptr data;
@@ -273,61 +497,70 @@ void MergerTexture::
                             0, 0, 0, 0,
                             0, 0, 0, 0};
 
-        data = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat (0, GL_RED);
+        data = GlTextureRead(*tex).readFloat (0, GL_RED);
         //data = block->block_data ()->cpu_copy;
         COMPARE_DATASTORAGE(expected1, sizeof(expected1), data);
 
         {
-            float* srcdata=new float[16]{ 1, 0, 0, .5,
-                                          0, 0, 0, 0,
-                                          0, 0, 0, 0,
-                                         .5, 0, 0, .5};
+            float srcdata[]={ 1, 0, 0, 0,
+                              0, 2, 0, 0,
+                              0, 0, 0, 0,
+                              0.5, 0, 0, 0};
 
-            pBlock block(new Block(ref.parentHorizontal (),bl,vp));
-            block->glblock.reset( new Render::GlBlock( block_textures.getUnusedTextures (1)[0] ));
-            block->glblock->updateTexture (srcdata, 16);
+            pBlock block(new Block(ref.parentHorizontal (),bl,vp,0));
+            //pBlock block(new Block(ref,bl,vp));
+            //Log("Inserting overlapping %s, visible %s") % block->getOverlappingRegion () % block->getVisibleRegion ();
+            GlTexture::ptr tex = block->texture ();
+            tex->bindTexture ();
+            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             cache->insert(block);
         }
 
         MergerTexture(cache, bl).fillBlockFromOthers(block);
         clearCache(cache);
-        float a = 1.0, b = 0.75,  c = 0.25;
-        float expected2[]={   a,   b,   c,   0,
+        float expected2[]={   1,  .5,   0,   0,
+                              0,   1,   2,   1,
                               0,   0,   0,   0,
-                              0,   0,   0,   0,
-                              a/2, b/2, c/2, 0};
-        data = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat (0, GL_RED);
+                             .5, .25,   0,   0};
+        data = GlTextureRead(*tex).readFloat (0, GL_RED);
         //data = block->block_data ()->cpu_copy;
+        //DataStorage<float>::ptr expected2ptr = CpuMemoryStorage::BorrowPtr(DataStorageSize(4,4), expected2);
+        //PRINT_DATASTORAGE(expected2ptr, "");
+        //PRINT_DATASTORAGE(data, "");
         COMPARE_DATASTORAGE(expected2, sizeof(expected2), data);
 
         {
-            float* srcdata=new float[16]{ 1, 2, 3, 4,
-                                          5, 6, 7, 8,
-                                          9, 10, 11, 12,
-                                          13, 14, 15, .16};
+            float srcdata[]={ 1, 2, 3, 4,
+                              5, 6, 7, 8,
+                              9, 1.0, 11, 12,
+                              13, 14, 15, .16};
 
-            pBlock block(new Block(ref.right (),bl,vp));
-            block->glblock.reset( new Render::GlBlock( block_textures.getUnusedTextures (1)[0] ));
-            block->glblock->updateTexture (srcdata,16);
+            pBlock block(new Block(ref.right (),bl,vp,0));
+            GlTexture::ptr tex = block->texture ();
+            tex->bindTexture ();
+            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             cache->insert(block);
         }
 
         MergerTexture(cache, bl).fillBlockFromOthers(block);
-        float v16 = 7.57812476837;
-        //float v32 = 7.58;
-        float expected3[]={   0, 0,    1.5,  3.5,
-                              0, 0,    5.5,  7.5,
-                              0, 0,    9.5,  11.5,
-                              0, 0,   13.5,  v16};
+        float expected3[]={   0, 0,    3,  4,
+                              0, 0,    7,  8,
+                              0, 0,   11,  12,
+                              0, 0,   15,  15};
 
-        data = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat (0, GL_RED);
+        data = GlTextureRead(*tex).readFloat (0, GL_RED);
         //data = block->block_data ()->cpu_copy;
+
+        //DataStorage<float>::ptr expected3ptr = CpuMemoryStorage::BorrowPtr(DataStorageSize(4,4), expected3);
+        //PRINT_DATASTORAGE(expected3ptr, "");
+        //PRINT_DATASTORAGE(data, "");
+
         COMPARE_DATASTORAGE(expected3, sizeof(expected3), data);
         clearCache(cache);
 
-        block->glblock.reset ();
+        tex.reset ();
     }
 }
 

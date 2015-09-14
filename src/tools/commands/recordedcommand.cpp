@@ -6,7 +6,7 @@ namespace Tools {
 namespace Commands {
 
 RecordedCommand::
-        RecordedCommand(Adapters::Recorder::ptr recording,
+        RecordedCommand(Signal::Recorder::ptr recording,
                         Signal::IntervalType prevLength,
                         Tools::RenderModel* model,
                         Signal::Processing::IInvalidator::ptr iinvalidator)
@@ -40,10 +40,10 @@ void RecordedCommand::
             d->samples.put (recordedData);
         }
 
-        iinvalidator.write ()->deprecateCache(recordedData->getInterval());
+        iinvalidator->deprecateCache(recordedData->getInterval());
 
         if (0<=prev_qx)
-            model->_qx = prev_qx;
+            model->camera->q[0] = prev_qx;
     }
 }
 
@@ -52,9 +52,9 @@ void RecordedCommand::
         undo()
 {
     recording.raw ()->data ()->samples.invalidate_samples (recordedData->getInterval());
-    prev_qx = model->_qx;
-    iinvalidator.write ()->deprecateCache (recordedData->getInterval());
-    if (prev_qx == model->_qx)
+    prev_qx = model->camera->q[0];
+    iinvalidator->deprecateCache (recordedData->getInterval());
+    if (prev_qx == model->camera->q[0])
         prev_qx = -1;
 
     undone = true;

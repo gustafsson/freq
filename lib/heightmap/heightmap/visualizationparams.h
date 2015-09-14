@@ -14,7 +14,22 @@ public:
     typedef std::shared_ptr<DetailInfo> ptr;
 
     virtual bool operator==(const DetailInfo&) const = 0;
+
+    /**
+     * @brief displayedTimeResolution describes the time resolution in ["time units" / "1 data point"].
+     * @param FS
+     * @param hz Cwt has different time resolutions depending on the frequency. Stft has a constant.
+     * @return
+     */
     virtual float displayedTimeResolution( float FS, float hz ) const = 0;
+
+    /**
+     * @brief displayedFrequencyResolution describes the frequency resolution in "data points" between hz1 and hz2.
+     * @param FS
+     * @param hz1
+     * @param hz2
+     * @return
+     */
     virtual float displayedFrequencyResolution( float FS, float hz1, float hz2 ) const = 0;
 };
 
@@ -23,8 +38,8 @@ public:
  * define how waveform data turns into pixels on a heightmap.
  *
  * All methods are thread-safe without risking to wait for a long lock.
- * VolatilePtr is private to guarantee that the transient locks created
- * internally are the only locks on VisualizationParams.
+ * shared_state<details> is private to guarantee that the transient locks
+ * created internally are the only locks on VisualizationParams.
  */
 class VisualizationParams {
 public:

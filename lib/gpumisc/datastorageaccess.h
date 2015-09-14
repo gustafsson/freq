@@ -5,6 +5,7 @@
 #define ACCESSCALL
 #endif
 
+#include <ostream>
 //#include <stddef.h> // size_t
 //typedef size_t DataAccessPosition_t;
 typedef int DataAccessPosition_t;
@@ -228,10 +229,18 @@ public:
     }
 
 
+    // clamps 'p' to a valid position
     ACCESSCALL unsigned offset( DataAccessPosition<3> p ) const
     {
         // *this is size of data
         DataAccessPosition<3> q = clamp( p );
+        return q.x + width*(q.y + height*q.z);
+    }
+
+
+    ACCESSCALL unsigned o( DataAccessPosition<3> q ) const
+    {
+        // *this is size of data
         return q.x + width*(q.y + height*q.z);
     }
 

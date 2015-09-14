@@ -1,7 +1,5 @@
-#include <QObject>
+#include <QtCore>
 #include "graphinvalidator.h"
-
-#include <boost/foreach.hpp>
 
 namespace Signal {
 namespace Processing {
@@ -28,7 +26,7 @@ void GraphInvalidator::
     Step::ptr step = step_.lock ();
 
     if (step)
-        GraphInvalidator::deprecateCache(*dag, step, what);
+        deprecateCache(*dag, step, what);
 
     if (notifier)
         notifier->wakeup();
@@ -43,16 +41,14 @@ void GraphInvalidator::
 
     // Invalidate the targets afterwards
     // Otherwise the scheduler might start working on data that isn't ready yet
-    for (Step::ptr ts: dag.targetSteps(step)) {
+    for (Step::ptr ts: dag.targetSteps(step))
         deprecateCache(dag, ts, what);
-    }
 }
 
 } // namespace Processing
 } // namespace Signal
 
 
-#include <QThread>
 #include "bedroomnotifier.h"
 
 namespace Signal {
@@ -86,7 +82,7 @@ void GraphInvalidator::
         sleeper.start ();
         dag.write ()->appendStep(step);
         Signal::Intervals initial_valid(-20,60);
-        int taskid = step.write ()->registerTask(initial_valid.spannedInterval ());
+        int taskid = Step::registerTask(step.write (), initial_valid.spannedInterval ());
         (void)taskid; // discard
         EXCEPTION_ASSERT_EQUALS(step.read ()->not_started(), ~initial_valid);
         EXCEPTION_ASSERT(sleeper.isRunning ());
@@ -96,10 +92,10 @@ void GraphInvalidator::
 
         // test
         GraphInvalidator graphInvalidator(dag, notifier, step);
-        Signal::Intervals deprected(40,50);
-        graphInvalidator.deprecateCache (deprected);
+        Signal::Intervals deprecated(40,50);
+        graphInvalidator.deprecateCache (deprecated);
 
-        EXCEPTION_ASSERT_EQUALS(step.read ()->not_started(), ~initial_valid | deprected);
+        EXCEPTION_ASSERT_EQUALS(step.read ()->not_started(), ~initial_valid | deprecated);
         sleeper.wait (1);
         EXCEPTION_ASSERT_EQUALS(bedroom->sleepers (), 0);
         EXCEPTION_ASSERT(sleeper.isFinished ());

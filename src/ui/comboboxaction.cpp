@@ -24,7 +24,7 @@ void ComboBoxAction::
 void ComboBoxAction::
         setCheckedAction( QAction* a )
 {
-    if (actions().contains(a))
+    if (!actions().contains(a))
         addActionItem(a);
     if (a != defaultAction())
     {

@@ -36,6 +36,7 @@ void PlaybackMarkersView::
 void PlaybackMarkersView::
         drawMarkers()
 {
+#ifdef LEGACY_OPENGL
     float y = 1;
 
     Support::ToolGlBrush tgb(enabled);
@@ -73,8 +74,7 @@ void PlaybackMarkersView::
     if ( itr != model_->markers().end() )
         b = *itr;
     else {
-//        b = project_->worker.length();
-        Signal::OperationDesc::Extent x = project_->processing_chain ().read ()->extent(project_->default_target ());
+        Signal::OperationDesc::Extent x = project_->processing_chain()->extent(project_->default_target ());
         b = x.interval.get_value_or (Signal::Interval()).count();
     }
 
@@ -136,6 +136,7 @@ void PlaybackMarkersView::
 
     glEnd();
     glLineWidth(0.5f);
+#endif // LEGACY_OPENGL
 }
 
 

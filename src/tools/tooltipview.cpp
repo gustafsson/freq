@@ -60,10 +60,12 @@ void TooltipView::
 void TooltipView::
         drawMarker( Heightmap::Position p )
 {
+#ifdef LEGACY_OPENGL
     Support::ToolGlBrush tgb(enabled);
     glColor4f( 0.7, 0.2, 0.2, enabled ? .5 : 0.2);
 
-    float sz = -0.01/render_view_->model->xscale*render_view_->model->_pz;
+    const Tools::Support::RenderCamera c = *render_view_->model->camera.read ();
+    float sz = -0.01/c.xscale*c.p[2];
     float x1 = p.time - sz;
     float x2 = p.time + sz;
     float y = 1.5;
@@ -83,6 +85,7 @@ void TooltipView::
         glVertex3f( x2, 0, p.scale );
     glEnd();
     glLineWidth(0.5f);
+#endif // LEGACY_OPENGL
 }
 
 

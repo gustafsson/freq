@@ -50,6 +50,12 @@ struct ChunkAndInverse
      * Which channel the monobuffer comes from.
      */
     int channel;
+
+
+    /**
+      * If this was aborted.
+      */
+    bool abort = false;
 };
 
 
@@ -64,10 +70,13 @@ public:
 
 
     /**
-     * @brief The ChunkFilterNoInverse class describes that the inverse shall never
+     * @brief The ChunkFilter::NoInverseTag class describes that the inverse shall never
      * be computed from the transformed data in 'ChunkFilter::operator ()'.
      *
      * Inherit from this class as well as from ChunkFilter.
+     *
+     *   class MyChunkFilter: public Tfr::ChunkFilter, public Tfr::ChunkFilter::NoInverseTag
+     *   { ... };
      */
     class NoInverseTag
     {
@@ -108,6 +117,7 @@ public:
     virtual Signal::OperationDesc::Extent   extent() const;
     virtual void                            transformDesc(pTransformDesc d);
     virtual ChunkFilterDesc::ptr            copy() const;
+    virtual QString                         toString() const;
 
     pTransformDesc                          transformDesc() const;
 

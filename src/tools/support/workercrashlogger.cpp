@@ -5,6 +5,7 @@
 #include "exceptionassert.h"
 #include "signal/processing/task.h"
 #include "tools/applicationerrorlogcontroller.h"
+#include "signal/qteventworker/qteventworkerfactory.h"
 
 #include <QTimer>
 
@@ -12,6 +13,7 @@
 #define DEBUG if(0)
 
 using namespace Signal::Processing;
+using namespace Signal::QtEventWorker;
 
 namespace Tools {
 namespace Support {
@@ -25,6 +27,8 @@ WorkerCrashLogger::
       workers_(workers),
       consume_exceptions_(consume_exceptions)
 {
+    EXCEPTION_ASSERTX(dynamic_cast<Signal::QtEventWorker::QtEventWorkerFactory*>(workers->workerfactory ()), "WorkerCrashLogger only supports QtEventWorkers");
+
     moveToThread (&thread_);
     // Remove responsibility for event processing for this when the the thread finishes
     connect(&thread_, SIGNAL(finished()), SLOT(finished()));
@@ -32,7 +36,7 @@ WorkerCrashLogger::
 
     auto ww = workers.write ();
     // Log any future worker crashes
-    connect(&*ww,
+    connect(dynamic_cast<Signal::QtEventWorker::QtEventWorkerFactory*>(ww->workerfactory ()),
             SIGNAL(worker_quit(std::exception_ptr,Signal::ComputingEngine::ptr)),
             SLOT(worker_quit(std::exception_ptr,Signal::ComputingEngine::ptr)));
 
@@ -48,7 +52,6 @@ WorkerCrashLogger::
 WorkerCrashLogger::
         ~WorkerCrashLogger()
 {
-    TaskInfo ti("~WorkerCrashLogger");
     thread_.quit ();
     thread_.wait ();
 }
@@ -103,11 +106,12 @@ void WorkerCrashLogger::
 {
     DEBUG TaskInfo ti("check_all_previously_crashed_without_consuming");
 
-    Workers::EngineWorkerMap workers_map = workers_.read ()->workers_map();
+    auto workers = workers_.read ();
+    const Workers::EngineWorkerMap& workers_map = workers->workers_map();
 
-    for(Workers::EngineWorkerMap::const_iterator i=workers_map.begin (); i != workers_map.end(); ++i)
+    for(auto i=workers_map.begin (); i != workers_map.end(); ++i)
       {
-        Worker::ptr worker = i->second;
+        const Worker::ptr& worker = i->second;
 
         if (worker && !worker->isRunning ())
           {
@@ -142,14 +146,13 @@ void WorkerCrashLogger::
         {
             auto s = mi->write ();
             s->mark_as_crashed_and_get_invalidator ();
-            od = s->get_crashed ();
+            od = Step::get_crashed (*mi);
         }
 
         if (od)
         {
             auto o = od.read ();
-            Signal::Processing::IInvalidator::ptr i = o->getInvalidator();
-            i.read ()->deprecateCache (Signal::Intervals::Intervals_ALL);
+            o->getInvalidator()->deprecateCache (Signal::Intervals::Intervals_ALL);
             operation_desc_text = " in " + o->toString().toStdString();
         }
       }
@@ -184,7 +187,7 @@ void WorkerCrashLogger::
 } // namespace Support
 } // namespace Tools
 
-#include <QApplication>
+#include <QtWidgets> // QApplication
 #include "timer.h"
 #include "trace_perf.h"
 
@@ -206,9 +209,11 @@ class DummyScheduler: public ISchedule
 void addAndWaitForStop(Workers::ptr workers)
 {
     QEventLoop e;
-    QObject::connect(&*workers.write (),
+    // Log any future worker crashes
+    QObject::connect(dynamic_cast<Signal::QtEventWorker::QtEventWorkerFactory*>(workers->workerfactory()),
             SIGNAL(worker_quit(std::exception_ptr,Signal::ComputingEngine::ptr)),
             &e, SLOT(quit()));
+
     workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr(new Signal::ComputingCpu));
     e.exec ();
 }
@@ -229,7 +234,7 @@ void WorkerCrashLogger::
         //for (int consume=0; consume<2; consume++)
         ISchedule::ptr schedule(new DummyScheduler);
         Bedroom::ptr bedroom(new Bedroom);
-        Workers::ptr workers(new Workers(schedule, bedroom));
+        Workers::ptr workers(new Workers(IWorkerFactory::ptr(new QtEventWorkerFactory(schedule, bedroom))));
 
         {
             WorkerCrashLogger wcl(workers);
@@ -263,7 +268,7 @@ void WorkerCrashLogger::
 
         ISchedule::ptr schedule(new DummyScheduler);
         Bedroom::ptr bedroom(new Bedroom);
-        Workers::ptr workers(new Workers(schedule, bedroom));
+        Workers::ptr workers(new Workers(IWorkerFactory::ptr(new QtEventWorkerFactory(schedule, bedroom))));
 
         {
             TRACE_PERF("Catch info from a crashed worker as it happens");
@@ -289,7 +294,7 @@ void WorkerCrashLogger::
 
         ISchedule::ptr schedule(new DummyScheduler);
         Bedroom::ptr bedroom(new Bedroom);
-        Workers::ptr workers(new Workers(schedule, bedroom));
+        Workers::ptr workers(new Workers(IWorkerFactory::ptr(new QtEventWorkerFactory(schedule, bedroom))));
 
         // Catch info from a previously crashed worker
         addAndWaitForStop(workers);

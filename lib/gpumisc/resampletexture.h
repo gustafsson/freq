@@ -2,12 +2,14 @@
 #define RESAMPLETEXTURE_H
 
 #include "glframebuffer.h"
+#include "GlTexture.h"
 
 /**
  * @brief The ResampleTexture class should paint a texture on top of another texture.
  */
 class ResampleTexture: boost::noncopyable
 {
+#ifdef LEGACY_OPENGL
 public:
     struct Area
     {
@@ -16,7 +18,8 @@ public:
         Area(float x1, float y1, float x2, float y2);
     };
 
-    ResampleTexture(unsigned dest);
+    ResampleTexture(unsigned dest, int width, int height);
+    ResampleTexture(const GlTexture& dest);
     ~ResampleTexture();
 
     GlFrameBuffer::ScopeBinding enable(Area destarea);
@@ -29,6 +32,7 @@ private:
     GlFrameBuffer fbo;
     unsigned vbo;
     Area destarea;
+#endif // LEGACY_OPENGL
 
 public:
     static void test();

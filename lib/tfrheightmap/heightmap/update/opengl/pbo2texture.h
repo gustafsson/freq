@@ -3,6 +3,8 @@
 
 #include "GlTexture.h"
 #include "tfr/chunk.h"
+#include "glprojection.h"
+#include "heightmap/render/shaderresource.h"
 
 namespace Heightmap {
 namespace Update {
@@ -12,21 +14,35 @@ class Shaders;
 
 class Shader {
 public:
-    Shader(unsigned program);
+    Shader(ShaderPtr&& programp);
     Shader(const Shader&)=delete;
     Shader& operator=(const Shader&)=delete;
     ~Shader();
 
+    // call glUseProgram(program) first
     void setParams(int data_width, int data_height, int tex_width, int tex_height,
-                   float normalization_factor, int amplitude_axis);
+                   float normalization_factor, int amplitude_axis, const glProjection& M,
+                   int &vertex_attrib, int &tex_attrib);
 
     const unsigned program;
 
 private:
     int normalization_location_;
     int amplitude_axis_location_;
+    int modelViewProjectionMatrix_location_;
     int data_size_loc_;
     int tex_size_loc_;
+    int vertex_attrib_;
+    int tex_attrib_;
+    ShaderPtr programp_;
+
+    int data_width = 0;
+    int data_height = 0;
+    int tex_width = 0;
+    int tex_height = 0;
+    float normalization_factor = 0;
+    int amplitude_axis = 0;
+    glProjection M;
 };
 
 
@@ -43,19 +59,21 @@ public:
 
 class ShaderTexture {
 public:
-    ShaderTexture(Shaders& shaders_);
+    ShaderTexture(Shaders& shaders_, GlTexture::ptr chunk_texture);
 
-    void prepareShader (int data_width, int data_height, unsigned chunk_pbo);
-    void prepareShader (int data_width, int data_height, float* data);
+    void prepareShader (int data_width, int data_height, unsigned chunk_pbo, bool f32);
+    void prepareShader (int data_width, int data_height, void* data, bool f32);
 
-    GlTexture& getTexture ();
-    unsigned getProgram (float normalization_factor, int amplitude_axis);
+    GlTexture& getTexture () const;
+    // the returned program will be currently in use (glUseProgram)
+    unsigned getProgram (float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib) const;
 
 private:
-    void prepareShader (int data_width, int data_height, unsigned chunk_pbo, float* data);
+    void prepareShader (int data_width, int data_height, unsigned chunk_pbo, void* data, bool f32);
 
-    int data_width, data_height, tex_width, tex_height;
-    std::shared_ptr<GlTexture> chunk_texture_;
+    int data_width, data_height;
+    int const tex_width, tex_height;
+    GlTexture::ptr const chunk_texture_;
     Shaders& shaders_;
     Shader* shader_;
 };
@@ -76,18 +94,12 @@ private:
 
 class Pbo2Texture {
 public:
-    class ScopeMap {
-    public:
-        ScopeMap();
-        ScopeMap(ScopeMap&&) = default;
-        ScopeMap(const ScopeMap&) = delete;
-        ScopeMap operator=(const ScopeMap&) = delete;
-        ~ScopeMap();
-    };
+    Pbo2Texture(Shaders& shaders, GlTexture::ptr chunk_texture, Tfr::pChunk chunk, int pbo, bool f32);
+    Pbo2Texture(Shaders& shaders, GlTexture::ptr chunk_texture, Tfr::pChunk chunk, void *p, bool f32);
+    Pbo2Texture(Pbo2Texture&&)=default;
+    Pbo2Texture(const Pbo2Texture&)=delete;
 
-    Pbo2Texture(Shaders& shaders, Tfr::pChunk chunk, int pbo);
-
-    ScopeMap map (float normalization_factor, int amplitude_axis);
+    void map (float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib) const;
 
 private:
     ShaderTexture shader_;

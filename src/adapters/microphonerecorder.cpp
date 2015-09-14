@@ -12,8 +12,8 @@
 
 #include <boost/foreach.hpp>
 
-#define TIME_MICROPHONERECORDER
-//#define TIME_MICROPHONERECORDER if(0)
+//#define TIME_MICROPHONERECORDER
+#define TIME_MICROPHONERECORDER if(0)
 
 //#define TIME_MICROPHONERECORDER_WRITEBUFFER
 #define TIME_MICROPHONERECORDER_WRITEBUFFER if(0)
@@ -183,6 +183,9 @@ MicrophoneRecorder::~MicrophoneRecorder()
 
 void MicrophoneRecorder::startRecording()
 {
+    if (!stopping.valid ())
+        return;
+
     TIME_MICROPHONERECORDER TaskInfo ti("MicrophoneRecorder::startRecording()");
     init();
 
@@ -215,39 +218,45 @@ void MicrophoneRecorder::startRecording()
         return;
     }
 
-    _start_recording = boost::posix_time::microsec_clock::local_time();
+    _start_recording.restart ();
 }
 
 void MicrophoneRecorder::stopRecording()
 {
     TIME_MICROPHONERECORDER TaskInfo ti("MicrophoneRecorder::stopRecording()");
-    if (_stream_record) {
-        try
-        {
-        TIME_MICROPHONERECORDER TaskInfo ti("Trying to stop recording on %s", deviceName().c_str());
+    if (_stream_record)
+    {
+        decltype(_stream_record) sr;
+        sr.swap (_stream_record);
 
-        //stop could hang the ui (codaset #24)
-        //_stream_record->isStopped()? void(): _stream_record->stop();
+        stopping = std::async (std::launch::async,
+            [](decltype(_stream_record) sr, std::string deviceName)
+            {
+                try
+                {
+                TIME_MICROPHONERECORDER TaskInfo ti("Trying to stop recording on %s", deviceName.c_str());
 
-        // using abort instead of stop means that the recording thread will continue for a
-        // while after abort has returned.
-        _stream_record->isStopped()? void(): _stream_record->abort();
+                //stop could hang the ui (codaset #24)
+                //_stream_record->isStopped()? void(): _stream_record->stop();
 
-        _stream_record->close();
-        _stream_record.reset();
-        }
-        catch (const portaudio::PaException& x)
-        {
-            TaskInfo("stopRecording error: %s %s (%d)\nMessage: %s",
-                     vartype(x).c_str(), x.paErrorText(), x.paError(), x.what());
-            _has_input_device = false;
-        }
-        catch (const portaudio::PaCppException& x)
-        {
-            TaskInfo("stopRecording error: %s (%d)\nMessage: %s",
-                     vartype(x).c_str(), x.specifier(), x.what());
-            _has_input_device = false;
-        }
+                // using abort instead of stop means that the recording thread will continue for a
+                // while after abort has returned.
+                sr->isStopped()? void(): sr->abort();
+
+                sr->close();
+                sr.reset();
+                }
+                catch (const portaudio::PaException& x)
+                {
+                    TaskInfo("stopRecording error: %s %s (%d)\nMessage: %s",
+                             vartype(x).c_str(), x.paErrorText(), x.paError(), x.what());
+                }
+                catch (const portaudio::PaCppException& x)
+                {
+                    TaskInfo("stopRecording error: %s (%d)\nMessage: %s",
+                             vartype(x).c_str(), x.specifier(), x.what());
+                }
+            }, std::move(sr), deviceName());
     }
 }
 
@@ -317,9 +326,9 @@ int MicrophoneRecorder::
     Signal::IntervalType offset = actual_number_of_samples();
 
     float fs = _data.raw ()->sample_rate;
-    unsigned nc = _data.raw ()->num_channels;
+    int nc = _data.raw ()->num_channels;
 
-    _last_update = boost::posix_time::microsec_clock::local_time();
+    _last_update.restart ();
 
     if (!_receive_buffer || _receive_buffer->number_of_samples ()!=(int)framesPerBuffer || _receive_buffer->number_of_channels ()!=nc)
         _receive_buffer = Signal::pBuffer( new Signal::Buffer(0, framesPerBuffer, 1, nc ) );
@@ -331,7 +340,7 @@ int MicrophoneRecorder::
     TIME_MICROPHONERECORDER_WRITEBUFFER TaskTimer tt(boost::format("MicrophoneRecorder: writeBuffer %s, [%g, %g) s")
                                         % I % (I.first/fs) % (I.last/fs));
 
-    for (unsigned i=0; i<nc; ++i)
+    for (int i=0; i<nc; ++i)
     {
         Signal::pMonoBuffer b = _receive_buffer->getChannel (i);
         float* p = CpuMemoryStorage::WriteAll<1>(b->waveform_data()).ptr ();
@@ -370,7 +379,7 @@ int MicrophoneRecorder::
 
     if (_invalidator)
         // Tell someone that there is new data available to read
-        _invalidator.write ()->markNewlyRecordedData( _receive_buffer->getInterval () );
+        _invalidator->deprecateCache ( _receive_buffer->getInterval () );
 
     } catch (...) {
         _exception = std::current_exception ();
@@ -380,127 +389,25 @@ int MicrophoneRecorder::
     return paContinue;
 }
 
-
-MicrophoneRecorderOperation::
-        MicrophoneRecorderOperation( Recorder::ptr recorder )
-    :
-      recorder_(recorder)
-{
-}
-
-
-Signal::pBuffer MicrophoneRecorderOperation::
-        process(Signal::pBuffer b)
-{
-    return recorder_.write ()->read (b->getInterval ());
-}
-
-
-MicrophoneRecorderDesc::
-        MicrophoneRecorderDesc(Recorder::ptr recorder, Recorder::IGotDataCallback::ptr invalidator)
-    :
-      recorder_(recorder)
-{
-    recorder_.write ()->setDataCallback(invalidator);
-}
-
-
-void MicrophoneRecorderDesc::
-        startRecording()
-{
-    recorder_.write ()->startRecording ();
-}
-
-
-void MicrophoneRecorderDesc::
-        stopRecording()
-{
-    recorder_.write ()->stopRecording ();
-}
-
-
-bool MicrophoneRecorderDesc::
-        isStopped()
-{
-    return recorder_.write ()->isStopped ();
-}
-
-
-bool MicrophoneRecorderDesc::
-        canRecord()
-{
-    return recorder_.write ()->canRecord ();
-}
-
-
-Signal::Interval MicrophoneRecorderDesc::
-        requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
-{
-    if (expectedOutput)
-        *expectedOutput = I;
-    return I;
-}
-
-
-Signal::Interval MicrophoneRecorderDesc::
-        affectedInterval( const Signal::Interval& I ) const
-{
-    return I;
-}
-
-
-Signal::OperationDesc::ptr MicrophoneRecorderDesc::
-        copy() const
-{
-    EXCEPTION_ASSERTX(false, "Can't make a copy of microphone recording");
-    return Signal::OperationDesc::ptr();
-}
-
-
-Signal::Operation::ptr MicrophoneRecorderDesc::
-        createOperation(Signal::ComputingEngine*) const
-{
-    Signal::Operation::ptr r(new MicrophoneRecorderOperation(recorder_));
-    return r;
-}
-
-
-MicrophoneRecorderDesc::Extent MicrophoneRecorderDesc::
-        extent() const
-{
-    auto data = recorder_.raw ()->data ();
-    MicrophoneRecorderDesc::Extent x;
-    x.interval = data.read ()->samples.spannedInterval ();
-    x.number_of_channels = data.raw ()->num_channels;
-    x.sample_rate = data.raw ()->sample_rate;
-    return x;
-}
-
-
-Recorder::ptr MicrophoneRecorderDesc::
-        recorder() const
-{
-    return recorder_;
-}
-
-
 } // namespace Adapters
 
 
+
 #include "timer.h"
-
+#include "signal/recorderoperation.h"
 #include <QSemaphore>
-
 
 namespace Adapters {
 
-class GotDataCallback: public Recorder::IGotDataCallback
+class GotDataCallback: public Signal::Processing::IInvalidator
 {
 public:
-    Signal::Intervals marked_data() const { return marked_data_; }
+    GotDataCallback() : marked_data_(new Signal::Intervals) {}
 
-    virtual void markNewlyRecordedData(Signal::Interval what) {
-        marked_data_ |= what;
+    Signal::Intervals marked_data() const { return *marked_data_.read (); }
+
+    virtual void deprecateCache(Signal::Intervals what) const {
+        *marked_data_.write () |= what;
         semaphore_.release ();
     }
 
@@ -509,19 +416,21 @@ public:
     }
 
 private:
-    QSemaphore semaphore_;
-    Signal::Intervals marked_data_;
+    mutable QSemaphore semaphore_;
+    shared_state<Signal::Intervals> marked_data_;
 };
 
-void MicrophoneRecorderDesc::
+void MicrophoneRecorder::
         test()
 {
     // It should control the behaviour of a recording
     {
         int inputDevice = -1;
-        Recorder::IGotDataCallback::ptr callback(new GotDataCallback);
+        Signal::Processing::IInvalidator::ptr callback(new GotDataCallback);
 
-        MicrophoneRecorderDesc mrd(Recorder::ptr(new MicrophoneRecorder(inputDevice)), callback);
+        Signal::Recorder::ptr rec(new MicrophoneRecorder(inputDevice));
+        rec->setInvalidator(callback);
+        Signal::MicrophoneRecorderDesc mrd(rec);
 
         EXCEPTION_ASSERT( mrd.canRecord() );
         EXCEPTION_ASSERT( mrd.isStopped() );
@@ -531,18 +440,18 @@ void MicrophoneRecorderDesc::
         EXCEPTION_ASSERT( !mrd.isStopped() );
 
         Timer t;
-        dynamic_cast<GotDataCallback*>(callback.raw ())->wait (6000);
+        dynamic_cast<GotDataCallback*>(callback.get ())->wait (6000);
         // Re-throw exception if an exception was generated
-        mrd.recorder_->read (Signal::Interval (0, 1));
+        mrd.recorder()->read (Signal::Interval (0, 1));
         EXCEPTION_ASSERT_LESS( t.elapsed (), 1.200 );
 
         mrd.stopRecording();
 
         EXCEPTION_ASSERT( mrd.isStopped() );
 
-        EXCEPTION_ASSERT(dynamic_cast<const GotDataCallback*>(&*callback.read ())->marked_data () != Signal::Intervals());
+        EXCEPTION_ASSERT(dynamic_cast<const GotDataCallback*>(callback.get ())->marked_data () != Signal::Intervals());
         EXCEPTION_ASSERT_LESS( t.elapsed (), 1.300 );
     }
 }
 
-} // namespace Adapters
+} // namespace Signal

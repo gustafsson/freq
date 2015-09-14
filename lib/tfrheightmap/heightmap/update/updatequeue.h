@@ -32,7 +32,11 @@ public:
     Job                 pop ();
     queue               clear ();
     bool                empty ();
-    void                abort_on_empty ();
+
+    // this method is used to abort any blocking pop,
+    // clear the queue, disable any future pops and
+    // discard any future pushes
+    void                close ();
 
 private:
     JustMisc::blocking_queue<Job> q_;

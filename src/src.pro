@@ -42,34 +42,35 @@ CONFIG += c++11 buildflags
 RESOURCES += \
     ui/icon-resources.qrc \
 
+PWD = $$_PRO_FILE_PWD_
+SAWEROOT = $$_PRO_FILE_PWD_/..
+
 SOURCES += \
-    adapters/*.cpp \
-    filters/*.cpp \
-    sawe/*.cpp \
-    test/*.cpp \
-    tools/*.cpp \
-    tools/commands/*.cpp \
-    tools/selections/*.cpp \
-    tools/selections/support/*.cpp \
-    tools/support/*.cpp \
-    tools/widgets/*.cpp \
-    ui/*.cpp \
+    $$PWD/adapters/*.cpp \
+    $$PWD/sawe/*.cpp \
+    $$PWD/test/*.cpp \
+    $$PWD/tools/*.cpp \
+    $$PWD/tools/commands/*.cpp \
+    $$PWD/tools/selections/*.cpp \
+    $$PWD/tools/selections/support/*.cpp \
+    $$PWD/tools/support/*.cpp \
+    $$PWD/tools/widgets/*.cpp \
+    $$PWD/ui/*.cpp \
 
 #Windows Icon
 win32:SOURCES += sonicawe.rc \
 
 HEADERS += \
-    adapters/*.h \
-    filters/*.h \
-    sawe/*.h \
-    test/*.h \
-    tools/*.h \
-    tools/commands/*.h \
-    tools/selections/*.h \
-    tools/selections/support/*.h \
-    tools/support/*.h \
-    tools/widgets/*.h \
-    ui/*.h \
+    $$PWD/adapters/*.h \
+    $$PWD/sawe/*.h \
+    $$PWD/test/*.h \
+    $$PWD/tools/*.h \
+    $$PWD/tools/commands/*.h \
+    $$PWD/tools/selections/*.h \
+    $$PWD/tools/selections/support/*.h \
+    $$PWD/tools/support/*.h \
+    $$PWD/tools/widgets/*.h \
+    $$PWD/ui/*.h \
 
 CONFIG += precompile_header
 PRECOMPILED_HEADER = sawe/project_header.h
@@ -135,8 +136,8 @@ CONFIG += otherfilesvs
 ####################
 # Build settings
 CONFIG += sawelibs
+CONFIG += freetype-gl
 #DEFINES += CUDA_MEMCHECK_TEST
-
 
 ####################
 # Temporary output

@@ -15,7 +15,8 @@ class OverlayWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit OverlayWidget(RenderView *parent);
+    // QWidget* sceneSection = tool_selector->parentTool()
+    explicit OverlayWidget(QGraphicsScene *parent, QWidget* sceneSection);
 
     QRect sceneRect();
 
@@ -24,10 +25,11 @@ signals:
 public slots:
 
 protected:
-    virtual void updatePosition() = 0;
+    virtual void updatePosition();
 
 private:
-    bool eventFilter(QObject *o, QEvent *e);
+    bool event(QEvent *e) override;
+    bool eventFilter(QObject *o, QEvent *e) override;
 
     QWidget* sceneSection_;
     QGraphicsScene* scene_;

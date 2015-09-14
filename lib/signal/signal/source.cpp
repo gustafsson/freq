@@ -59,7 +59,7 @@ pBuffer SourceBase::
     // Didn't get exact result, prepare new Buffer
     pBuffer r( new Buffer(I, p->sample_rate(), p->number_of_channels ()) );
 
-    for (unsigned c=0; c<r->number_of_channels (); ++c)
+    for (int c=0; c<r->number_of_channels (); ++c)
     {
     #ifndef USE_CUDA
         // Allocate cpu memory and prevent calling an unnecessary clear by flagging the store as up-to-date

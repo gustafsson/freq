@@ -3,10 +3,10 @@
 #include "toolfactory.h"
 
 // Sonic AWE
-#include "renderview.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
 #include "graphicsview.h"
+#include "tools/support/renderviewinfo.h"
 
 // Qt
 #include <QGraphicsProxyWidget>
@@ -15,9 +15,15 @@
 namespace Tools
 {
 
+using Support::RenderViewInfo;
+
 CommentController::
-        CommentController(RenderView* view)
-            :   view_(view),
+        CommentController(QGraphicsScene* graphicsscene, RenderView* view, Sawe::Project* project, Support::ToolSelector* tool_selector, GraphicsView* graphicsview)
+            :   graphicsscene_(graphicsscene),
+                view_(view),
+                project_(project),
+                tool_selector_(tool_selector),
+                graphicsview_(graphicsview),
                 comment_(0)
 {
     setEnabled( false );
@@ -34,13 +40,13 @@ CommentController::
 
 
 void CommentController::
-        createView( ToolModelP model, ToolRepo* repo, Sawe::Project* /*p*/ )
+        createView( ToolModelP model, ToolRepo* repo, Sawe::Project* p )
 {
     CommentModel* cmodel = dynamic_cast<CommentModel*>(model.get());
     if (0 == cmodel)
         return;
 
-    CommentView* comment = new CommentView(model, repo->render_view());
+    CommentView* comment = new CommentView(model, graphicsscene_, repo->render_view(), p);
 
     comments_.append( comment );
 }
@@ -76,7 +82,7 @@ void CommentController::
     view->model()->pos = p;
 
     // keep in sync with CommentView::updatePosition()
-    view->model()->scroll_scale = 0.5f*sqrt(-view_->model->_pz);
+    view->model()->scroll_scale = 0.5f*sqrt(-view_->model->camera->p[2]);
 
     view->setHtml( text );
     view->show();
@@ -88,11 +94,11 @@ CommentView* CommentController::
 {
     CommentModel* model = new CommentModel();
 
-    model->pos.time = -FLT_MAX;//view_->model->_qx;
-    //model->pos.scale = view_->model->_qz;
+    model->pos.time = -FLT_MAX;//view_->model->camera.q[0];
+    //model->pos.scale = view_->model->camera.q[2];
 
     // addModel calls createView
-    view_->model->project()->tools().addModel( model );
+    project_->tools().addModel( model );
 
     return comments_.back();
 }
@@ -101,7 +107,7 @@ CommentView* CommentController::
 void CommentController::
         setupGui()
 {
-    Ui::MainWindow* ui = view_->model->project()->mainWindow()->getItems();
+    Ui::MainWindow* ui = project_->mainWindow()->getItems();
 
     // Connect enabled/disable actions,
     // 'enableCommentAdder' sets/unsets this as current tool when
@@ -126,8 +132,8 @@ void CommentController::
 void CommentController::
         enableCommentAdder(bool active)
 {
-    view_->toolSelector()->setCurrentTool( this, active );
-    view_->graphicsview->setToolFocus( active );
+    tool_selector_->setCurrentTool( this, active );
+    graphicsview_->setToolFocus( active );
 
     if (active)
     {
@@ -137,7 +143,7 @@ void CommentController::
         setMouseTracking( true );
         mouseMoveEvent(new QMouseEvent(
                 QEvent::MouseMove,
-                mapFromGlobal(view_->graphicsview->mapFromGlobal( QCursor::pos())),
+                mapFromGlobal(graphicsview_->mapFromGlobal( QCursor::pos())),
                 Qt::NoButton,
                 Qt::MouseButtons(),
                 Qt::KeyboardModifiers()));
@@ -173,11 +179,11 @@ void CommentController::
     bool use_heightmap_value = true;
 
     if (use_heightmap_value)
-        comment_->model()->pos = view_->getHeightmapPos( e->localPos() );
+        comment_->model()->pos = RenderViewInfo(view_->model).getHeightmapPos( e->localPos() );
     else
-        comment_->model()->pos = view_->getPlanePos( e->localPos() );
+        comment_->model()->pos = RenderViewInfo(view_->model).getPlanePos( e->localPos() );
 
-    QPointF window_coordinates = view_->window_coordinates( e->localPos() );
+    QPointF window_coordinates = RenderViewInfo(view_->model).window_coordinates( e->localPos() );
     comment_->model()->screen_pos[0] = window_coordinates.x();
     comment_->model()->screen_pos[1] = window_coordinates.y();
 
@@ -198,7 +204,7 @@ void CommentController::
         comment_->model()->screen_pos[0] = UpdateModelPositionFromScreen;
 
         // keep in sync with CommentView::updatePosition()
-        comment_->model()->scroll_scale = 0.5f*sqrt(-view_->model->_pz);
+        comment_->model()->scroll_scale = 0.5f*sqrt(-view_->model->camera->p[2]);
 
         comment_->setEditFocus(true);
         comment_ = 0;

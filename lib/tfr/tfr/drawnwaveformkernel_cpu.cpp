@@ -1,7 +1,7 @@
 #ifndef USE_CUDA
 
 #include "resamplecpu.h"
-#include "drawnwaveformkerneldef.h"
+#include "drawnwaveformkerneldef.inc"
 #include <stdio.h>
 #include "msc_stdc.h"
 

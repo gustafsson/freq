@@ -1,6 +1,7 @@
 #pragma once
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <ostream>
 #include "tvector.h"
 
 #define DEG_TO_RAD(x) ((x)*(M_PI/180.))
@@ -10,35 +11,48 @@ template<int rows, typename t, int cols=rows>
 class tmatrix
 {
 public:
+    typedef t T;
+
 	tmatrix( ) {}
-/*	tmatrix( const tmatrix<rows, t, cols -1> &b )
+
+    // huh, what are these for?
+    /*tmatrix( const tmatrix<rows, t, cols -1> &b )
 	{
 		*this = identity();
 		for(int i=0; i<cols-1; i++)
 			m[i] = b[i];
 	}*/
-	tmatrix( const tmatrix<rows-1, t, cols> &b )
+    /*tmatrix( const tmatrix<rows-1, t, cols> &b )
 	{
 		*this = identity();
 		for(int i=0; i<cols; i++)
 		for(int a=0; a<rows-1; a++)
 			m[i][a] = b[i][a];
-	}
+    }*/
 	/*tmatrix( const tmatrix<rows-1, t, cols -1> &b )
 	{
 		*this = identity();
 		for(int i=0; i<cols-1; i++)
 			m[i] = b[i];
 	}*/
-	tmatrix( const t *b )
+
+    // tmatrix is a POD-type so a move is no more efficient than a copy
+    // however: to avoid being lazy and copying more data than needed ask that copy construction is explicit
+    tmatrix( tmatrix &&a ) = default;
+    explicit tmatrix( const tmatrix &a ) = default;
+    tmatrix& operator=( tmatrix &&a ) = default;
+    tmatrix& operator=( const tmatrix &a ) = default;
+    explicit tmatrix( const t *b )
 	{
 		for(int i=0; i<cols; i++)
-			m[i] = &b[i *rows];
+            m[i] = b + i*rows;
 	}
-	tmatrix( const tmatrix &b )
+    template<class t2,
+             class = typename std::enable_if <std::is_convertible<t2, t>::value>::type>
+    explicit tmatrix( const tmatrix<rows,t2,cols> &b )
 	{
 		for(int i=0; i<cols; i++)
-			m[i] = b[i];
+            m[i] = tvector<rows,t>(b[i]);
 	}
 	static tmatrix identity()
 	{
@@ -50,38 +64,61 @@ public:
 	tvector<rows, t>& operator[](unsigned i){return m[i];}
 	const tvector<rows, t>& operator[] (unsigned i)const {return m[i];}
 
-	tmatrix( const tvector<rows, t> &b );
+    tmatrix( tvector<rows, t> &&b );
 	operator tvector<rows, t>&();
 	operator tvector<rows-1, t>();
 
         template<typename t2 >
-        tvector<rows, t> operator*( const tvector<cols, t2> &n ) {
-                return *this * tmatrix<cols,t2,1>( n );
+        tvector<rows, t2> operator*( const tvector<cols, t2> &n ) const {
+            tvector<rows, t2> v;
+            for(int a=0; a<rows; a++)
+            {
+                t f = 0;
+                for(int b=0; b<cols; b++)
+                    f += m[b][a]*n[b];
+                v[a] = f;
+            }
+            return v;
         }
 
         template<int cols2, typename t2 >
-	tmatrix<rows, t, cols2> operator*( const tmatrix<cols, t2, cols2> &n ) {
+    tmatrix<rows, t, cols2> operator*( const tmatrix<cols, t2, cols2> &n ) const {
 		tmatrix<rows,t,cols2> r;
 		for(int a=0; a<cols2; a++)
 		for(int b=0; b<rows; b++)
-		for(int c=0; c<cols; c++)
-			r[a][b] = r[a][b] + m[c][b]*n[a][c];
+        {
+            t v=0;
+            for(int c=0; c<cols; c++)
+                v += m[c][b]*n[a][c];
+            r[a][b] = v;
+        }
 		return r;
 	}
-    tmatrix operator*( const t &v ) {
+    tmatrix operator*( const t &v ) const {
 		tmatrix r;
 		for(int a=0; a<cols; a++)
 		for(int b=0; b<rows; b++)
 			r[a][b] = m[a][b]*v;
 		return r;
 	}
-    tmatrix operator+( const t &v ) {
+    tmatrix operator+( const t &v ) const {
 		tmatrix r;
 		for(int a=0; a<cols; a++)
 		for(int b=0; b<rows; b++)
 			r[a][b] = m[a][b]+v;
 		return r;
 	}
+    tmatrix operator-( const tmatrix &v ) const {
+        tmatrix r;
+        for(int a=0; a<cols; a++)
+        for(int b=0; b<rows; b++)
+            r[a][b] = m[a][b]-v[a][b];
+        return r;
+    }
+    template< typename t2 >
+    tmatrix& operator*=( const tmatrix<cols, t2, rows> &n ) {
+        return *this = *this * n;
+    }
     template<typename T2>
     bool operator==( const tmatrix<rows,T2,cols> &v ) const {
         for(int a=0; a<cols; a++)
@@ -94,37 +131,46 @@ public:
     bool operator!=( const tmatrix<rows,T2,cols> &v ) const {
         return !(*this == v);
     }
-    tmatrix<cols,t,rows> transpose() {
+    tmatrix<cols,t,rows> transpose() const {
         tmatrix<cols,t,rows> r;
 		for(int a=0; a<cols; a++)
 		for(int b=0; b<rows; b++)
             r[b][a] = m[a][b];
+        return r;
 	}
-	static tmatrix<4,t,4> rotHead( tvector<3, t> r )
+    t norm() const {
+        t n=0;
+        for(int a=0; a<cols; a++)
+        for(int b=0; b<rows; b++)
+            n += m[a][b]*m[a][b];
+        return n;
+    }
+    static tmatrix<4,t,4> rotFpsHead( tvector<3, t> r )
 	{
 		return
 			rot(tvector<3,t>(0,1,0), DEG_TO_RAD(r[1]))*
 			rot(tvector<3,t>(1,0,0), DEG_TO_RAD(r[0])) *
 			rot(tvector<3,t>(0,0,1), DEG_TO_RAD(r[2]));
 	}
-	static tmatrix<4,t,4> rotHeadAnti( tvector<3, t> r )
-	{
-		return
-			rot(tvector<3,t>(0,1,0), -DEG_TO_RAD(r[1])) *
-			rot(tvector<3,t>(1,0,0), -DEG_TO_RAD(r[0])) *
-			rot(tvector<3,t>(0,0,1), -DEG_TO_RAD(r[2]));
-	}
-	static tmatrix<4,t,4> rot( tvector<3, t> r, t d )
+    static tmatrix<4,t,4> rotFpsHeadAnti( tvector<3, t> r )
+    {
+        return
+            rot(tvector<3,t>(0,1,0), -DEG_TO_RAD(r[1])) *
+            rot(tvector<3,t>(1,0,0), -DEG_TO_RAD(r[0])) *
+            rot(tvector<3,t>(0,0,1), -DEG_TO_RAD(r[2]));
+    }
+    static tmatrix<4,t,4> rot( tvector<3, t> axis, t rad )
 	{
 		t
-			c = cos(d),
-			s = sin(d),
-			i = 1-cos(d),
-			X = r[0],
-			Y = r[1],
-			Z = r[2];
+            c = cos(rad),
+            s = sin(rad),
+            i = 1-cos(rad),
+            X = axis[0],
+            Y = axis[1],
+            Z = axis[2];
 
-		t p[]=
+        // transposed layout
+        t p[]=
 		{
 			i*X*X + c,		i*Y*X + s*Z,		i*Z*X - s*Y,		0,
 			i*X*Y - s*Z,		i*Y*Y + c,			i*Z*Y + s*X,		0,
@@ -133,35 +179,74 @@ public:
 		};
 		return tmatrix<4,t,4>(p);
 	}
-	static tmatrix<4,t,4> move( tvector<3, t> r )
+    static tmatrix<4,t,4> rot( t deg, t x, t y, t z )
+    {
+        // glRotate
+        return rot(tvector<3,t>(x,y,z), DEG_TO_RAD(deg));
+    }
+
+    static tmatrix<4,t,4> translate( tvector<3, t> r )
 	{
-		double p[]=
+        // transposed layout
+        t p[]=
 		{
-			1,0,0, r[0],
-			0,1,0, r[1],
-			0,0,1, r[2],
-			0,0,0, 1
+            1,0,0, 0,
+            0,1,0, 0,
+            0,0,1, 0,
+            r[0], r[1], r[2], 1
 		};
-		return tmatrix<4,t,4>(p);
+        return tmatrix<4,t,4>(p);
 	}
+    static tmatrix<4,t,4> translate( t x, t y, t z )
+    {
+        // glTranslate
+        return translate(tvector<3,t>(x,y,z));
+    }
+
+    static tmatrix<4,t,4> scale( tvector<3, t> r )
+    {
+        // transposed layout
+        t p[]=
+        {
+            r[0],0,   0,    0,
+            0,   r[1],0,    0,
+            0,   0,   r[2], 0,
+            0,   0,   0,    1
+        };
+        return tmatrix<4,t,4>(p);
+    }
+    static tmatrix<4,t,4> scale( t x, t y, t z )
+    {
+        // glScale
+        return scale(tvector<3,t>(x,y,z));
+    }
+
+    t* v() { return m[0].v; }
+    const t* v() const { return m[0].v; }
+
 private:
-	tvector<rows, t> m[cols];
+    tvector<rows, t> m[cols];
 };
 
 template<>
-inline tmatrix<3,double,1>::tmatrix( const tvector<3, double> &b )
+inline tmatrix<3,double,1>::tmatrix( tvector<3, double> &&b )
+    : m{b}
 {
-	m[0] = b;
 }
 template<>
-inline tmatrix<3,float,1>::tmatrix( const tvector<3, float> &b )
+inline tmatrix<3,float,1>::tmatrix( tvector<3, float> &&b )
+    : m{b}
 {
-	m[0] = b;
 }
 template<>
-inline tmatrix<4,double,1>::tmatrix( const tvector<4, double> &b )
+inline tmatrix<4,double,1>::tmatrix( tvector<4, double> &&b )
+    : m{b}
 {
-	m[0] = b;
+}
+template<>
+inline tmatrix<4,float,1>::tmatrix( tvector<4, float> &&b )
+    : m{b}
+{
 }
 template<>
 inline tmatrix<4,double,1>::operator tvector<4, double>&()
@@ -183,4 +268,15 @@ template<>
 inline tmatrix<4,float,1>::operator tvector<3, float>()
 {
 	return tvector<3, float>(&m[0][0]);
+}
+
+template<class st, int rows, typename t, int cols=rows>
+std::basic_ostream<st>& operator<<(std::basic_ostream<st>& o, const tmatrix<rows,t,cols>& M) {
+    for (int i=0; i<4; i++)
+    {
+        for (int j=0; j<4; j++)
+            o << M[i][j] << " ";
+        o << std::endl;
+    }
+    return o;
 }

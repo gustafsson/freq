@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include "tooltipmodel.h"
-#include "renderview.h"
+#include "tools/renderview.h"
 
 namespace Tools {
 

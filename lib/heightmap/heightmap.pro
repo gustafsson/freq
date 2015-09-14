@@ -9,23 +9,31 @@ win32:CONFIG += debug_and_release
 CONFIG += staticlib warn_on
 CONFIG += c++11 buildflags
 CONFIG += tmpdir
+CONFIG += precompile_header_with_all_headers
+
+# fonts for RenderAxes
+#CONFIG += freetype-gl # the embedded font works just fine
+#DEFINES += USE_GLUT
 
 QT += opengl
 
 RESOURCES += \
     heightmap/render/shaders.qrc \
 
+PWD = $$_PRO_FILE_PWD_
+SAWEROOT = $$PWD/../..
+
 SOURCES += \
-    heightmap/*.cpp \
-    heightmap/blockmanagement/*.cpp \
-    heightmap/blockmanagement/merge/*.cpp \
-    heightmap/render/*.cpp \
+    $$PWD/heightmap/*.cpp \
+    $$PWD/heightmap/blockmanagement/*.cpp \
+    $$PWD/heightmap/blockmanagement/merge/*.cpp \
+    $$PWD/heightmap/render/*.cpp \
 
 HEADERS += \
-    heightmap/*.h \
-    heightmap/blockmanagement/*.h \
-    heightmap/blockmanagement/merge/*.h \
-    heightmap/render/*.h \
+    $$PWD/heightmap/*.h \
+    $$PWD/heightmap/blockmanagement/*.h \
+    $$PWD/heightmap/blockmanagement/merge/*.h \
+    $$PWD/heightmap/render/*.h \
 
 INCLUDEPATH += ../backtrace ../gpumisc ../signal
 win32: INCLUDEPATH += ../sonicawe-winlib

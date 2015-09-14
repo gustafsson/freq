@@ -21,7 +21,7 @@ AppendOperationDescCommand::
 void AppendOperationDescCommand::
         execute()
 {
-    IInvalidator::ptr i = chain_.write ()->addOperationAt ( operation_, at_ );
+    IInvalidator::ptr i = chain_->addOperationAt ( operation_, at_ );
 
     operation_.write ()->setInvalidator (i);
 }
@@ -30,7 +30,7 @@ void AppendOperationDescCommand::
 void AppendOperationDescCommand::
         undo()
 {
-    chain_.write ()->removeOperationsAt ( at_ );
+    chain_->removeOperationsAt ( at_ );
 }
 
 
@@ -47,7 +47,7 @@ std::string AppendOperationDescCommand::
 
 // Unit test
 #include "test/operationmockups.h"
-#include <QApplication>
+#include <QtWidgets> // QApplication
 
 namespace Tools {
 namespace Commands {
@@ -78,30 +78,30 @@ void AppendOperationDescCommand::
         OperationDesc::ptr target_desc(new Test::TransparentOperationDesc);
         OperationDesc::ptr operation_desc(new Test::TransparentOperationDesc);
         OperationDesc::ptr source_desc(new SourceMock);
-        TargetMarker::ptr target = chain.write ()->addTarget(target_desc);
+        TargetMarker::ptr target = chain->addTarget(target_desc);
 
 
         AppendOperationDescCommand aodc1(source_desc, chain, target);
         AppendOperationDescCommand aodc2(operation_desc, chain, target);
 
 
-        EXCEPTION_ASSERT( !chain.read ()->extent (target).interval.is_initialized() );
+        EXCEPTION_ASSERT( !chain->extent (target).interval.is_initialized() );
 
         aodc1.execute ();
-        EXCEPTION_ASSERT_EQUALS( chain.read ()->extent (target).interval, Interval(3,5));
+        EXCEPTION_ASSERT_EQUALS( chain->extent (target).interval.get_value_or (Signal::Interval()), Interval(3,5));
 
         aodc1.undo ();
-        EXCEPTION_ASSERT( !chain.read ()->extent (target).interval.is_initialized() );
+        EXCEPTION_ASSERT( !chain->extent (target).interval.is_initialized() );
 
         aodc1.execute ();
         aodc2.execute ();
-        EXCEPTION_ASSERT_EQUALS( chain.read ()->extent (target).interval, Interval(3,5));
+        EXCEPTION_ASSERT_EQUALS( chain->extent (target).interval.get_value_or (Signal::Interval()), Interval(3,5));
 
         aodc2.undo ();
-        EXCEPTION_ASSERT_EQUALS( chain.read ()->extent (target).interval, Interval(3,5));
+        EXCEPTION_ASSERT_EQUALS( chain->extent (target).interval.get_value_or (Signal::Interval()), Interval(3,5));
 
         aodc1.undo ();
-        EXCEPTION_ASSERT( !chain.read ()->extent (target).interval.is_initialized() );
+        EXCEPTION_ASSERT( !chain->extent (target).interval.is_initialized() );
     }
 }
 

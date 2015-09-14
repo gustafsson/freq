@@ -18,7 +18,6 @@
 // Sonic AWE
 #include "heightmap/collection.h"
 #include "heightmap/render/renderer.h"
-#include "sawe/project.h"
 #include "tfr/chunkfilter.h"
 #include "tools/rendercontroller.h"
 #include "ui/mainwindow.h"
@@ -48,23 +47,11 @@
 #include <vector>
 
 
-// Qt
-#include <QAction>
-#include <QApplication>
-#include <QComboBox>
-#include <QDockWidget>
-#include <QHBoxLayout>
-#include <QListWidgetItem>
-#include <QMainWindow>
-#include <QMessageBox>
-#include <QMutex>
-#include <QPointer>
-#include <QReadWriteLock>
-#include <QString>
-#include <QToolButton>
-#include <QTreeWidgetItem>
-#include <QWaitCondition>
-#include <QWheelEvent>
+// Qt frameworks
+#include <QtCore> // Qt QWaitCondition etc
+#include <QtGui> // QMouseEvent etc
+#include <QtWidgets> // QApplication etc
+#include <QtOpenGL> // QGLWidget
 
 
 // boost

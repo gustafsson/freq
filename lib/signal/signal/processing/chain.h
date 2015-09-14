@@ -27,7 +27,8 @@ class Workers;
 class Chain
 {
 public:
-    typedef shared_state<Chain> ptr;
+    typedef std::shared_ptr<Chain> ptr;
+    typedef std::shared_ptr<const Chain> const_ptr;
 
     static Chain::ptr createDefaultChain();
 
@@ -48,7 +49,9 @@ public:
      * @param at
      * @return A marker to keep track of the target. The Target is removed from the Dag when TargetMarker is deleted.
      */
-    TargetMarker::ptr addTarget(Signal::OperationDesc::ptr desc, TargetMarker::ptr at=TargetMarker::ptr());
+    TargetMarker::ptr addTarget(Signal::OperationDesc::ptr desc);
+    TargetMarker::ptr addTargetBefore(Signal::OperationDesc::ptr desc, TargetMarker::ptr at);
+    TargetMarker::ptr addTargetAfter(Signal::OperationDesc::ptr desc, TargetMarker::ptr at);
 
     /**
      * @brief addOperation
@@ -62,10 +65,13 @@ public:
      */
     IInvalidator::ptr addOperationAt(Signal::OperationDesc::ptr desc, TargetMarker::ptr at);
     void removeOperationsAt(TargetMarker::ptr at);
+    void removeOperation(Signal::OperationDesc::ptr operation);
     Signal::OperationDesc::Extent extent(TargetMarker::ptr at) const;
 
     shared_state<Workers> workers() const;
     Targets::ptr targets() const;
+    shared_state<const Dag> dag() const;
+    Bedroom::ptr bedroom() const;
 
     void resetDefaultWorkers();
     // Add jumping around with targets later.
@@ -79,7 +85,7 @@ private:
 
     Chain(Dag::ptr, Targets::ptr targets, shared_state<Workers> workers, Bedroom::ptr bedroom, INotifier::ptr notifier);
 
-    Step::ptr::weak_ptr createBranchStep (Dag& dag, Signal::OperationDesc::ptr desc, TargetMarker::ptr at);
+    Step::ptr::weak_ptr createBranchStep (Dag& dag, Signal::OperationDesc::ptr desc, TargetMarker::ptr at, bool addbefore);
     Step::ptr::weak_ptr insertStep (Dag& dag, Signal::OperationDesc::ptr desc, TargetMarker::ptr at);
 
 public:

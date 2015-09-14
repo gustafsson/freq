@@ -21,8 +21,8 @@ TargetMarker::
 std::set<Step::ptr> single_paths(GraphVertex v, const Graph& g) {
     std::set<Step::ptr> S;
 
-    UNUSED(int od) = boost::out_degree(v, g);
-    UNUSED(int id) = boost::in_degree(v, g);
+    UNUSED(long od) = boost::out_degree(v, g);
+    UNUSED(long id) = boost::in_degree(v, g);
 
     if (boost::out_degree(v, g) > 1)
         return S;
@@ -70,6 +70,13 @@ Step::ptr::weak_ptr TargetMarker::
         step() const
 {
     return target_needs_->step();
+}
+
+
+shared_state<Dag> TargetMarker::
+        dag() const
+{
+    return dag_;
 }
 
 } // namespace Processing

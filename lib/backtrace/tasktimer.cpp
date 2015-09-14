@@ -25,11 +25,15 @@
 #define TIMESTAMPS
 //#define TIMESTAMPS if(0)
 
+#define TIMEFROMSTART
+
 using namespace boost;
 using namespace std;
 
 bool DISABLE_TASKTIMER = false;
 const int thread_column_width = 4;
+
+auto g_start = boost::posix_time::microsec_clock::local_time();
 
 class is_alive_t {
 public:
@@ -242,8 +246,13 @@ bool TaskTimer::printIndentation() {
         TIMESTAMPS { // Print timestamp
             stringstream ss;
 
+
             auto now = boost::posix_time::microsec_clock::local_time();
+#ifdef TIMEFROMSTART
+            auto t = now - g_start;
+#else
             auto t = now.time_of_day();
+#endif
 
 #ifndef MICROSEC_TIMESTAMPS
             ss  << setiosflags(ios::fixed)
@@ -266,7 +275,7 @@ bool TaskTimer::printIndentation() {
             stringstream ss;
 
             int width = 1;
-            int N = thread_info_map.size ();
+            size_t N = thread_info_map.size ();
             int number = t.threadNumber;
 
             while ((N/=10) > 1)

@@ -9,6 +9,8 @@
 
 #include <QColor>
 
+#ifdef LEGACY_OPENGL
+
 using namespace std;
 
 namespace Tools {
@@ -102,7 +104,7 @@ void PlotLines::
 
     glPushMatrixContext push_model( GL_MODELVIEW );
 
-    glScalef(1, render_view_->model->renderer->render_settings.y_scale, 1);
+    glScalef(1, render_view_->model->render_settings.y_scale, 1);
 
     if (0 == display_list_)
     {
@@ -141,7 +143,7 @@ void PlotLines::
     GlException_CHECK_ERROR();
 
     glPushAttribContext ac;
-    glEnable(GL_BLEND);
+    GlState::glEnable (GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDepthMask(false);
 
@@ -179,6 +181,7 @@ void PlotLines::
     glEnd();
     glPointSize( 1.f );
     glDepthMask(true);
+    GlState::glDisable (GL_BLEND);
 
     GlException_CHECK_ERROR();
 }
@@ -205,3 +208,5 @@ void PlotLines::
 
 } // namespace Support
 } // namespace Tools
+
+#endif // LEGACY_OPENGL

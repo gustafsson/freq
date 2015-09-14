@@ -2,32 +2,234 @@
 #include "gl.h"
 #include "GlException.h"
 #include "log.h"
+#include "neat_math.h"
+#include "tasktimer.h"
+#include "shared_state_traits_backtrace.h"
+#include "datastorage.h"
+#include "shared_state.h"
+
+#include <QOpenGLContextGroup>
 
 //#define INFO
 #define INFO if(0)
 
+//#define INFO_DISCARDED
+#define INFO_DISCARDED if(0)
+
 namespace Heightmap {
 namespace Render {
 
-BlockTextures::BlockTextures(BlockLayout bl)
-    :
-      block_layout(bl)
+class BlockTexturesImpl
 {
+public:
+    struct shared_state_traits: shared_state_traits_backtrace {
+        double timeout() { return 10.0; } // might take a long time if allocating a lot of textures
+    };
+
+    explicit BlockTexturesImpl(unsigned width, unsigned height);
+    BlockTexturesImpl(const BlockTexturesImpl&)=delete;
+    BlockTexturesImpl&operator=(const BlockTexturesImpl&)=delete;
+
+    void setCapacityHint(unsigned c);
+    void setCapacity (unsigned target_capacity);
+    std::vector<GlTexture::ptr> getUnusedTextures(unsigned count) const;
+    GlTexture::ptr get1();
+
+    int getCapacity() const;
+    int getUseCount() const;
+    unsigned getWidth() const { return width_; }
+    unsigned getHeight() const { return height_; }
+
+    static void setupTexture(unsigned name, unsigned width, unsigned height);
+    static void setupTexture(unsigned name, unsigned width, unsigned height, bool mipmaps);
+    static unsigned allocated_bytes_per_element();
+
+private:
+    std::vector<GlTexture::ptr> textures;
+    const unsigned width_, height_;
+
+public:
+    static void test();
+};
+
+
+unsigned g_width=0, g_height=0;
+std::map<void*,shared_state<BlockTexturesImpl>> gbti_map;
+
+shared_state<BlockTexturesImpl>& global_block_textures_impl() {
+    void* p = QOpenGLContextGroup::currentContextGroup ();
+    shared_state<BlockTexturesImpl>& v = gbti_map[p];
+
+    if (!v) v.reset(new BlockTexturesImpl(g_width,g_height));
+
+    return v;
+}
+
+
+bool BlockTextures::
+        isInitialized()
+{
+    return 0!=g_width && 0!=g_height;
 }
 
 
 void BlockTextures::
-        setCapacityHint (unsigned c)
+        init(unsigned width, unsigned height)
 {
-    if (c < textures.size () && textures.size () < 3*c)
+    EXCEPTION_ASSERT(!isInitialized ());
+
+    g_width = width;
+    g_height = height;
+}
+
+
+void BlockTextures::
+        destroy()
+{
+    void* p = QOpenGLContextGroup::currentContextGroup ();
+    gbti_map.erase (p);
+    g_width = 0;
+    g_height = 0;
+}
+
+
+void BlockTextures::
+        setCapacityHint(unsigned c)
+{
+    global_block_textures_impl()->setCapacityHint(c);
+}
+
+
+void BlockTextures::
+        gc(bool aggressive)
+{
+    auto w = global_block_textures_impl().write ();
+    int c = w->getUseCount();
+
+    if (aggressive)
+        w->setCapacity(c);
+    else
+        w->setCapacityHint(c);
+}
+
+
+std::vector<GlTexture::ptr> BlockTextures::
+        getTextures(unsigned count)
+{
+    auto w = global_block_textures_impl().write ();
+    std::vector<GlTexture::ptr> missing_textures = w->getUnusedTextures(count);
+
+    if (count > missing_textures.size ())
     {
-        // ok
-        return;
+        size_t need_more = count - missing_textures.size ();
+        INFO Log("getTextures: %d, had %d of %d readily available, allocating an additional %d textures")
+                % count % missing_textures.size () % w->getCapacity () % need_more;
+        w->setCapacityHint (w->getCapacity () + need_more);
+
+        auto T = w->getUnusedTextures(need_more);
+        EXCEPTION_ASSERT_EQUALS(T.size(), need_more);
+
+        missing_textures.reserve (count);
+        for (GlTexture::ptr& t : T)
+            missing_textures.push_back (t);
     }
 
-    // not ok, adjust
-    unsigned target_capacity = c*2;
-    if (target_capacity < textures.size ())
+    return missing_textures;
+}
+
+
+GlTexture::ptr BlockTextures::
+        get1()
+{
+    return global_block_textures_impl()->get1();
+}
+
+
+int BlockTextures::
+        getCapacity()
+{
+    return global_block_textures_impl().read ()->getCapacity();
+}
+
+
+int BlockTextures::
+        getUseCount()
+{
+    return global_block_textures_impl().read ()->getUseCount();
+}
+
+
+unsigned BlockTextures::
+        getWidth()
+{
+    return global_block_textures_impl().read ()->getWidth();
+}
+
+
+unsigned BlockTextures::
+        getHeight()
+{
+    return global_block_textures_impl().read ()->getHeight();
+}
+
+
+void BlockTextures::
+        setupTexture(unsigned name, unsigned width, unsigned height)
+{
+    BlockTexturesImpl::setupTexture (name,width,height);
+}
+
+
+void BlockTextures::
+        setupTexture(unsigned name, unsigned width, unsigned height, bool mipmaps)
+{
+    BlockTexturesImpl::setupTexture (name,width,height,mipmaps);
+}
+
+
+unsigned BlockTextures::
+        allocated_bytes_per_element()
+{
+    return BlockTexturesImpl::allocated_bytes_per_element ();
+}
+
+
+void BlockTextures::
+        test()
+{
+    BlockTexturesImpl::test ();
+}
+
+
+BlockTexturesImpl::BlockTexturesImpl(unsigned width, unsigned height)
+    :
+      width_(width),
+      height_(height)
+{
+}
+
+
+void BlockTexturesImpl::
+        setCapacityHint (unsigned c)
+{
+    size_t S = textures.size ();
+    unsigned C = 64; // 16 MB
+    unsigned lower_bound = c; // need at least this many
+    unsigned preferred = align_down(c,C)+C; // create margin textures
+    unsigned upper_bound = align_down(c,C)+2*C; // but more than this is unnecessary
+
+    if (lower_bound <= S && S <= upper_bound)
+        return;
+
+    INFO Log("hint: %d, textures.size (): %d") % c % textures.size ();
+    setCapacity(preferred);
+}
+
+
+void BlockTexturesImpl::
+        setCapacity (unsigned target_capacity)
+{
+    if (target_capacity <= textures.size ())
     {
         std::vector<GlTexture::ptr> pick;
         pick.reserve (target_capacity);
@@ -43,30 +245,36 @@ void BlockTextures::
                 pick.push_back (p);
 
         int discarded = textures.size () - pick.size ();
-        INFO Log("BlockTextures: discarding %d textures") % discarded;
+        INFO_DISCARDED Log("BlockTextures: discarding %d textures, was=%d, target=%d") % discarded % textures.size () % target_capacity;
 
         textures.swap (pick);
         return;
     }
 
     int new_textures = target_capacity - textures.size ();
-    INFO Log("BlockTextures: allocating %d new textures") % new_textures;
+    int mipmapfactor = 2;
+
     GLuint t[new_textures];
     glGenTextures (new_textures, t);
+    INFO Log("BlockTextures: allocating %d new textures from name %d (had %d of which %d were used). %s")
+            % new_textures % t[0] % textures.size () % getUseCount()
+            % DataStorageVoid::getMemorySizeText (
+                textures.size ()*allocated_bytes_per_element()*width_*height_*mipmapfactor);
     textures.reserve (target_capacity);
-    int w = block_layout.texels_per_row ();
-    int h = block_layout.texels_per_column ();
 
     for (int i=0; i<new_textures; i++)
     {
-        setupTexture (t[i], w, h);
+        setupTexture (t[i], width_, height_);
 
-        textures.push_back (GlTexture::ptr(new GlTexture(t[i])));
+        bool adopt = true; // GlTexture does glDeleteTextures
+        GlTexture::ptr tp(new GlTexture(t[i], width_, height_, adopt));
+        tp->setMinFilter(GL_LINEAR);
+        textures.push_back (move(tp));
     }
 }
 
 
-std::vector<GlTexture::ptr> BlockTextures::
+std::vector<GlTexture::ptr> BlockTexturesImpl::
         getUnusedTextures(unsigned count) const
 {
     std::vector<GlTexture::ptr> pick;
@@ -85,47 +293,101 @@ std::vector<GlTexture::ptr> BlockTextures::
 }
 
 
-int BlockTextures::
+int BlockTexturesImpl::
         getCapacity() const
 {
     return textures.size ();
 }
 
 
-void BlockTextures::
+int BlockTexturesImpl::
+        getUseCount() const
+{
+    int c = 0;
+    for (const GlTexture::ptr& p : textures)
+        if (!p.unique ())
+            c++;
+    return c;
+}
+
+
+void BlockTexturesImpl::
         setupTexture(unsigned name, unsigned w, unsigned h)
 {
+    setupTexture(name, w, h, BlockTextures::mipmaps > 0);
+}
+
+
+void BlockTexturesImpl::
+        setupTexture(unsigned name, unsigned w, unsigned h, bool mipmaps)
+{
     glBindTexture(GL_TEXTURE_2D, name);
+    // Compatible with GlFrameBuffer
+#if defined(GL_ES_VERSION_2_0)
+    // https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_storage.txt
+    int mipmaplevels = std::max(1,std::min(1+BlockTextures::mipmaps,(int)log2(std::max(w,h))-1));
+    if (!mipmaps)
+        mipmaplevels = 1;
+
+    #ifdef GL_ES_VERSION_3_0
+        GlException_SAFE_CALL( glTexStorage2D ( GL_TEXTURE_2D, mipmaplevels, GL_R16F, w, h));
+    #else
+        GlException_SAFE_CALL( glTexStorage2DEXT ( GL_TEXTURE_2D, mipmaplevels, GL_R16F_EXT, w, h));
+    #endif
+#else
+//    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // GL 1.4
+    GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, w, h, 0, GL_RED, GL_FLOAT, 0) );
+//    GlException_SAFE_CALL( glTexStorage2D (GL_TEXTURE_2D, mipmaplevels, GL_R16F, w, h) ); // GL 4.0
+
+#endif
+
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+    // change to a mipmapping filter when mipmaps are built later
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+}
 
-    // Not compatible with GlFrameBuffer
-    //static bool hasTextureFloat = 0 != strstr( (const char*)glGetString(GL_EXTENSIONS), "GL_ARB_texture_float" );
-    //GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D,0,hasTextureFloat?GL_LUMINANCE32F_ARB:GL_LUMINANCE,w, h,0, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
 
-    // Compatible with GlFrameBuffer
-    //GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, w, h, 0, GL_RED, GL_FLOAT, 0) );
-    GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, w, h, 0, GL_RED, GL_FLOAT, 0) );
-    //GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RED, GL_FLOAT, 0) );
+unsigned BlockTexturesImpl::
+        allocated_bytes_per_element()
+{
+#ifdef GL_ES_VERSION_2_0
+    return 2; // GL_R16F_EXT
+#else
+    return 2; // GL_R16F
+#endif
+}
 
-    glBindTexture(GL_TEXTURE_2D, 0);
+
+GlTexture::ptr BlockTexturesImpl::
+        get1()
+{
+    auto v = getUnusedTextures(1);
+    if (!v.empty ())
+        return v[0];
+
+    setCapacityHint (getCapacity ()+1);
+    v = getUnusedTextures(1);
+    if (!v.empty ())
+        return v[0];
+
+    return GlTexture::ptr();
 }
 
 
 } // namespace Render
 } // namespace Heightmap
 
-#include <QApplication>
-#include <QGLWidget>
+#include <QtWidgets> // QApplication
+#include <QtOpenGL> // QGLWidget
 #include "exceptionassert.h"
 #include "trace_perf.h"
 
 namespace Heightmap {
 namespace Render {
 
-void BlockTextures::
+void BlockTexturesImpl::
         test()
 {
     std::string name = "BlockTextures";
@@ -135,14 +397,12 @@ void BlockTextures::
     QGLWidget w;
     w.makeCurrent ();
 
-    // The BlockTextures class should keep track of all OpenGL textures that
-    // have been allocated for painting GlBlocks and provide already allocated
-    // textures fast
+    // It should keep track of all OpenGL textures that have been allocated for
+    // painting block textures and provide already allocated textures fast.
     {
         GlException_CHECK_ERROR();
 
-        BlockLayout block_layout(512,512,1);
-        BlockTextures block_textures(block_layout);
+        BlockTexturesImpl block_textures(512,512);
 
         int c = block_textures.getCapacity ();
 
@@ -155,10 +415,10 @@ void BlockTextures::
 
         TRACE_PERF("It should provide already allocated textures fast");
         c = block_textures.getCapacity ();
-        EXCEPTION_ASSERT_EQUALS(c,20);
+        EXCEPTION_ASSERT_EQUALS(c,64);
 
-        t = block_textures.getUnusedTextures (11);
-        EXCEPTION_ASSERT_EQUALS(t.size (),11u);
+        t = block_textures.getUnusedTextures (55);
+        EXCEPTION_ASSERT_EQUALS(t.size (),55u);
 
         auto t1 = block_textures.getUnusedTextures (11);
         EXCEPTION_ASSERT_EQUALS(t1.size (),9u);
@@ -166,8 +426,7 @@ void BlockTextures::
         auto t2 = block_textures.getUnusedTextures (11);
         EXCEPTION_ASSERT_EQUALS(t2.size (),0u);
 
-        t.resize (5);
-
+        t1.resize (3); // shrink from 9 to 3, making 6 textures unused
         t2 = block_textures.getUnusedTextures (11);
         EXCEPTION_ASSERT_EQUALS(t2.size (),6u);
 

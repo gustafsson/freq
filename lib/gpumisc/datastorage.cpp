@@ -215,15 +215,17 @@ void DataStorageVoid::
 
 
 void DataStorageVoid::
-        DiscardAllData()
+        DiscardAllData(bool keep_allocated_data)
 {
+    validContent_.clear();
+    if (keep_allocated_data)
+        return;
+
     TIME_DataStorageImplementation
             TaskTimer tt("%s.DiscardAllData %p #%d ( %u, %u, %u ), elemsize %u",
                          vartype(*this).c_str(), this, storage_.size(),
                          size().width, size().height, size().depth,
                          bytesPerElement());
-
-    validContent_.clear();
 
     while (!storage_.empty())
     {
@@ -241,6 +243,16 @@ void DataStorageVoid::
 DataStorageVoid& DataStorageVoid::
         operator=(const DataStorageVoid& b)
 {
+    if (this == &b)
+        return *this;
+
+    if (size_ != b.size_ || bytesPerElement_ != b.bytesPerElement_)
+    {
+        DiscardAllData(false);
+        size_ = b.size_;
+        bytesPerElement_ = b.bytesPerElement_;
+    }
+
     bool allowCow = false;
     BOOST_FOREACH( DataStorageImplementation* p, b.validContent_ )
     {
@@ -250,6 +262,7 @@ DataStorageVoid& DataStorageVoid::
     BOOST_FOREACH( DataStorageImplementation* p, this->storage_ )
     {
         // All allocated instances in 'this' must support being replaced by 'Cow' copies.
+        // i.e cpu memory does not allow cow if the pointer is borrowed
         allowCow &= p->allowCow();
     }
 
@@ -259,7 +272,10 @@ DataStorageVoid& DataStorageVoid::
                 TaskTimer tt("Adding a COW copy");
 
         // COW, copy on write, postpones copying of data chunks until 'UpdateValidContent'
-        DiscardAllData();
+        DiscardAllData(false);
+
+        size_ = b.size_;
+        bytesPerElement_ = b.bytesPerElement_;
 
         BOOST_FOREACH( DataStorageImplementation* p, b.storage_ )
         {
@@ -280,6 +296,12 @@ void DataStorageVoid::
         DeepCopy(const DataStorageVoid&b)
 {
     validContent_.clear();
+    if (size_ != b.size_ || bytesPerElement_ != b.bytesPerElement_)
+    {
+        DiscardAllData(false);
+        size_ = b.size_;
+        bytesPerElement_ = b.bytesPerElement_;
+    }
 
     DataStorageImplementation* p = CopyStorage(b);
     if (p)
@@ -288,38 +310,38 @@ void DataStorageVoid::
 
 
 /*static*/ std::string DataStorageVoid::
-       getMemorySizeText( unsigned long long size, char decimals, char type )
+       getMemorySizeText( unsigned long long size, char decimals )
 {
-    if (type != 'g' && type != 'f')
-        type = 'g';
-
-    float value = (float)size;
+    double value = size;
     std::string unit;
     if (size>>40 > 4) {
         unit = "TB";
-        value = size/(float)(((unsigned long long )1)<<40);
+        value = size/double(((unsigned long long )1)<<40);
 
     } else if (size>>30 > 5) {
         unit = "GB";
-        value = size/(float)(1<<30);
+        value = size/double(1<<30);
 
     } else if (size>>20 > 5) {
         unit = "MB";
-        value = size/(float)(1<<20);
+        value = size/double(1<<20);
 
     } else if (size>>10 > 5) {
         unit = "KB";
-        value = size/(float)(1<<10);
+        value = size/double(1<<10);
 
     } else {
         return (boost::format("%u B") % size).str();
     }
 
+    // Not more than 2 decimals
+    value = int(value*100 + .5)/100.;
+
     std::string format;
     if (decimals < 0)
-        format = (boost::format("%%%c %s") % type % unit).str();
+        format = (boost::format("%%g %s") % unit).str();
     else
-        format = (boost::format("%%.%u%c %s") % decimals % type % unit).str();
+        format = (boost::format("%%.%df %s") % int(decimals) % unit).str();
 
     return (boost::format(format) % value).str();
 }
@@ -378,8 +400,8 @@ DataStorageImplementation* DataStorageVoid::
 {
     // Look for anything we have allocated that can use valid content from 'b'
     // Note. if b.validContent_ is empty this operator doesn't do anything.
-    StorageImplementations oldValidContent = validContent_;
-    validContent_.clear();
+    StorageImplementations oldValidContent;
+    oldValidContent.swap (validContent_);
 
     BOOST_FOREACH( DataStorageImplementation* p, oldValidContent )
     {

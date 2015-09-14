@@ -5,7 +5,6 @@
 #include "heightmap/visualizationparams.h"
 #include "heightmap/block.h"
 #include "heightmap/blockcache.h"
-#include "heightmap/render/glblock.h"
 
 namespace Heightmap {
 namespace BlockManagement {
@@ -24,8 +23,13 @@ public:
     BlockInitializer(BlockInitializer const&) = delete;
     BlockInitializer& operator=(BlockInitializer const&) = delete;
 
-    void      initBlock( pBlock b ) { initBlocks( std::vector<pBlock>{b}); }
-    void      initBlocks( const std::vector<pBlock>& );
+    /**
+     * @brief fillBlockFromOthers fills a block with data from other blocks.
+     * @param block
+     * @return Intervals that couldn't be merged with details from other blocks.
+     */
+    Signal::Intervals      initBlock( pBlock b ) { return initBlocks( std::vector<pBlock>{b}); }
+    Signal::Intervals      initBlocks( const std::vector<pBlock>& );
 
 private:
     BlockLayout block_layout_;

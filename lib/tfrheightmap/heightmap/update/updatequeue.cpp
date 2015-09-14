@@ -25,14 +25,14 @@ future<void> UpdateQueue::
 
 
 UpdateQueue::Job UpdateQueue::
-        pop()
+        pop ()
 {
     return q_.pop ();
 }
 
 
 UpdateQueue::queue UpdateQueue::
-        clear()
+        clear ()
 {
     return q_.clear ();
 }
@@ -46,9 +46,9 @@ bool UpdateQueue::
 
 
 void UpdateQueue::
-        abort_on_empty()
+        close ()
 {
-    return q_.abort_on_empty ();
+    return q_.close ();
 }
 
 } // namespace Update

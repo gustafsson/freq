@@ -30,16 +30,22 @@ public:
     struct shared_state_traits : shared_state_traits_backtrace {
         virtual double timeout () { return 4*shared_state_traits_default::timeout (); }
         virtual double verify_lock_time() { return timeout()/4.0f; }
+#if defined SHARED_STATE_NO_TIMEOUT
+        typedef shared_state_mutex_notimeout_noshared shared_state_mutex;
+#else
         typedef shared_state_mutex_noshared shared_state_mutex;
+#endif
     };
 
     // To be appended to exceptions while using Step
+    struct crashed_step_tag {};
     typedef boost::error_info<struct crashed_step_tag, Step::ptr> crashed_step;
 
     Step(Signal::OperationDesc::ptr operation_desc);
 
-    Signal::OperationDesc::ptr get_crashed() const;
+    static Signal::OperationDesc::ptr get_crashed(const_ptr step);
     Signal::Processing::IInvalidator::ptr mark_as_crashed_and_get_invalidator();
+    void undie();
 
     /**
      * @brief deprecateCache should mark which intervals the scheduler should find tasks for.
@@ -49,12 +55,33 @@ public:
      * deprecateCache returns which intervals in the cache that was affected by 'deprecated_input'
      */
     Signal::Intervals           deprecateCache(Signal::Intervals deprecated_input);
-    Signal::Intervals           not_started() const;
-    Signal::Intervals           out_of_date() const; // not_started | currently_processing
 
-    Signal::OperationDesc::ptr  operation_desc() const; // Safe to call without lock
+    /**
+     * @brief purge discards samples from the cache, freeing up memory
+     * @param still_needed describes which samples to keep
+     * @return how many samples that were released
+     */
+    size_t                      purge(Signal::Intervals still_needed, bool aggressive);
 
-    int                         registerTask(Signal::Interval expected_output);
+    /**
+     * @brief not_started describes which samples stuff might be in the cache or in the middle of being processed
+     * The cache isn't updated until a new interval is finished. When deprecateCache is called
+     * it affects the currently processing samples as well.
+     * @return
+     */
+    Signal::Intervals           not_started() const; // ~cache->samplesDesc() & ~currently_processing;
+
+    static Signal::OperationDesc::ptr operation_desc(const_ptr step);
+
+    /**
+     * @brief registerTask registers an interval as a work in progress
+     * @param expected_output which result that will be produced and given to finishTask
+     * @return a task id to be given to finishTask
+     *
+     * registerTask will block until there are no other tasks running for the same expected_output
+     */
+    static int                  registerTask(Step::ptr::write_ptr&, Signal::Interval expected_output);
+    static int                  registerTask(Step::ptr::write_ptr&&, Signal::Interval expected_output);
     static void                 finishTask(Step::ptr, int taskid, Signal::pBuffer result);
 
     /**
@@ -66,29 +93,35 @@ public:
     static bool                 sleepWhileTasks(Step::ptr::read_ptr&& step, int sleep_ms);
 
     /**
-     * @brief readFixedLengthFromCache should read a buffer from the cache.
-     * @param I
-     * @return If no task has finished yet, a null buffer. Otherwise the data
-     *         that is stored in the cache for given interval. Cache misses are
-     *         returned as 0 values.
+     * @brief cache returns a read-only cache. This can be used to query cache
+     * contents but not to update the cache. The cache is modified through
+     * purge() and finishTask ()
+     * @return
      */
-    static Signal::pBuffer      readFixedLengthFromCache(Step::const_ptr, Signal::Interval I);
+    static shared_state<const Signal::Cache> cache(const_ptr step);
 
 private:
-    typedef std::map<int, Signal::Interval> RunningTaskMap;
+    struct TaskInfo {
+        const int id;
+        const Signal::Interval expected_output;
+        Signal::Intervals valid_output;
+
+        TaskInfo(int id, Signal::Interval i) : id(id), expected_output(i), valid_output(i) {}
+    };
+
+    typedef std::list<TaskInfo> RunningTaskList;
 
     Signal::OperationDesc::ptr  died_;
     shared_state<Signal::Cache> cache_;
-    Signal::Intervals           not_started_;
     int                         task_counter_ = 0;
 
-    RunningTaskMap              running_tasks;
+    RunningTaskList             running_tasks;
 
     Signal::OperationDesc::ptr  operation_desc_;
 
     mutable std::condition_variable_any wait_for_tasks_;
 
-    std::string                 operation_name() const;
+    std::string                 operation_name() const; // doesn't need lock
     Signal::Intervals           currently_processing() const; // from running_tasks
 
 public:

@@ -40,26 +40,27 @@ pChunk DrawnWaveform::
     if (free > 64<<20)
         free = 64<<20;
 
-    unsigned wmax = free/(drawWaveform_YRESOLUTION*sizeof(Tfr::ChunkElement)*drawWaveform_BLOCK_SIZE ) * drawWaveform_BLOCK_SIZE;
+    size_t wmax = free/(drawWaveform_YRESOLUTION*sizeof(Tfr::ChunkElement)*drawWaveform_BLOCK_SIZE ) * drawWaveform_BLOCK_SIZE;
     if (0==wmax)
         wmax = free/(drawWaveform_YRESOLUTION*sizeof(Tfr::ChunkElement));
     if (0==wmax)
         wmax = 1;
     if (wmax < w)
-        w = wmax;
+        w = (unsigned)wmax;
 
     updateMaxValue(b);
 
     pChunk c(new DrawnWaveformChunk(this->block_fs));
     c->transform_data.reset( new ChunkData(w, drawWaveform_YRESOLUTION, 1));
 
-    unsigned readstop = b->number_of_samples();
+    // Can only draw waveforms shorter than 2 G elements
+    int readstop = (int)b->number_of_samples();
     if (b->getInterval().last > signal_length)
     {
         if (b->getInterval().first > signal_length)
             readstop = 0;
         else
-            readstop = signal_length - b->getInterval().first;
+            readstop = int(signal_length - b->getInterval().first);
     }
 
     float writeposoffs = ((b->sample_offset() / blobsize) - floorf((b->sample_offset() / blobsize).asFloat())).asFloat();

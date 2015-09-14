@@ -1,11 +1,6 @@
-// Include QObject and Boost.Foreach in that order to prevent conflicts with Qt foreach
-#include <QObject>
-#include <boost/foreach.hpp>
-
 #include "workers.h"
-#include "targetschedule.h"
+#include "signal/processing/targetschedule.h"
 #include "timer.h"
-#include "bedroomsignaladapter.h"
 #include "demangle.h"
 #include "tasktimer.h"
 
@@ -19,12 +14,11 @@ namespace Signal {
 namespace Processing {
 
 
-Workers::
-        Workers(ISchedule::ptr schedule, Bedroom::ptr bedroom)
+Workers::Workers(IWorkerFactory::ptr&& workerfactory)
     :
-      schedule_(schedule),
-      notifier_(new BedroomSignalAdapter(bedroom, this))
+      workerfactory_(move(workerfactory))
 {
+
 }
 
 
@@ -32,13 +26,15 @@ Workers::
         ~Workers()
 {
     try {
-        schedule_.reset ();
-        notifier_->quit_and_wait ();
-
-        //terminate_workers ();
         remove_all_engines ();
 
         print (clean_dead_workers());
+
+        workers_map_.clear ();
+
+        workerfactory_.reset ();
+
+        workers_.clear ();
     } catch (const std::exception& x) {
         fflush(stdout);
         fprintf(stderr, "%s",
@@ -57,29 +53,16 @@ Workers::
 }
 
 
-Worker::ptr Workers::
+void Workers::
         addComputingEngine(Signal::ComputingEngine::ptr ce)
 {
     if (workers_map_.find (ce) != workers_map_.end ())
         EXCEPTION_ASSERTX(false, "Engine already added");
 
-    Worker::ptr w(new Worker(ce, schedule_));
-    workers_map_[ce] = w;
+    Worker::ptr wp = workerfactory_->make_worker(ce);
+    workers_map_.insert (make_pair(ce,move(wp)));
 
     updateWorkers();
-    bool a = connect(&*w,
-            SIGNAL(finished(std::exception_ptr,Signal::ComputingEngine::ptr)),
-            SIGNAL(worker_quit(std::exception_ptr,Signal::ComputingEngine::ptr)));
-    bool b = connect(notifier_, SIGNAL(wakeup()), &*w, SLOT(wakeup()));
-    bool c = connect(&*w, SIGNAL(oneTaskDone()), notifier_, SIGNAL(wakeup()));
-    bool d = connect((Worker*)&*w, SIGNAL(finished(std::exception_ptr,Signal::ComputingEngine::ptr)), notifier_, SIGNAL(wakeup()));
-
-    EXCEPTION_ASSERT(a);
-    EXCEPTION_ASSERT(b);
-    EXCEPTION_ASSERT(c);
-    EXCEPTION_ASSERT(d);
-
-    return w;
 }
 
 
@@ -97,10 +80,9 @@ void Workers::
         else
           {
             workers_map_.erase (worker);
+            updateWorkers();
           }
       }
-
-    updateWorkers();
 }
 
 
@@ -123,8 +105,8 @@ size_t Workers::
 {
     size_t N = 0;
 
-    for(EngineWorkerMap::const_iterator i=workers_map_.begin (); i != workers_map_.end(); ++i) {
-        Worker::ptr worker = i->second;
+    for(const auto& i : workers_map_) {
+        const Worker::ptr& worker = i.second;
 
         if (worker && worker->isRunning ())
             N++;
@@ -134,16 +116,60 @@ size_t Workers::
 }
 
 
+double Workers::
+        activity() const
+{
+    double a = 0;
+
+    for(const auto& i : workers_map_) {
+        const Worker::ptr& worker = i.second;
+
+        if (worker)
+            a += worker->activity();
+    }
+
+    return a;
+}
+
+
+bool Workers::
+        wait(int timeout) const
+{
+    TIME_TERMINATE TaskTimer ti("wait(%d)", timeout);
+    bool ok = true;
+
+    for (const auto& i: workers_map_) {
+        if (i.second)
+            ok &= i.second->wait (timeout);
+    }
+
+    return ok;
+}
+
+
+bool Workers::
+        remove_all_engines(int timeout) const
+{
+    TIME_TERMINATE TaskTimer ti("remove_all_engines");
+
+    // Make sure the workers doesn't start anything new
+    for(const auto& i: workers_map_) {
+        if (i.second) i.second->abort();
+    }
+
+    return wait(timeout);
+}
+
+
 void Workers::
         updateWorkers()
 {
     Engines engines;
 
-    BOOST_FOREACH(EngineWorkerMap::value_type ewp, workers_map_) {
+    for (const auto& ewp: workers_map_)
         engines.push_back (ewp.first);
-    }
 
-    workers_ = engines;
+    workers_ = move(engines);
 }
 
 
@@ -152,8 +178,11 @@ Workers::DeadEngines Workers::
 {
     DeadEngines dead;
 
-    for (EngineWorkerMap::iterator i=workers_map_.begin (); i != workers_map_.end(); ++i) {
-        Worker::ptr worker = i->second;
+    for (EngineWorkerMap::iterator i=workers_map_.begin ();
+         i != workers_map_.end();
+         ++i)
+    {
+        const Worker::ptr& worker = i->second;
 
         if (!worker) {
             // The worker has been deleted
@@ -184,8 +213,6 @@ Workers::DeadEngines Workers::
                     }
                 }
                 dead[ce] = e;
-
-                worker->deleteLater ();
             }
         }
     }
@@ -205,14 +232,13 @@ void Workers::
         rethrow_any_worker_exception()
 {
     for (EngineWorkerMap::iterator i=workers_map_.begin (); i != workers_map_.end(); ++i) {
-        Worker::ptr worker = i->second;
+        Worker::ptr& worker = i->second;
 
         if (worker) {
             std::exception_ptr e = worker->caught_exception ();
             if (e) {
                 Signal::ComputingEngine::ptr ce = i->first;
 
-                worker->deleteLater ();
                 workers_map_.erase (i);
 
                 try {
@@ -233,68 +259,6 @@ void Workers::
 }
 
 
-bool Workers::
-        terminate_workers(int timeout)
-{
-    TIME_TERMINATE TaskTimer ti("terminate_workers");
-
-    remove_all_engines(timeout);
-
-    bool ok = true;
-
-    TIME_TERMINATE TaskInfo("terminate");
-    BOOST_FOREACH(EngineWorkerMap::value_type i, workers_map_) {
-        if (i.second) i.second->terminate ();
-    }
-
-    TIME_TERMINATE TaskInfo("wait(1000)");
-    // Wait for terminate to take effect
-    BOOST_FOREACH(EngineWorkerMap::value_type i, workers_map_) {
-        if (i.second) ok &= i.second->wait (1000);
-    }
-
-    return ok;
-}
-
-
-bool Workers::
-        wait(int timeout)
-{
-    TIME_TERMINATE TaskTimer ti("wait(%d)", timeout);
-
-    bool ok = true;
-
-    BOOST_FOREACH(EngineWorkerMap::value_type i, workers_map_) {
-        if (i.second)
-            ok &= i.second->wait (timeout);
-    }
-
-    return ok;
-}
-
-
-bool Workers::
-        remove_all_engines(int timeout) const
-{
-    TIME_TERMINATE TaskTimer ti("remove_all_engines");
-
-    bool ok = true;
-
-    // Make sure the workers doesn't start anything new
-    BOOST_FOREACH(EngineWorkerMap::value_type i, workers_map_) {
-        if (i.second) i.second->abort();
-    }
-
-    TIME_TERMINATE TaskInfo("wait(%d)", timeout);
-    // Give ISchedule and Task 1.0 s to return.
-    BOOST_FOREACH(EngineWorkerMap::value_type i, workers_map_) {
-        if (i.second) ok &= i.second->wait (timeout);
-    }
-
-    return ok;
-}
-
-
 void Workers::
         print(const DeadEngines& engines)
 {
@@ -303,7 +267,7 @@ void Workers::
 
     TaskInfo ti("Dead engines");
 
-    BOOST_FOREACH(Workers::DeadEngines::value_type e, engines) {
+    for (const DeadEngines::value_type& e : engines) {
         Signal::ComputingEngine::ptr engine = e.first;
         std::exception_ptr x = e.second;
         std::string enginename = engine ? vartype(*engine.get ()) : (vartype(engine.get ())+"==0");
@@ -333,12 +297,6 @@ void Workers::
 } // namespace Processing
 } // namespace Signal
 
-#include "expectexception.h"
-#include "bedroom.h"
-
-#include <QApplication>
-#include <atomic>
-
 namespace Signal {
 namespace Processing {
 
@@ -361,57 +319,9 @@ public:
 };
 
 
-class BlockScheduleMock: public ISchedule {
-protected:
-    virtual Task getTask(Signal::ComputingEngine::ptr) const override {
-        bedroom.wakeup ();
-
-        // This should block the thread and be aborted by QThread::terminate
-        dont_return();
-
-        EXCEPTION_ASSERT( false );
-
-        return Task();
-    }
-
-    virtual void dont_return() const = 0;
-
-public:
-    mutable Bedroom bedroom;
-};
-
-class SleepScheduleMock: public BlockScheduleMock {
-    virtual void dont_return() const override {
-        // Don't use this->getBed() as that Bedroom is used for something else.
-        Bedroom().getBed().sleep ();
-    }
-};
-
-
-class LockScheduleMock: public BlockScheduleMock {
-    virtual void dont_return() const override {
-        shared_state_mutex m;
-        m.lock (); // ok
-        m.lock (); // lock
-    }
-};
-
-
-class BusyScheduleMock: public BlockScheduleMock {
-    virtual void dont_return() const override {
-        for(;;) usleep(0); // Allow OS scheduling to kill the thread (just "for(;;);" would not)
-    }
-};
-
-
 void Workers::
-        test()
+    test(std::function<IWorkerFactory::ptr(ISchedule::ptr)> workerfactoryfactory)
 {
-    std::string name = "Workers";
-    int argc = 1;
-    char * argv = &name[0];
-    QApplication a(argc,&argv); // takes 0.4 s if this is the first instantiation of QApplication
-
     {
         UNITTEST_STEPS TaskInfo("It should start and stop computing engines as they are added and removed");
 
@@ -419,22 +329,21 @@ void Workers::
         double maxwait = 0;
         for (int j=0;j<100; j++){
             ISchedule::ptr schedule(new GetEmptyTaskMock);
-            Bedroom::ptr bedroom(new Bedroom);
-            Workers workers(schedule, bedroom);
+            Processing::Workers workers(workerfactoryfactory(schedule));
             workers.rethrow_any_worker_exception(); // Should do nothing
 
             Timer t;
             int worker_count = 40; // Number of threads to start. Multiplying by 10 multiplies the elapsed time by a factor of 100.
-            std::list<Worker::ptr> workerlist;
-            Worker::ptr w = workers.addComputingEngine(Signal::ComputingEngine::ptr());
-            workerlist.push_back (w);
-            for (int i=1; i<worker_count; ++i) {
-                Worker::ptr w = workers.addComputingEngine(Signal::ComputingEngine::ptr(new Signal::ComputingCpu));
-                workerlist.push_back (w);
-            }
+            workers.addComputingEngine(Signal::ComputingEngine::ptr());
+            for (int i=1; i<worker_count; ++i)
+                workers.addComputingEngine(Signal::ComputingEngine::ptr(new Signal::ComputingCpu));
+
+            std::list<Worker*> workerlist;
+            for(const auto& v : workers.workers_map())
+                workerlist.push_back (v.second.get());
 
             // Wait until they're done
-            BOOST_FOREACH (Worker::ptr& w, workerlist) { w->abort (); w->wait (); }
+            for (Worker* w: workerlist) { w->abort (); w->wait (); }
             maxwait = std::max(maxwait, t.elapsed ());
 
             int get_task_count = ((const GetEmptyTaskMock*)schedule.get ())->get_task_count;
@@ -447,16 +356,16 @@ void Workers::
                 EXCEPTION_ASSERTX(false, "Expected exception");
             } catch (const std::exception& x) {
                 const Signal::ComputingEngine::ptr* ce =
-                        boost::get_error_info<crashed_engine>(x);
+                        boost::get_error_info<Workers::crashed_engine>(x);
                 EXCEPTION_ASSERT(ce);
 
                 const std::string* cename =
-                        boost::get_error_info<crashed_engine_typename>(x);
+                        boost::get_error_info<Workers::crashed_engine_typename>(x);
                 EXCEPTION_ASSERT(cename);
             }
 
             Workers::DeadEngines dead = workers.clean_dead_workers ();
-            Engines engines = workers.workers();
+            Workers::Engines engines = workers.workers();
 
             EXCEPTION_ASSERT_EQUALS(engines.size (), 0u);
             EXCEPTION_ASSERT_EQUALS(dead.size (), (size_t)worker_count-1); // One was cleared by catching its exception above
@@ -467,54 +376,7 @@ void Workers::
 
 //        EXCEPTION_ASSERT_LESS(maxwait, 0.02);
     }
-
-    {
-        UNITTEST_STEPS TaskInfo("It should terminate all threads when it's closed");
-
-        ISchedule::ptr schedule[] = {
-            ISchedule::ptr(new SleepScheduleMock),
-            ISchedule::ptr(new LockScheduleMock),
-            ISchedule::ptr(new BusyScheduleMock)
-        };
-
-        for (unsigned i=0; i<sizeof(schedule)/sizeof(schedule[0]); i++) {
-            Timer t;
-            {
-                ISchedule::ptr s = schedule[i];
-                //TaskInfo ti(boost::format("%s") % vartype(*s));
-                Bedroom::ptr bedroom(new Bedroom);
-
-                Workers workers(s, bedroom);
-                Bedroom::Bed bed = dynamic_cast<BlockScheduleMock*>(s.get ())->bedroom.getBed();
-
-                workers.addComputingEngine(Signal::ComputingEngine::ptr());
-
-                // Wait until the schedule has been called (Bedroom supports
-                // that the wakeup in schedule is called even before this sleep call
-                // as long as 'bed' is allocated before the wakeup call)
-                bed.sleep ();
-
-                EXCEPTION_ASSERT_EQUALS(false, workers.remove_all_engines (10));
-                EXCEPTION_ASSERT_EQUALS(true, workers.terminate_workers (0));
-
-                EXCEPTION_ASSERT_EQUALS(workers.n_workers(), 0u);
-                EXPECT_EXCEPTION(Worker::TerminatedException, workers.rethrow_any_worker_exception ());
-                workers.clean_dead_workers ();
-            }
-            float elapsed = t.elapsed ();
-            float n = (i+1)*0.00001;
-            EXCEPTION_ASSERT_LESS(0.01+n, elapsed);
-            EXCEPTION_ASSERT_LESS(elapsed, 0.04+n); // +n makes it possible to see in the test log which iteration that failed
-        }
-    }
-
-    // It should wake up sleeping workers when any work is done to see if they can
-    // help out on what's left.
-    {
-
-    }
 }
-
 
 } // namespace Processing
 } // namespace Signal

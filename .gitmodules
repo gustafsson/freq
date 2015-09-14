@@ -1,12 +1,15 @@
-[submodule "lib/sonicawe-winlib"]
-	path = lib/sonicawe-winlib
-	url = git@bitbucket.org:MuchDifferent/sonicawe-winlib.git
-[submodule "lib/sonicawe-maclib"]
-	path = lib/sonicawe-maclib
-	url = git@bitbucket.org:MuchDifferent/sonicawe-maclib.git
-[submodule "lib/sonicawe-ubuntulib"]
-	path = lib/sonicawe-ubuntulib
-	url = git@bitbucket.org:MuchDifferent/sonicawe-ubuntulib.git
+[submodule "3rdparty/ios"]
+	path = 3rdparty/ios
+	url = https://github.com/gustafsson/freq-ios.git
+[submodule "3rdparty/windows"]
+	path = 3rdparty/windows
+	url = https://github.com/gustafsson/freq-windows.git
+[submodule "3rdparty/ubuntu"]
+	path = 3rdparty/ubuntu
+	url = https://github.com/gustafsson/freq-ubuntu.git
 [submodule "tests/integration"]
 	path = tests/integration
-	url = git@bitbucket.org:MuchDifferent/sonicawe-integration-tests.git
+	url = https://github.com/gustafsson/freq-integration.git
+[submodule "3rdparty/freetype-gl"]
+	path = 3rdparty/freetype-gl
+	url = https://github.com/gustafsson/freetype-gl.git

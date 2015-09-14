@@ -1,0 +1,39 @@
+About submodules, subtree, "git add" and copying source.
+
+
+submodules (.gitmodules, .git/modules, git submodule)
+-----------------------------------------------------
+These are used for 3rd party projects that are unlikely to be affected by the development of the container project. The container rarely updates which version of 3rd party project that is used. The 3rd party project is assumed to be more long term stable than the container project, i.e there is no need to embed the 3rd party project into the container project to ensure future builds. Why not use subtree? Because its ugly to copy the entire history of a completely independent project into a container repo, just referring its unique SHA1 is enough. It does add a separate step into the clone-setup-build procedure.
+
+
+subtree
+-------
+Neat for stand-alone projects that are being actively developed together with the container project. Commits can be tracked from either repo. Why not modules? Because it's messy to update the reference in a submodule.
+
+How to use "git subtree":
+http://blogs.atlassian.com/2013/05/alternatives-to-git-submodule-git-subtree/
+
+git remote add -f lib-backtrace https://github.com/gustafsson/backtrace.git
+git subtree add --prefix lib/backtrace lib-backtrace master
+
+Notably the command to update the sub-project at a later date becomes:
+git fetch 3rdparty-freetype-gl master
+git subtree pull --prefix lib/backtrace lib-backtrace master
+
+And contributing back to upstream is:
+git subtree push --prefix=lib/backtrace lib-backtrace master
+
+
+git add "contents of another repository in a subfolder"
+-------------------------------------------------------
+This could work for stand-alone projects that are being actively developed together with the container project. But commits and merges will be ugly. So this is essentially a no-go.
+
+
+git add "subfolder containing repository"
+-----------------------------------------
+Looks good at first. Git status correctly detects new commits, but it doesn't provide a means to follow with clone like submodules.
+
+
+git add files
+-------------
+Just copy the files when it doesn't make sense to keep the subproject as a stand-alone project separated from the container project.

@@ -2,7 +2,7 @@
 #define FANTRACKERVIEW_H
 
 #include <QObject>
-#include "renderview.h"
+#include "tools/renderview.h"
 #include "support/fantrackerfilter.h"
 #include "fantrackermodel.h"
 

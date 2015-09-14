@@ -58,6 +58,11 @@ public:
 
       But a Transform is required to return something valid for any input
       size.
+
+      Note: operator() must check that the given interval is valid and may return
+            an empty chunk if it isn't. This may typically happen if settings
+            are changed after the call to requiredInterval but before the call
+            to operator()
       */
     virtual pChunk operator()( Signal::pMonoBuffer b ) = 0;
 
@@ -101,8 +106,8 @@ public:
 
 
     /**
-      At what time resolution (1/sample rate) it is meaningful to display the
-      computed Chunks.
+      At what time resolution (distance in time between samples) it is
+      meaningful to display the computed Chunks.
       */
     virtual float displayedTimeResolution( float FS, float hz ) const = 0;
 
@@ -165,6 +170,7 @@ public:
      * 'I' changes.
      */
     virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const = 0;
+
 
     /**
       Returns a string representation of this transform. Mainly used for debugging.

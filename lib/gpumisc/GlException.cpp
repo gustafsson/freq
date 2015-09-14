@@ -16,7 +16,10 @@ void GlException::check_error( GLenum errorCode ) {
     if (GL_NO_ERROR != errorCode) {
         GlException x; x
                 << GlException_namedGlError(errorCode)
-                << GlException_namedGlErrorString((const char*)gluErrorString( errorCode ))
+                << GlException_namedGlErrorString(
+                       str(boost::format("errorCode=0x%X: %s")
+                           % errorCode
+                           % (const char*)gluErrorString( errorCode )))
                 << Backtrace::make(2);
 
         if (std::uncaught_exception())
@@ -49,7 +52,10 @@ void GlException::check_error( GLenum errorCode, const char* functionMacro,
 
         GlException x; x
                     << GlException_namedGlError(errorCode)
-                    << GlException_namedGlErrorString((const char*)gluErrorString( errorCode ))
+                    << GlException_namedGlErrorString(
+                           str(boost::format("errorCode=0x%X: %s")
+                               % errorCode
+                               % (const char*)gluErrorString( errorCode )))
                     << GlException_message((callerMessage?callerMessage:"") + context_error)
                     << Backtrace::make(2);
 

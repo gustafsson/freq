@@ -1,3 +1,7 @@
+// dead code
+// StatisticsRandom wasn't updated when class Statistics was updated to use DataStorage.
+#if 0
+
 #include "GpuCpuData.h"
 #include "tasktimer.h"
 #include <time.h>
@@ -229,3 +233,4 @@ protected:
 		return diffSum;
 	}
 };
+#endif

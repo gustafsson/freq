@@ -1,5 +1,6 @@
 #include "blockcache.h"
 #include "reference_hash.h"
+#include "heightmap/render/blocktextures.h"
 
 #include "tasktimer.h"
 
@@ -89,18 +90,32 @@ BlockCache::cache_t BlockCache::
     return C;
 }
 
+} // namespace Heightmap
+
+#include <QtWidgets> // QApplication
+#include <QtOpenGL> // QGLWidget
+
+namespace Heightmap {
 
 void BlockCache::
         test()
 {
+    std::string name = "BlockCache";
+    int argc = 1;
+    char * argv = &name[0];
+    QApplication a(argc,&argv);
+    QGLWidget w;
+    w.makeCurrent ();
+
     // It should store allocated blocks readily available
     {
         Reference r1;
         Reference r2 = r1.right ();
         BlockLayout bl(2,2,1);
+        Render::BlockTextures::Scoped bt_raii(bl.texels_per_row (),bl.texels_per_column ());
         VisualizationParams::ptr vp;
-        pBlock b1(new Block(r1, bl, vp));
-        pBlock b2(new Block(r2, bl, vp));
+        pBlock b1(new Block(r1, bl, vp, 0));
+        pBlock b2(new Block(r2, bl, vp, 0));
 
         BlockCache c;
         c.insert (b1);

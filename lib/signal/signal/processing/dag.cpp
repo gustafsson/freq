@@ -1,4 +1,4 @@
-#include <QObject>
+#include <QtCore> // QObject
 
 #include "dag.h"
 
@@ -96,8 +96,8 @@ void Dag::
     if (!v)
         return;
 
-    int id = in_degree(v, g_);
-    int od = out_degree(v, g_);
+    long id = in_degree(v, g_);
+    long od = out_degree(v, g_);
 
     if (id <= 1) {
         if (id == 1) {

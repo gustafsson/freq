@@ -123,8 +123,10 @@ public:
 
     /**
       Discards all memory allocated by 'this' instance.
+      If keep_allocated_data is true HasValidContent will return false for all
+      storages but AccessStorage will reuse previous memory allocations.
       */
-    void DiscardAllData();
+    void DiscardAllData(bool keep_allocated_data=false);
 
 
     /**
@@ -140,7 +142,7 @@ public:
     DataStorageVoid& operator=( const DataStorageVoid& );
 
 
-    static std::string getMemorySizeText( unsigned long long size, char decimals=-1, char type='g' );
+    static std::string getMemorySizeText( unsigned long long size, char decimals=-1 );
 
 
 protected:
@@ -287,6 +289,7 @@ class DataStorage: public DataStorageVoid
 {
 public:
     typedef boost::shared_ptr<DataStorage<T> > ptr;
+    typedef T element_type;
 
     DataStorage(DataAccessPosition_t size_x)
         :DataStorageVoid(DataStorageSize(size_x), sizeof(T))

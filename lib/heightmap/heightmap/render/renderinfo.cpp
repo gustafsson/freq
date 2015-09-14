@@ -3,62 +3,68 @@
 #include "heightmap/position.h"
 #include "heightmap/referenceinfo.h"
 #include "heightmap/render/frustumclip.h"
+#include "log.h"
 
 namespace Heightmap {
 namespace Render {
 
 
-RenderInfo::
-        RenderInfo(glProjection* gl_projection, BlockLayout bl, VisualizationParams::const_ptr vp, FrustumClip* frustum_clip, float redundancy)
+LevelOfDetail::
+        LevelOfDetail(bool valid)
     :
-      gl_projection(gl_projection),
+      LevelOfDetail(valid?1:-1, valid?1:-1, true, true)
+{}
+
+
+LevelOfDetail::
+        LevelOfDetail(double pixels_per_data_point_t, double pixels_per_data_point_s,
+              bool max_t, bool max_s)
+    :
+      pixels_per_data_point_t(pixels_per_data_point_t),
+      pixels_per_data_point_s(pixels_per_data_point_s),
+      max_t(max_t),
+      max_s(max_s)
+{
+}
+
+
+bool LevelOfDetail::
+        valid() const
+{
+    return pixels_per_data_point_t>=0 && pixels_per_data_point_s>=0;
+}
+
+
+RenderInfo::
+        RenderInfo(const glProjecter* gl_projecter, BlockLayout bl, VisualizationParams::const_ptr vp, float redundancy)
+    :
+      gl_projecter(gl_projecter),
       bl(bl),
       vp(vp),
-      frustum_clip(frustum_clip),
       redundancy(redundancy)
 {
 }
 
 
-RenderInfo::LevelOfDetal RenderInfo::
+LevelOfDetail RenderInfo::
         testLod( Reference ref ) const
 {
-    float timePixels, scalePixels;
-    Region r = RegionFactory ( bl )(ref);
+    double timePixels, scalePixels;
+    Region r = RegionFactory ( bl ).getVisible (ref);
     if (!computePixelsPerUnit( r, timePixels, scalePixels ))
-        return Lod_Invalid;
+        return false;
 
-    if(0) if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1]) {
-        fprintf(stdout, "Ref (%d,%d)\t%g\t%g\n", ref.block_index[0], ref.block_index[1], timePixels,scalePixels);
-        fflush(stdout);
-    }
+    double needBetterT = timePixels / (redundancy*bl.texels_per_row ()),
+           needBetterS = scalePixels / (redundancy*bl.texels_per_column ());
 
-    GLdouble needBetterF, needBetterT;
+    bool max_s =
+            !ReferenceInfo(ref.top(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighS) &&
+            !ReferenceInfo(ref.bottom(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighS);
 
-    if (0==scalePixels)
-        needBetterF = 1.01;
-    else
-        needBetterF = scalePixels / (redundancy*bl.texels_per_column ());
-    if (0==timePixels)
-        needBetterT = 1.01;
-    else
-        needBetterT = timePixels / (redundancy*bl.texels_per_row ());
+    bool max_t =
+            !ReferenceInfo(ref.left(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighT);
 
-    if (!ReferenceInfo(ref.top(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighS) &&
-        !ReferenceInfo(ref.bottom(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighS))
-        needBetterF = 0;
-
-    if (!ReferenceInfo(ref.left(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighT))
-        needBetterT = 0;
-
-    if ( needBetterF > needBetterT && needBetterF > 1 )
-        return Lod_NeedBetterF;
-
-    else if ( needBetterT > 1 )
-        return Lod_NeedBetterT;
-
-    else
-        return Lod_Ok;
+    return LevelOfDetail(needBetterT, needBetterS, max_t, max_s);
 }
 
 
@@ -70,47 +76,57 @@ bool RenderInfo::
 
 
 Region RenderInfo::
-        region(Reference ref) const
+        visible_region(Reference ref) const
 {
-    return RegionFactory(bl)(ref);
+    return RegionFactory(bl).getVisible (ref);
 }
 
 
 /**
-  @arg ref See timePixels and scalePixels
-  @arg timePixels Estimated longest line of pixels along time axis within ref measured in pixels
-  @arg scalePixels Estimated longest line of pixels along scale axis within ref measured in pixels
+  @arg r Region to study. Only the point in 'r' closest to the camera will be considered.
+  @arg timePixels Resolution in pixels per 'r.time()' time units
+  @arg scalePixels Resolution in pixels per 'r.scale()' scale unit
   */
 bool RenderInfo::
-        computePixelsPerUnit( Region r, float& timePixels, float& scalePixels ) const
+        computePixelsPerUnit( Region r, double& timePixels, double& scalePixels ) const
 {
     const Position p[2] = { r.a, r.b };
 
-    float y[]={0, float(frustum_clip->projectionPlane[1]*.5)};
+    Render::FrustumClip frustum_clip(*gl_projecter);
+    double y[]={0, frustum_clip.getCamera()[1]*.5};
     for (unsigned i=0; i<sizeof(y)/sizeof(y[0]); ++i)
     {
-        GLvector corner[]=
+        vectord corner[]=
         {
-            GLvector( p[0].time, y[i], p[0].scale),
-            GLvector( p[0].time, y[i], p[1].scale),
-            GLvector( p[1].time, y[i], p[1].scale),
-            GLvector( p[1].time, y[i], p[0].scale)
+            vectord( p[0].time, y[i], p[0].scale),
+            vectord( p[0].time, y[i], p[1].scale),
+            vectord( p[1].time, y[i], p[1].scale),
+            vectord( p[1].time, y[i], p[0].scale)
         };
 
-        GLvector closest_i;
-        std::vector<GLvector> clippedCorners = frustum_clip->clipFrustum(corner, closest_i); // about 10 us
+        // the resolution needed from the whole block is determinded by the
+        // resolution needed from the point of the block that is closest to
+        // the camera, start by finding that point
+        vectord closest_i;
+        std::vector<vectord> clippedCorners = frustum_clip.clipFrustum(corner, &closest_i); // about 10 us
         if (clippedCorners.empty ())
             continue;
 
-        GLvector::T
-                timePerPixel = 0,
-                freqPerPixel = 0;
-
-        gl_projection->computeUnitsPerPixel( closest_i, timePerPixel, freqPerPixel );
+        // use a small delta to estimate the resolution at closest_i
+        vectord::T deltaTime = 0.001*r.time (),
+                   deltaScale = 0.001*r.scale ();
+        vectord timePoint = closest_i + vectord(deltaTime,0,0);
+        vectord scalePoint = closest_i + vectord(0,0,deltaScale);
 
         // time/scalepixels is approximately the number of pixels in ref along the time/scale axis
-        timePixels = (p[1].time - p[0].time)/timePerPixel;
-        scalePixels = (p[1].scale - p[0].scale)/freqPerPixel;
+        vectord::T pixelsPerTime = gl_projecter->computePixelDistance (closest_i, timePoint) / deltaTime;
+        vectord::T pixelsPerScale = gl_projecter->computePixelDistance (closest_i, scalePoint) / deltaScale;
+        timePixels = pixelsPerTime * r.time ();
+        scalePixels = pixelsPerScale * r.scale ();
+
+        // fail if 'r' doesn't even cover a pixel
+        if (scalePixels < 0.5 || timePixels < 0.5)
+            continue;
 
         return true;
     }

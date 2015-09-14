@@ -1,0 +1,9 @@
+macx {
+DEFINES += USE_FREETYPE_GL
+
+LIBS += -L$$SAWEROOT/3rdparty/freetype-gl -lfreetype-gl -L/usr/local/lib -lfreetype
+
+INCLUDEPATH += $$SAWEROOT/3rdparty/freetype-gl
+macx:exists(/opt/local/include/) INCLUDEPATH += /opt/local/include/freetype2 # macports
+macx:exists(/usr/local/include/) INCLUDEPATH += /usr/local/include/freetype2 # homebrew
+}

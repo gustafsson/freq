@@ -1,7 +1,7 @@
 #include "playbackview.h"
 
 #include "playbackmodel.h"
-#include "renderview.h"
+#include "tools/renderview.h"
 #include "selectionmodel.h"
 #include "adapters/playback.h"
 #include "filters/ellipse.h"
@@ -111,9 +111,11 @@ void PlaybackView::
     if (follow_play_marker && 0<_playbackMarker)
     {
         Tools::RenderView& r = *_render_view;
-        if (r.model->_qx != _playbackMarker)
+        auto c = r.model->camera.write ();
+        if (c->q[0] != _playbackMarker)
         {
-            r.model->_qx = _playbackMarker;
+            c->q[0] = _playbackMarker;
+            c.unlock ();
 
             r.redraw();
         }
@@ -125,6 +127,7 @@ void PlaybackView::
 void PlaybackView::
         drawPlaybackMarker()
 {
+#ifdef LEGACY_OPENGL
     if (0>_playbackMarker)
         return;
 
@@ -152,7 +155,6 @@ void PlaybackView::
         glVertex3f( t, y, z1 );
     glEnd();
 
-    //glDisable(GL_BLEND);
     glDepthMask(true);
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -163,6 +165,7 @@ void PlaybackView::
         glVertex3f( t, y, z1 );
     glEnd();
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+#endif // LEGACY_OPENGL
 }
 
 
@@ -179,7 +182,7 @@ bool PlaybackView::
 //    if (!e || model->playbackTarget->post_sink()->filter() != model->selection->current_selection())
     if (!e)
         return false;
-
+#ifdef LEGACY_OPENGL
     glDepthMask(false);
 
     Heightmap::FreqAxis const& fa =
@@ -216,7 +219,7 @@ bool PlaybackView::
         glVertex3f( t, y, z1 );
     glEnd();
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
+#endif // LEGACY_OPENGL
     return true;
 }
 

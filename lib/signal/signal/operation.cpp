@@ -58,7 +58,7 @@ Signal::Processing::IInvalidator::ptr OperationDesc::
 bool OperationDesc::
         operator==(const OperationDesc& d) const
 {
-    &d?void():void(); // suppress unused argument warning
+    //&d?void():void(); // suppress unused argument warning
     return typeid(*this) == typeid(d);
 }
 

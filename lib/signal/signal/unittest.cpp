@@ -1,6 +1,7 @@
 #include "unittest.h"
 
 #include "signal/buffer.h"
+#include "signal/buffersource.h"
 #include "signal/cache.h"
 #include "signal/processing/bedroom.h"
 #include "signal/processing/chain.h"
@@ -13,8 +14,10 @@
 #include "signal/processing/targets.h"
 #include "signal/processing/targetschedule.h"
 #include "signal/processing/task.h"
-#include "signal/processing/worker.h"
-#include "signal/processing/workers.h"
+#include "signal/qteventworker/qteventworker.h"
+#include "signal/qteventworker/qteventworkerfactory.h"
+#include "signal/cvworker/cvworker.h"
+#include "signal/cvworker/cvworkerfactory.h"
 #include "signal/operationwrapper.h"
 
 // common backtrace tools
@@ -47,8 +50,10 @@ int UnitTest::
         Timer(); // Init performance counting
         TaskTimer tt("Running tests");
 
-        RUNTEST(Signal::Cache);
         RUNTEST(Signal::Intervals);
+        RUNTEST(Signal::Buffer);
+        RUNTEST(Signal::BufferSource);
+        RUNTEST(Signal::Cache);
         RUNTEST(Signal::Processing::Bedroom);
         RUNTEST(Signal::Processing::Dag);
         RUNTEST(Signal::Processing::FirstMissAlgorithm);
@@ -59,8 +64,10 @@ int UnitTest::
         RUNTEST(Signal::Processing::Targets);
         RUNTEST(Signal::Processing::TargetSchedule);
         RUNTEST(Signal::Processing::Task);
-        RUNTEST(Signal::Processing::Worker);
-        RUNTEST(Signal::Processing::Workers);
+        RUNTEST(Signal::QtEventWorker::QtEventWorker);
+        RUNTEST(Signal::QtEventWorker::QtEventWorkerFactory);
+        RUNTEST(Signal::CvWorker::CvWorker);
+        RUNTEST(Signal::CvWorker::CvWorkerFactory);
         RUNTEST(Signal::Processing::Chain); // Chain last
         RUNTEST(Signal::OperationDescWrapper);
 

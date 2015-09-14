@@ -3,6 +3,8 @@
 #include "demangle.h"
 #include "timer.h"
 
+#include <boost/exception_ptr.hpp>
+
 #ifdef __APPLE__
 #include <iostream>
 #include <stdio.h>
@@ -19,10 +21,9 @@
 using namespace boost;
 using namespace std;
 
-typedef error_info<struct failed_condition,const char*> failed_condition_type;
+typedef error_info<struct failed_condition,const boost::exception_ptr> failed_condition_type;
+typedef error_info<struct failed_to_parse_backtrace_string,const std::string> failed_to_parse_backtrace_string_type;
 
-void *bt_array[256];
-size_t array_size;
 void printSignalInfo(int sig);
 
 #ifdef __APPLE__
@@ -49,6 +50,9 @@ void Backtrace::
     fflush(stdout);
 
 #ifndef _MSC_VER
+    static void *bt_array[256];
+    static int array_size;
+
     // GCC supports malloc-free backtrace which is kind of neat
     // It does require the stack to grow though as this is a function call.
 
@@ -217,7 +221,7 @@ string Backtrace::
     if (!pretty_print_.empty ())
         return pretty_print_;
 
-    char** msg = backtrace_symbols(&frames_[0], frames_.size());
+    char** msg = backtrace_symbols(&frames_[0], (int)frames_.size());
     if (0 == msg)
         return "Couldn't get backtrace symbol names for pretty print";
 
@@ -226,11 +230,13 @@ string Backtrace::
     bool found_pretty = false;
 
 #ifdef __APPLE__
+    int p = 2+sizeof(void*)*2;
     string addrs;
     for (unsigned i=0; i < frames_.size(); ++i)
     {
         string s = msg[i];
-        string addr = s.substr (40, 18);
+
+        string addr = s.substr (40, p);
         addrs += addr + " ";
     }
 
@@ -239,7 +245,7 @@ string Backtrace::
     // 'atos' should be invoked through 'xcrun atos', but that crashes every
     // now and then, and takes much more time to execute.
     //string cmd = str(format("xcrun atos -p %1% %2%") % id % addrs);
-    string cmd = str(format("atos -d -p %1% %2%") % id % addrs);
+    string cmd = str(format("atos -p %1% %2%") % id % addrs);
 
     string op = exec_get_output(cmd);
     found_pretty = !op.empty();
@@ -253,9 +259,8 @@ string Backtrace::
         try
         {
 #ifdef __APPLE__
-            //string first = s.substr (4, 59-4);
-            size_t n = s.find_first_of (' ', 60);
-            string name = s.substr (59, n-59);
+            size_t n = s.find_first_of (' ', 42+p);
+            string name = s.substr (41+p, n-41-p);
             string last = s.substr (n);
 #else
             size_t n1 = s.find_last_of ('(');
@@ -351,34 +356,34 @@ void Backtrace::
             try {
 #ifdef _MSC_VER
                 EXCEPTION_ASSERTX( s.find ("throwfunction") != string::npos, s );
-                EXCEPTION_ASSERTX( s.find ("backtrace.cpp(307)") != string::npos, s );
+                EXCEPTION_ASSERTX( s.find ("backtrace.cpp(312)") != string::npos, s );
                 EXCEPTION_ASSERTX( s.find ("Backtrace::test") != string::npos, s );
                 EXCEPTION_ASSERTX( s.find ("main") != string::npos, s );
-                EXCEPTION_ASSERTX( s.find ("backtrace.cpp (307): throwfunction") != string::npos, s );
+                EXCEPTION_ASSERTX( s.find ("backtrace.cpp (312): throwfunction") != string::npos, s );
                 if(4==sizeof(void*) && !debug) // WoW64 w/ optimization behaves differently
-                    EXCEPTION_ASSERTX( s.find ("backtrace.cpp (347): Backtrace::test") != string::npos, s );
+                    EXCEPTION_ASSERTX( s.find ("backtrace.cpp (352): Backtrace::test") != string::npos, s );
                 else
-                    EXCEPTION_ASSERTX( s.find ("backtrace.cpp (345): Backtrace::test") != string::npos, s );
+                    EXCEPTION_ASSERTX( s.find ("backtrace.cpp (350): Backtrace::test") != string::npos, s );
 #else
                 EXCEPTION_ASSERTX( s.find ("throwfunction()") != string::npos, s );
-                EXCEPTION_ASSERTX( s.find ("backtrace.cpp(307)") != string::npos, s );
                 EXCEPTION_ASSERTX( s.find ("Backtrace::test()") != string::npos, s );
                 EXCEPTION_ASSERTX( s.find ("start") != string::npos, s );
 
-                EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:307)") != string::npos, s );
     #ifdef _DEBUG
+                // The backtrace.cpp file and line numbers will be removed by optimization
+                EXCEPTION_ASSERTX( s.find ("backtrace.cpp(312)") != string::npos, s );
+                EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:312)") != string::npos, s );
                 // The call to throwfunction will be removed by optimization
                 EXCEPTION_ASSERTX( s.find ("main") != string::npos, s );
-                EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:347)") != string::npos, s );
+                EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:352)") != string::npos, s );
     #else
-                EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:347)") == string::npos, s );
+                EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:352)") == string::npos, s );
     #endif
 #endif
                 break;
-            } catch (const ExceptionAssert& e) {
-                char const* const* condition = get_error_info<ExceptionAssert::ExceptionAssert_condition>(e);
-
-                x << failed_condition_type(*condition);
+            } catch (const ExceptionAssert&) {
+                x << failed_condition_type(boost::current_exception());
+                x << failed_to_parse_backtrace_string_type(s);
             }
             throw;
         } while (false);

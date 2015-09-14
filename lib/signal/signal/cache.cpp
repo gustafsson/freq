@@ -1,6 +1,7 @@
 #include "cache.h"
 
 #include "tasktimer.h"
+#include "log.h"
 #include "exceptionassert.h"
 #include "neat_math.h"
 #include "backtrace.h"
@@ -10,6 +11,18 @@
 using namespace boost;
 
 namespace Signal {
+
+static Buffer zeros(Signal::Interval I, float fs, int C)
+{
+    return Buffer(I,fs,C);
+}
+
+
+static pBuffer zerosp(Signal::Interval I, float fs, int C)
+{
+    return pBuffer(new Buffer(zeros(I, fs, C)));
+}
+
 
 Cache::
         Cache( )
@@ -37,49 +50,61 @@ void Cache::
 {
     bp->release_extra_resources();
 
+    if (this->num_channels () != int(bp->number_of_channels ()) || this->sample_rate () != bp->sample_rate ())
+    {
+        if (_valid_samples.empty ()) {
+            _cache.clear ();
+            _discarded.clear ();
+        } else {
+            if (num_channels () != int(bp->number_of_channels ()))
+                BOOST_THROW_EXCEPTION(InvalidBufferDimensions() << errinfo_format
+                                      (boost::format("Expected %d channels, got %d") %
+                                                num_channels () % bp->number_of_channels ()) << Backtrace::make ());
+
+            if (sample_rate () != bp->sample_rate ()) // Not fuzzy compare, must be identical.
+                BOOST_THROW_EXCEPTION(InvalidBufferDimensions() << errinfo_format
+                                      (boost::format("Expected fs=%g, got %g") %
+                                       sample_rate () % bp->sample_rate ()) << Backtrace::make ());
+        }
+    }
+
     const Buffer& b = *bp;
     allocateCache(b.getInterval(), b.sample_rate(), b.number_of_channels ());
 
     Timer t;
     for( std::vector<pBuffer>::iterator itr = findBuffer(b.getInterval().first); itr!=_cache.end(); itr++ )
-        **itr |= b;
+    {
+        Buffer& c = **itr;
+        if (c.getInterval ().first >= b.getInterval ().last)
+            break;
+        c |= b;
+    }
 
     _valid_samples |= b.getInterval();
 
     double T=t.elapsed ();
     if (T>10e-3)
-        TaskInfo(boost::format("!!! It took %s to put(%s) into cache") % TaskTimer::timeToString(T) % b.getInterval ());
+        Log("!!! It took %s to put(%s) into cache") % TaskTimer::timeToString(T) % b.getInterval ();
 }
 
 
 void Cache::
-        allocateCache( Interval I, float fs, int num_channels )
+        allocateCache( const Interval& J, float fs, int num_channels )
 {
-    int N = this->num_channels ();
-    float F = this->sample_rate ();
-    if (empty()) {
-        N = num_channels;
-        F = fs;
-    } else {
-        if (N != num_channels)
+    if (!empty())
+    {
+        if (this->num_channels () != num_channels)
             BOOST_THROW_EXCEPTION(InvalidBufferDimensions() << errinfo_format
                                   (boost::format("Expected %d channels, got %d") %
-                                            N % num_channels) << Backtrace::make ());
+                                            this->num_channels () % num_channels) << Backtrace::make ());
 
-        if (F != fs) // Not fuzzy compare, must be identical.
+        if (sample_rate () != fs) // Not fuzzy compare, must be identical.
             BOOST_THROW_EXCEPTION(InvalidBufferDimensions() << errinfo_format
                                   (boost::format("Expected fs=%g, got %g") %
-                                   F % fs) << Backtrace::make ());
+                                   sample_rate () % fs) << Backtrace::make ());
     }
 
-    // chunkSize 1 << ...
-    // 22 -> 1.8 ms
-    // 21 -> 1.5 ms
-    // 20 -> 1.2 ms -> 4 MB cache chunks
-    // 19 -> 1.2 ms
-    // 18 -> 1.2 ms
-    // 10 -> 1.2 ms
-    const IntervalType chunkSize = 1<<20;
+    Interval I = J;
     I.first = align_down(I.first, chunkSize);
     I.last = align_up(I.last, chunkSize);
 
@@ -96,9 +121,24 @@ void Cache::
             }
         }
 
-//        TaskTimer tt(boost::format("Allocating cache %s") % Interval(I.first, I.first+chunkSize));
+        pBuffer n;
+        if (!_discarded.empty ())
+        {
+            n = _discarded.back ();
+            _discarded.pop_back ();
+            // Log("Cache: Reusing previously discarded %s as %s for %s") % n->getInterval () % Interval(I.first, I.first+chunkSize) % J;
+            n->set_sample_offset (I.first);
+            n->set_sample_rate (fs);
+            for (int c=0; c<n->number_of_channels (); c++)
+                n->getChannel (c)->waveform_data ()->DiscardAllData(true);
+        }
 
-        pBuffer n( new Buffer( I.first, chunkSize, fs, num_channels) );
+        if (!n || n->number_of_channels () != num_channels || n->number_of_samples () != chunkSize)
+        {
+            // Log("Cache: Allocating new cache slot %s for %s") % Interval(I.first, I.first+chunkSize) % J;
+            n.reset ( new Buffer( I.first, chunkSize, fs, num_channels) );
+        }
+
         for (int i=0; i<num_channels; i++)
         {
             // Force allocation here, don't delay it.
@@ -121,10 +161,60 @@ void Cache::
 }
 
 
+Signal::Intervals Cache::
+        purge(Signal::Intervals still_needed, bool aggressive)
+{
+    Signal::Intervals purged;
+
+    for (auto itr = _cache.begin (); itr != _cache.end ();)
+    {
+        pBuffer b = *itr;
+        Signal::Interval i = b->getInterval();
+        if (i & still_needed)
+        {
+            itr++;
+            continue;
+        }
+        else
+        {
+            invalidate_samples (i);
+            purged |= i;
+            itr = _cache.erase (itr);
+
+            //if (!b->getChannel (0)->waveform_data ()->HasValidContent<CpuMemoryStorage>())
+            //    Log("purging non-allocated buffer %s") % i;
+
+            if (_discarded.size ()<2)
+                _discarded.push_back (b);
+        }
+    }
+
+    if (aggressive)
+        _discarded.clear ();
+
+    return purged;
+}
+
+
+size_t Cache::
+        cache_size() const
+{
+    size_t sz = 0;
+
+    for (pBuffer const& b : _cache)
+        for (int c=0; c<b->number_of_channels (); c++)
+            if (b->getChannel (c)->waveform_data ()->HasValidContent<CpuMemoryStorage>())
+                sz += b->getChannel (c)->number_of_samples ();
+
+    return sz * sizeof(Signal::TimeSeriesData::element_type);
+}
+
+
 void Cache::
         clear()
 {
-    _cache.clear();
+    _cache.clear ();
+    _discarded.clear ();
     _valid_samples = Intervals();
 }
 
@@ -144,16 +234,23 @@ void Cache::
     Timer t;
 
     Intervals sid(r->getInterval ());
-    while(sid)
+
+    // Make sure 'r' is allocated if it will receive any data
+    if (r->getInterval () & _valid_samples)
+        for (int c=0; c<r->number_of_channels (); c++)
+            CpuMemoryStorage::WriteAll<1>(r->getChannel (c)->waveform_data ());
+
+    while (sid)
     {
-        pBuffer p = readAtLeastFirstSample( sid.fetchFirstInterval() );
+        Interval s = sid.fetchFirstInterval ();
+        pBuffer p = readAtLeastFirstSample( s );
         *r |= *p; // Fill buffer
         sid -= p->getInterval();
     }
 
     double T=t.elapsed ();
     if (T > 10e-3 && T/r->number_of_samples ()>10e-6)
-        TaskInfo(boost::format("!!! It took %s to read(%s) from cache") % TaskTimer::timeToString(T) % r->number_of_samples ());
+        Log("!!! It took %s to read(%s) from cache") % TaskTimer::timeToString(T) % r->number_of_samples ();
 }
 
 
@@ -165,16 +262,10 @@ pBuffer Cache::
     Interval validFetch = (I & _valid_samples).fetchFirstInterval();
 
     if (!validFetch)
-    {
-        // return zeros
-        return pBuffer(new Buffer(I, sample_rate(), num_channels ()));
-    }
+        return zerosp(I, sample_rate(), num_channels ());
 
     if (validFetch.first > I.first)
-    {
-        // return zeros
-        return pBuffer( new Buffer(Interval(I.first, validFetch.first), sample_rate(), num_channels()) );
-    }
+        return zerosp(Interval(I.first, validFetch.first), sample_rate(), num_channels());
 
     // Find the cache chunk for sample I.first
     std::vector<pBuffer>::const_iterator itr = findBuffer(I.first);
@@ -183,19 +274,17 @@ pBuffer Cache::
 
     pBuffer b = *itr;
     Interval bI = b->getInterval ();
-    EXCEPTION_ASSERT_DBG( bI.contains (I.first) );
+    EXCEPTION_ASSERTX_DBG( bI.contains (I.first), boost::format("bI = %s, I = %s") % bI % I );
 
     // If all of b is ok, return b
     if ( _valid_samples.contains (bI) )
-    {
-        // TODO: if COW chunks could be created with an offset we could return all
-        // of b that is valid instead of just a copy of the portion that matches I.
-        // Would result in less copying by returning more data right away.
         return b;
-    }
 
     validFetch &= bI;
 
+    // TODO: if COW chunks could be created with an offset we could return all
+    // of b that is valid instead of just a copy of the portion that matches I.
+    // Would result in less copying by returning more data right away.
     pBuffer n = pBuffer(new Buffer(validFetch, b->sample_rate(), b->number_of_channels ()));
     *n |= *b;
     return n;
@@ -233,6 +322,23 @@ Interval Cache::
         spannedInterval() const
 {
     return _valid_samples.spannedInterval ();
+}
+
+
+Intervals Cache::
+        allocated() const
+{
+    Intervals I;
+    for (pBuffer b : _cache)
+        I |= b->getInterval ();
+    return I;
+}
+
+
+bool Cache::
+        contains(const Signal::Intervals& I) const
+{
+    return _valid_samples.contains (I);
 }
 
 

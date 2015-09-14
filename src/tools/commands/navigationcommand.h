@@ -2,6 +2,8 @@
 #define NAVIGATIONCOMMAND_H
 
 #include "viewcommand.h"
+#include "GLvector.h"
+#include "tools/support/rendercamera.h"
 
 namespace Tools {
     class RenderModel;
@@ -19,12 +21,7 @@ public:
 private:
     bool _is_set;
 
-    float _qx, _qy, _qz;
-    float _px, _py, _pz,
-        _rx, _ry, _rz;
-    float xscale;
-    float zscale;
-    float orthoview;
+    Tools::Support::RenderCamera camera;
     Tools::RenderModel* model;
 };
 

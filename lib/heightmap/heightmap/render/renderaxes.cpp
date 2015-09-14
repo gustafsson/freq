@@ -1,16 +1,15 @@
 #include "renderaxes.h"
 #include "frustumclip.h"
+#include "shaderresource.h"
 
 // gpumisc
 #include "tasktimer.h"
 #include "glPushContext.h"
-
-// glut
-#ifndef __APPLE__
-#   include <GL/glut.h>
-#else
-#   include <GLUT/glut.h>
-#endif
+#include "glstate.h"
+#include "GLvector.h"
+#include "gluperspective.h"
+#include "log.h"
+#include "GlException.h"
 
 //#define TIME_RENDERER
 #define TIME_RENDERER if(0)
@@ -19,38 +18,71 @@ namespace Heightmap {
 namespace Render {
 
 RenderAxes::
-        RenderAxes(
-                RenderSettings& render_settings,
-                glProjection* gl_projection,
-                Render::FrustumClip* frustum_clip,
-                FreqAxis display_scale)
+        RenderAxes()
     :
-      render_settings(render_settings),
-      gl_projection(gl_projection),
-      frustum_clip(frustum_clip),
-      display_scale(display_scale)
+      glyphs_(0)
 {
-    // Using glut for drawing fonts, so glutInit must be called.
-    static int c=0;
-    if (0==c)
-    {
-        // run glutinit once per process
-#ifdef _WIN32
-        c = 1;
-        char* dummy="dummy\0";
-        glutInit(&c,&dummy);
-#elif !defined(__APPLE__)
-        glutInit(&c,0);
-        c = 1;
-#endif
+    GlException_SAFE_CALL( glyphs_ = GlyphFactory::makeIGlyphs () );
 }
+
+
+RenderAxes::
+        ~RenderAxes()
+{
+    delete glyphs_;
+
+    if (!QOpenGLContext::currentContext ()) {
+        Log ("%s: destruction without gl context leaks vbos %d and %d") % __FILE__ % orthobuffer_ % vertexbuffer_;
+        return;
+    }
+
+    if (orthobuffer_)
+        glDeleteBuffers (1, &orthobuffer_);
+    if (vertexbuffer_)
+        glDeleteBuffers (1, &vertexbuffer_);
 }
 
 
 void RenderAxes::
-        drawAxes( float T )
+        drawAxes( const RenderSettings* render_settings,
+                  const glProjection* gl_projection,
+                  FreqAxis display_scale, float T )
 {
-    render_settings.last_axes_length = T;
+    this->render_settings = render_settings;
+    this->gl_projection = gl_projection;
+    this->display_scale = display_scale;
+
+    ae_.glyphs.clear ();
+    ae_.vertices.clear ();
+    ae_.orthovertices.clear ();
+
+    getElements(ae_, T);
+    GlException_SAFE_CALL( drawElements(ae_) );
+}
+
+
+tvector<4,GLfloat> make4(const tvector<2,GLfloat>& v) {
+    return tvector<4,GLfloat>(v[0], v[1], 0, 1);
+}
+
+tvector<4,GLfloat> make4(const vectord& v) {
+    return tvector<4,GLfloat>(v[0], v[1], v[2], 1);
+}
+
+template<int N,typename T> void addVertices(
+        std::vector<RenderAxes::Vertex>& vertices,
+        const tvector<4,GLfloat>& color,
+        const tvector<N,T>* V, int L)
+{
+    vertices.push_back (RenderAxes::Vertex{make4(V[0]),color}); // degenerate
+    for (int i=0; i<L; i++)
+        vertices.push_back (RenderAxes::Vertex{make4(V[i]),color});
+    vertices.push_back (RenderAxes::Vertex{make4(V[L-1]),color}); // degenerate
+}
+
+void RenderAxes::
+        getElements( RenderAxes::AxesElements& ae, float T )
+{
     TIME_RENDERER TaskTimer tt("drawAxes(length = %g)", T);
     // Draw overlay borders, on top, below, to the right or to the left
     // default left bottom
@@ -59,171 +91,158 @@ void RenderAxes::
     // 2 clip entire sound to frustum
     // 3 decide upon scale
     // 4 draw axis
-    glProjection* g = gl_projection;
-    const int* viewport_matrix = g->viewport_matrix ();
-    unsigned screen_width = viewport_matrix[2];
-    unsigned screen_height = viewport_matrix[3];
+    const glProjecter gi(*gl_projection);
+    const glProjecter* g = &gi;
 
-    float borderw = 12.5*1.1;
-    float borderh = 12.5*1.1;
+    unsigned screen_width = g->viewport[2];
+    unsigned screen_height = g->viewport[3];
+    auto& render_settings = *this->render_settings;
+
+    float borderw = 12.5*1.2;
+    float borderh = 12.5*1.3;
 
     float scale = render_settings.dpifactor;
-//    scale *= 2;
-
-    g->setZoom (scale);
     borderw *= scale;
     borderh *= scale;
 
     float w = borderw/screen_width, h=borderh/screen_height;
-    frustum_clip->update(w, h);
+    Render::FrustumClip frustum_clip(*g, w, h);
 
     if (render_settings.axes_border) { // 1 gray draw overlay
-        glPushMatrixContext push_model(GL_MODELVIEW);
-        glPushMatrixContext push_proj(GL_PROJECTION);
+        typedef tvector<2,GLfloat> GLvector2F;
+        GLvector2F v[] = {
+            GLvector2F(0, 0),
+            GLvector2F(w, h),
+            GLvector2F(1, 0),
+            GLvector2F(1-w, h),
+            GLvector2F(1, 1),
+            GLvector2F(1-w, 1-h),
+            GLvector2F(0, 1),
+            GLvector2F(w, 1-h),
+            GLvector2F(0, 0),
+            GLvector2F(w, h),
+        };
 
-        glLoadIdentity();
-        gluOrtho2D( 0, 1, 0, 1 );
-
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-
-        glDisable(GL_DEPTH_TEST);
-
-
-        glColor4f( 1.0f, 1.0f, 1.0f, .4f );
-        glBegin( GL_QUADS );
-            glVertex2f( 0, 0 );
-            glVertex2f( w, 0 );
-            glVertex2f( w, 1 );
-            glVertex2f( 0, 1 );
-
-            glVertex2f( w, 0 );
-            glVertex2f( 1-w, 0 );
-            glVertex2f( 1-w, h );
-            glVertex2f( w, h );
-
-            glVertex2f( 1, 0 );
-            glVertex2f( 1, 1 );
-            glVertex2f( 1-w, 1 );
-            glVertex2f( 1-w, 0 );
-
-            glVertex2f( w, 1 );
-            glVertex2f( w, 1-h );
-            glVertex2f( 1-w, 1-h );
-            glVertex2f( 1-w, 1 );
-        glEnd();
-
-        glEnable(GL_DEPTH_TEST);
-
-        //glDisable(GL_BLEND);
+        addVertices(ae.orthovertices, tvector<4,GLfloat>(1.0f, 1.0f, 1.0f, .4f), v, 10);
     }
 
     // 2 clip entire sound to frustum
-    clippedFrustum.clear();
+    std::vector<vectord> clippedFrustum;
 
-    GLvector closest_i;
+    vectord closest_i;
     {   //float T = collection->worker->source()->length();
-        GLvector corner[4]=
+        vectord corner[4]=
         {
-            GLvector( 0, 0, 0),
-            GLvector( 0, 0, 1),
-            GLvector( T, 0, 1),
-            GLvector( T, 0, 0),
+            vectord( 0, 0, 0),
+            vectord( 0, 0, 1),
+            vectord( T, 0, 1),
+            vectord( T, 0, 0),
         };
 
-        clippedFrustum = frustum_clip->clipFrustum (corner, closest_i);
+        clippedFrustum = frustum_clip.clipFrustum (corner, &closest_i);
     }
 
 
     // 3 find inside
-    GLvector inside;
+    vectord inside;
     {
         for (unsigned i=0; i<clippedFrustum.size(); i++)
             inside = inside + clippedFrustum[i];
 
         // as clippedFrustum is a convex polygon, the mean position of its vertices will be inside
-        inside = inside * (1.f/clippedFrustum.size());
+        inside = inside * (1./clippedFrustum.size());
+    }
+
+
+    // 3.1 compute units per pixel
+    std::vector<vectord::T> timePerPixel;
+    std::vector<vectord::T> scalePerPixel;
+    vectord::T timePerPixel_closest, scalePerPixel_closest;
+    vectord::T timePerPixel_inside, scalePerPixel_inside;
+    {
+        g->computeUnitsPerPixel( inside, timePerPixel_inside, scalePerPixel_inside );
+        timePerPixel_inside *= scale; scalePerPixel_inside *= scale;
+
+        g->computeUnitsPerPixel( closest_i, timePerPixel_closest, scalePerPixel_closest );
+        timePerPixel_closest *= scale; scalePerPixel_closest *= scale;
+
+        timePerPixel.resize (clippedFrustum.size());
+        scalePerPixel.resize (clippedFrustum.size());
+
+        for (unsigned i=0; i<clippedFrustum.size(); i++)
+        {
+            const vectord& p = clippedFrustum[i];
+            vectord::T tpp, spp;
+            g->computeUnitsPerPixel( p, tpp, spp );
+            timePerPixel[i] = tpp * scale;
+            scalePerPixel[i] = spp * scale;
+        }
     }
 
 
     // 4 render and decide upon scale
-    GLvector x(1,0,0), z(0,0,1);
-
-    glDepthMask(false);
-    glDisable(GL_DEPTH_TEST);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    vectord x(1,0,0), z(0,0,1);
 
     FreqAxis fa = display_scale;
     // loop along all sides
     typedef tvector<4,GLfloat> GLvectorF;
-    typedef tvector<2,GLfloat> GLvector2F;
-    std::vector<GLvectorF> ticks;
-    std::vector<GLvectorF> phatTicks;
-    std::vector<GLvector2F> quad(4);
 
     for (unsigned i=0; i<clippedFrustum.size(); i++)
     {
-        glColor4f(0,0,0,0.8);
         unsigned j=(i+1)%clippedFrustum.size();
-        GLvector p1 = clippedFrustum[i]; // starting point of side
-        GLvector p2 = clippedFrustum[j]; // end point of side
-        GLvector v0 = p2-p1;
+        vectord p1_0 = clippedFrustum[i]; // starting point of side
+        vectord p2_0 = clippedFrustum[j]; // end point of side
+        const vectord v0 = p2_0-p1_0;
 
         // decide if this side is a t or f axis
-        GLvector::T timePerPixel, scalePerPixel;
-        g->computeUnitsPerPixel( inside, timePerPixel, scalePerPixel );
-
-        bool taxis = fabsf(v0[0]*scalePerPixel) > fabsf(v0[2]*timePerPixel);
-
+        bool taxis = std::abs(v0[0]*scalePerPixel_inside) > std::abs(v0[2]*timePerPixel_inside);
 
         // decide in which direction to traverse this edge
-        GLvector::T timePerPixel1, scalePerPixel1, timePerPixel2, scalePerPixel2;
-        g->computeUnitsPerPixel( p1, timePerPixel1, scalePerPixel1 );
-        g->computeUnitsPerPixel( p2, timePerPixel2, scalePerPixel2 );
+        vectord::T timePerPixel1 = timePerPixel[i],
+                scalePerPixel1 = scalePerPixel[i],
+                timePerPixel2 = timePerPixel[j],
+                scalePerPixel2 = scalePerPixel[j];
 
         double dscale = 0.001;
-        double hzDelta1= fabs(fa.getFrequencyT( p1[2] + v0[2]*dscale ) - fa.getFrequencyT( p1[2] ));
-        double hzDelta2 = fabs(fa.getFrequencyT( p2[2] - v0[2]*dscale ) - fa.getFrequencyT( p2[2] ));
+        double hzDelta1= fabs(fa.getFrequencyT( p1_0[2] + v0[2]*dscale ) - fa.getFrequencyT( p1_0[2] ));
+        double hzDelta2 = fabs(fa.getFrequencyT( p2_0[2] - v0[2]*dscale ) - fa.getFrequencyT( p2_0[2] ));
 
         if ((taxis && timePerPixel1 > timePerPixel2) || (!taxis && hzDelta1 > hzDelta2))
         {
-            GLvector flip = p1;
-            p1 = p2;
-            p2 = flip;
+            std::swap(p1_0, p2_0);
+            std::swap(timePerPixel1, timePerPixel2);
+            std::swap(scalePerPixel1, scalePerPixel2);
         }
 
-        GLvector p = p1; // starting point
-        GLvector v = p2-p1;
+        if (render_settings.draw_axis_at0==-1)
+            (taxis?p1_0[2]:p1_0[0]) = ((taxis?p1_0[2]:p1_0[0])==0) ? 1 : 0;
+        const vectord& p1 = p1_0;
+        const vectord& p2 = p2_0;
+        const vectord v = p2-p1;
 
         if (!v[0] && !v[2]) // skip if |v| = 0
             continue;
 
-
-        GLvector::T timePerPixel_closest, scalePerPixel_closest;
-        g->computeUnitsPerPixel( closest_i, timePerPixel_closest, scalePerPixel_closest );
-
-        if (render_settings.draw_axis_at0==-1)
-        {
-            (taxis?p[2]:p[0]) = ((taxis?p[2]:p[0])==0) ? 1 : 0;
-            (taxis?p1[2]:p1[0]) = ((taxis?p1[2]:p1[0])==0) ? 1 : 0;
-        }
-
         // need initial f value
-        GLvector pp = p;
+        vectord p = p1; // starting point
+        vectord pp = p;
         double f = fa.getFrequencyT( p[2] );
 
         if (((taxis && render_settings.draw_t) || (!taxis && render_settings.draw_hz)) &&
             (render_settings.draw_axis_at0!=0?(taxis?p[2]==0:p[0]==0):true))
         for (double u=-1; true; )
         {
-            GLvector::T timePerPixel, scalePerPixel;
-            g->computeUnitsPerPixel( p, timePerPixel, scalePerPixel );
+            // linear interpolation, false, but good enough. The true value would
+            // be really slow.
+            vectord::T timePerPixel = timePerPixel1 + (u<0?0:u)*(timePerPixel2-timePerPixel1),
+                       scalePerPixel = scalePerPixel1 + (u<0?0:u)*(scalePerPixel2-scalePerPixel1);
+
             double ppp=0.4;
             timePerPixel = timePerPixel * ppp + timePerPixel_closest * (1.0-ppp);
             scalePerPixel = scalePerPixel * ppp + scalePerPixel_closest * (1.0-ppp);
 
-            double ST = timePerPixel * 750; // ST = time units per 750 pixels, 750 pixels is a fairly common window size
-            double SF = scalePerPixel * 750;
+            vectord::T ST = timePerPixel * 750; // ST = time units per 750 pixels, 750 pixels is a fairly common window size
+            vectord::T SF = scalePerPixel * 750;
             double drawScaleT = std::min(ST, 50*timePerPixel_closest*750);
             double drawScaleF = std::min(SF, 50*scalePerPixel_closest*750);
 
@@ -266,12 +285,12 @@ void RenderAxes::
             p[0] = t*DT;
 
             //int tmarkanyways = (bool)(fabsf(5*DT*tupdatedetail) > (ST / time_axis_density) && ((unsigned)(p[0]/DT + 0.5)%(tsubmultiple*tupdatedetail)==0) && ((unsigned)(p[0]/DT +.5)%(tmultiple*tupdatedetail)!=0));
-            int tmarkanyways = (bool)(fabsf(5*DT*tupdatedetail) > (ST / time_axis_density) && ((unsigned)(p[0]/DT + 0.5)%(tsubmultiple*tupdatedetail)==0));
+            int tmarkanyways = (bool)(std::abs(5*DT*tupdatedetail) > (ST / time_axis_density) && ((unsigned)(p[0]/DT + 0.5)%(tsubmultiple*tupdatedetail)==0));
             if (tmarkanyways)
                 st--;
 
             // compute index of next marker along t and f
-            double epsilon = 1.f/10;
+            double epsilon = 1./10;
             double hz1 = fa.getFrequencyT( p[2] - DF * epsilon );
             double hz2 = fa.getFrequencyT( p[2] + DF * epsilon );
             if (hz2-f < f-hz1)  hz1 = f;
@@ -293,8 +312,8 @@ void RenderAxes::
             double np1 = fa.getFrequencyScalarNotClampedT( f + fc);
             double np2 = fa.getFrequencyScalarNotClampedT( f - fc);
             int fmarkanyways = false;
-            fmarkanyways |= 0.9*fabsf(np1 - p[2]) > DF && 0.9*fabsf(np2 - p[2]) > DF && ((unsigned)(f / fc + .5)%1==0);
-            fmarkanyways |= 4.5*fabsf(np1 - p[2]) > DF && 4.5*fabsf(np2 - p[2]) > DF && ((unsigned)(f / fc + .5)%5==0);
+            fmarkanyways |= 0.9*std::abs(np1 - p[2]) > DF && 0.9*std::abs(np2 - p[2]) > DF && ((unsigned)(f / fc + .5)%1==0);
+            fmarkanyways |= 4.5*std::abs(np1 - p[2]) > DF && 4.5*std::abs(np2 - p[2]) > DF && ((unsigned)(f / fc + .5)%5==0);
             if (fmarkanyways)
                 sf--;
 
@@ -324,7 +343,7 @@ void RenderAxes::
                     tmarkanyways = 2;
                 }
             }
-            else if(render_settings.draw_cursor_marker)
+            else if(render_settings.draw_cursor_marker && fa.axis_scale != AxisScale_Unknown)
             {
                 float w = (render_settings.cursor[2] - pp[2])/(p[2] - pp[2]);
 
@@ -364,7 +383,7 @@ void RenderAxes::
             p[c2] = p1[c2] + v[c2]*u;
 
 
-            GLvector np = p;
+            vectord np = p;
             nf = f;
             int nt = t;
 
@@ -392,59 +411,42 @@ void RenderAxes::
                     if (-1 == tmarkanyways)
                         size = 1;
 
-                    float sign = (v0^z)%(v0^( p - inside))>0 ? 1.f : -1.f;
-                    float o = size*SF*.003f*sign;
+                    double sign = (v0^z)%(v0^( p - inside))>0 ? 1 : -1;
+                    vectord o { 0, 0, size*SF*.008*sign };
+                    vectord ow { ST*0.0005 * size, 0, 0 };
 
-                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0], 0.f, p[2], 1.f));
-                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0], 0.f, p[2]-o, 1.f));
+                    vectord v[] = {
+                        p - ow,
+                        p - ow - o,
+                        p + ow,
+                        p + ow - o
+                    };
+                    addVertices(ae.vertices, tvector<4,GLfloat>(0,0,0,0.8), v, 4 );
 
                     if (size>1) {
-                        glPushMatrixContext push_model( GL_MODELVIEW );
-
-                        glTranslatef(p[0], 0, p[2]);
-                        glRotatef(90,1,0,0);
-                        glScalef(0.00013f*drawScaleT,0.00013f*drawScaleF,1.f);
                         float angle = atan2(v0[2]/SF, v0[0]/ST) * (180*M_1_PI);
-                        glRotatef(angle,0,0,1);
+
+                        matrixd modelview { gl_projection->modelview };
+                        modelview *= matrixd::translate (p[0], 0, p[2]);
+                        modelview *= matrixd::rot (90,1,0,0);
+                        modelview *= matrixd::scale (0.013*drawScaleT, 0.013*drawScaleF, 1);
+                        modelview *= matrixd::rot (angle,0,0,1);
+
                         char a[100];
                         char b[100];
                         sprintf(b,"%%d:%%0%d.%df", 2+(st<-1?-st:0), st<0?-1-st:0);
                         int minutes = (int)(t*DT/60);
                         sprintf(a, b, minutes,t*DT-60*minutes);
-                        float w=0;
-                        float letter_spacing=15;
-
-                        for (char*c=a;*c!=0; c++) {
-                            if (c!=a)
-                                w+=letter_spacing;
-                            w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
-                        }
 
                         if (!render_settings.left_handed_axes)
-                            glScalef(-1,1,1);
-                        glTranslatef(0,70.f,0);
+                            modelview *= matrixd::scale (-1,1,1);
                         if (sign<0)
-                            glRotatef(180,0,0,1);
-                        glTranslatef(-.5f*w,-50.f,0);
-                        glColor4f(1,1,1,0.5);
-                        float z = 10;
-                        float q = 20;
-                        glEnableClientState(GL_VERTEX_ARRAY);
-                        quad[0] = GLvector2F(0 - z, 0 - q);
-                        quad[1] = GLvector2F(w + z, 0 - q);
-                        quad[2] = GLvector2F(0 - z, 100 + q);
-                        quad[3] = GLvector2F(w + z, 100 + q);
-                        glVertexPointer(2, GL_FLOAT, 0, &quad[0]);
-                        glDrawArrays(GL_TRIANGLE_STRIP, 0, quad.size());
-                        glDisableClientState(GL_VERTEX_ARRAY);
-                        glColor4f(0,0,0,0.8);
-                        for (char*c=a;*c!=0; c++) {
-                            glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
-                            glTranslatef(letter_spacing,0,0);
-                        }
+                            modelview *= matrixd::rot (180,0,0,1);
+
+                        ae.glyphs.push_back (GlyphData{std::move(modelview), a, 0.0, -0.05, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
                     }
                 }
-            } else {
+            } else if (fa.axis_scale != AxisScale_Unknown) {
                 if (0 == ((unsigned)floor(f/fc + .5))%fupdatedetail || fmarkanyways==2)
                 {
                     int size = 1;
@@ -455,57 +457,40 @@ void RenderAxes::
                     if (-1 == fmarkanyways)
                         size = 1;
 
+                    double sign = (v0^x)%(v0^( p - inside))>0 ? 1 : -1;
+                    vectord o { size*ST*.008*sign, 0, 0 };
+                    vectord ow { 0, 0, SF*0.0005 * size };
 
-                    float sign = (v0^x)%(v0^( p - inside))>0 ? 1.f : -1.f;
-                    float o = size*ST*.003f*sign;
-
-                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0], 0.f, p[2], 1.f));
-                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0]-o, 0.f, p[2], 1.f));
-
+                    vectord v[] = {
+                        p - ow,
+                        p - ow - o,
+                        p + ow,
+                        p + ow - o
+                    };
+                    addVertices(ae.vertices, tvector<4,GLfloat>(0,0,0,0.8), v, 4 );
 
                     if (size>1)
                     {
-                        glPushMatrixContext push_model( GL_MODELVIEW );
-
-                        glTranslatef(p[0],0,p[2]);
-                        glRotatef(90,1,0,0);
-                        glScalef(0.00013f*drawScaleT,0.00013f*drawScaleF,1.f);
                         float angle = atan2(v0[2]/SF, v0[0]/ST) * (180*M_1_PI);
-                        glRotatef(angle,0,0,1);
+
+                        matrixd modelview { gl_projection->modelview };
+                        modelview *= matrixd::translate (p[0],0,p[2]);
+                        modelview *= matrixd::rot (90,1,0,0);
+                        modelview *= matrixd::scale (0.013*drawScaleT, 0.013*drawScaleF, 1);
+                        modelview *= matrixd::rot (angle,0,0,1);
+
                         char a[100];
                         char b[100];
                         sprintf(b,"%%.%df", sf<0?-1-sf:0);
                         sprintf(a, b, f);
                         //sprintf(a,"%g", f);
-                        unsigned w=0;
-                        float letter_spacing=5;
 
-                        for (char*c=a;*c!=0; c++)
-                        {
-                            if (c!=a)
-                                w+=letter_spacing;
-                            w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
-                        }
                         if (!render_settings.left_handed_axes)
-                            glScalef(-1,1,1);
-                        glTranslatef(0,70.f,0);
+                            modelview *= matrixd::scale (-1,1,1);
                         if (sign<0)
-                            glRotatef(180,0,0,1);
-                        glTranslatef(-.5f*w,-50.f,0);
-                        glColor4f(1,1,1,0.5);
-                        float z = 10;
-                        float q = 20;
-                        glEnableClientState(GL_VERTEX_ARRAY);
-                        quad[0] = GLvector2F(0 - z, 0 - q);
-                        quad[1] = GLvector2F(w + z, 0 - q);
-                        quad[2] = GLvector2F(0 - z, 100 + q);
-                        quad[3] = GLvector2F(w + z, 100 + q);
-                        glVertexPointer(2, GL_FLOAT, 0, &quad[0]);
-                        glDrawArrays(GL_TRIANGLE_STRIP, 0, quad.size());
-                        glDisableClientState(GL_VERTEX_ARRAY);
-                        glColor4f(0,0,0,0.8);
-                        for (char*c=a;*c!=0; c++)
-                            glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+                            modelview *= matrixd::rot (180,0,0,1);
+
+                        ae.glyphs.push_back (GlyphData{std::move(modelview), a, 0.0, -0.05, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
                     }
                 }
             }
@@ -518,11 +503,11 @@ void RenderAxes::
 
         if (!taxis && render_settings.draw_piano && (render_settings.draw_axis_at0?p[0]==0:true))
         {
-            GLvector::T timePerPixel, scalePerPixel;
-            g->computeUnitsPerPixel( p + v*0.5, timePerPixel, scalePerPixel );
+            vectord::T timePerPixel = 0.5*(timePerPixel1 + timePerPixel2),
+                       scalePerPixel = 0.5*(scalePerPixel1 + scalePerPixel2);
 
             double ST = timePerPixel * 750;
-            // double SF = scalePerPixel * 750;
+            double SF = scalePerPixel * 750;
 
             // from http://en.wikipedia.org/wiki/Piano_key_frequencies
             // F(n) = 440 * pow(pow(2, 1/12),n-49)
@@ -536,14 +521,14 @@ void RenderAxes::
             if (F2<F1) { unsigned swap = F2; F2=F1; F1=swap; }
             if (!(F1>fa.min_hz)) F1=fa.min_hz;
             if (!(F2<fa.max_hz())) F2=fa.max_hz();
-            float tva12 = powf(2.f, 1.f/12);
+            double tva12 = powf(2., 1./12);
 
 
             if (0 == F1)
                 F1 = 1;
-            int startTone = log(F1/440.f)/log(tva12) + 45;
-            int endTone = ceil(log(F2/440.f)/log(tva12)) + 45;
-            float sign = (v^x)%(v^( clippedFrustum[i] - inside))>0 ? 1.f : -1.f;
+            int startTone = log(F1/440.)/log(tva12) + 45;
+            int endTone = ceil(log(F2/440.)/log(tva12)) + 45;
+            double sign = (v^x)%(v^( clippedFrustum[i] - inside))>0 ? 1 : -1;
             if (!render_settings.left_handed_axes)
                 sign *= -1;
 
@@ -562,7 +547,6 @@ void RenderAxes::
                 switch((toneTest+11)%12) { case 1: case 3: case 6: case 8: case 10: blackKeyP = true; }
                 bool blackKeyN = false;
                 switch((toneTest+1)%12) { case 1: case 3: case 6: case 8: case 10: blackKeyN = true; }
-                glLineWidth(1);
                 float wN = ffN-ff, wP = ff-ffP;
                 if (blackKey)
                     wN *= .5, wP *= .5;
@@ -576,17 +560,19 @@ void RenderAxes::
                 float u = (ff - p1[2])/v[2];
                 float un = (ff+wN - p1[2])/v[2];
                 float up = (ff-wP - p1[2])/v[2];
-                GLvector pt = p1+v*u;
-                GLvector pn = p1+v*un;
-                GLvector pp = p1+v*up;
+                vectord pt = p1+v*u;
+                vectord pn = p1+v*un;
+                vectord pp = p1+v*up;
 
-                glPushMatrixContext push_model( GL_MODELVIEW );
-
-                float xscale = 0.016000f;
+                vectord dx { 0.016000*ST, 0, 0 };
                 float blackw = 0.4f;
 
                 if (sign>0)
-                    glTranslatef( xscale*ST, 0.f, 0.f );
+                {
+                    pp += dx;
+                    pn += dx;
+                    pt += dx;
+                }
 
                 tvector<4,GLfloat> keyColor(0,0,0, 0.7f * blackKey);
                 if (render_settings.draw_cursor_marker)
@@ -605,134 +591,224 @@ void RenderAxes::
 
                 if (keyColor[3] != 0)
                 {
-                    glColor4fv(keyColor.v);
                     if (blackKey)
                     {
-                        glBegin(GL_TRIANGLE_STRIP);
-                            glVertex3f(pp[0] - xscale*ST*(1.f), 0, pp[2]);
-                            glVertex3f(pp[0] - xscale*ST*(blackw), 0, pp[2]);
-                            glVertex3f(pn[0] - xscale*ST*(1.f), 0, pn[2]);
-                            glVertex3f(pn[0] - xscale*ST*(blackw), 0, pn[2]);
-                        glEnd();
+                        vectord v[] = {
+                            pp - dx,
+                            pp - dx*blackw,
+                            pn - dx,
+                            pn - dx*blackw,
+                        };
+
+                        addVertices(ae.vertices, keyColor, v, 4);
                     }
                     else
                     {
-                        glBegin(GL_TRIANGLE_FAN);
-                            if (blackKeyP)
-                            {
-                                glVertex3dv((pp*0.5 + pt*0.5 - GLvector(xscale*ST*(blackw), 0, 0)).v);
-                                glVertex3f(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
-                            }
-                            glVertex3f(pp[0] - xscale*ST*(0.f), 0, pp[2]);
-                            glVertex3f(pn[0] - xscale*ST*(0.f), 0, pn[2]);
-                            glVertex3f(pn[0] - xscale*ST*(blackKeyN ? blackw : 1.f), 0, pn[2]);
-                            if (blackKeyN)
-                            {
-                                glVertex3dv((pn*0.5 + pt*0.5 - GLvector(xscale*ST*(blackw), 0, 0)).v);
-                                glVertex3dv((pn*0.5 + pt*0.5 - GLvector(xscale*ST*(1.f), 0, 0)).v);
-                            }
-                            if (blackKeyP)
-                                glVertex3dv((pp*0.5 + pt*0.5 - GLvector(xscale*ST*(1.f), 0, 0)).v);
-                            else
-                                glVertex3f(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
-                        glEnd();
+                        vectord v[] = {
+                            vectord (pp - dx*(blackKeyP ? blackw : 1.)),
+                            vectord (pp),
+                            vectord (pp*0.5 + pt*0.5 - dx*(blackKeyP ? blackw : 1.)),
+                            vectord (pp*0.5 + pt*0.5),
+                            vectord (pp*0.5 + pt*0.5),
+                            vectord (pp*0.5 + pt*0.5 - dx), // backside
+                            vectord (pn*0.5 + pt*0.5),
+                            vectord (pn*0.5 + pt*0.5 - dx),
+                            vectord (pn*0.5 + pt*0.5 - dx),
+                            vectord (pn*0.5 + pt*0.5),
+                            vectord (pn*0.5 + pt*0.5),
+                            vectord (pn*0.5 + pt*0.5 - dx*(blackKeyN ? blackw : 1.)),
+                            vectord (pn),
+                            vectord (pn - dx*(blackKeyN ? blackw : 1.))
+                        };
+
+                        addVertices(ae.vertices, keyColor, v, 14);
                     }
                 }
 
-                // outline
-                glColor4f(0,0,0,0.8);
-                    glBegin(GL_LINES );
-                        glVertex3f(pn[0] - xscale*ST, 0, pn[2]);
-                        glVertex3f(pp[0] - xscale*ST, 0, pp[2]);
-                    glEnd();
-                    glBegin(GL_LINE_STRIP);
-                        glVertex3f(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
-                        glVertex3f(pp[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pp[2]);
-                        glVertex3f(pn[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pn[2]);
-                        glVertex3f(pn[0] - xscale*ST*(blackKeyN ? blackw : 1.f), 0, pn[2]);
-                    glEnd();
 
-                glColor4f(0,0,0,0.8);
+                // outline
+                vectord lx { 0.0005*ST, 0, 0 };
+                vectord ly { 0, 0, 0.0005*SF };
+                vectord v[] = {
+                    pn - dx - lx,
+                    pn - dx + lx,
+                    pp - dx - lx,
+                    pp - dx + lx
+                };
+                addVertices(ae.vertices, tvector<4,GLfloat>(0,0,0,0.8), v, 4 );
+
+                vectord v2[] = {
+                    pp - dx*(blackKeyP ? blackw : 1.) - ly,
+                    pp - dx*(blackKeyP ? blackw : 1.) + ly,
+                    pp - dx*(blackKey ? blackw : 0.) - ly - lx,
+                    pp - dx*(blackKey ? blackw : 0.) + ly + lx,
+                    pn - dx*(blackKey ? blackw : 0.) + ly + lx,
+                    pn - dx*(blackKey ? blackw : 0.) - ly - lx,
+                    pn - dx*(blackKeyN ? blackw : 1.) + ly,
+                    pn - dx*(blackKeyN ? blackw : 1.) - ly
+                };
+                addVertices(ae.vertices, tvector<4,GLfloat>(0,0,0,0.8), v2, 8 );
 
                 if (tone%12 == 0)
                 {
-                    glLineWidth(1);
+                    matrixd modelview { gl_projection->modelview };
+                    modelview *= matrixd::translate ( pp[0], 0, pp[2] );
+                    modelview *= matrixd::rot (90,1,0,0);
 
-                    glPushMatrixContext push_model( GL_MODELVIEW );
-                    glTranslatef(pp[0], 0, pp[2]);
-                    glRotatef(90,1,0,0);
+                    //modelview *= matrixd::scale (0.00014*ST, 0.00014*SF, 1);
+                    modelview *= matrixd::scale (0.5 * dx[0], 35. * dx[0]/ST*(pn[2]-pp[2]), 1.);
 
-                    //glScalef(0.00014f*ST,0.00014f*SF,1.f);
-                    glScalef(0.005 * xscale*ST,0.35 * xscale*(pn[2]-pp[2]),1.f);
+                    if (!render_settings.left_handed_axes)
+                        modelview *= matrixd::scale (-1,1,1);
 
                     char a[100];
                     sprintf(a,"C%d", tone/12+1);
-                    float w=10;
-                    for (char*c=a;*c!=0; c++)
-                        w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
-                    if (!render_settings.left_handed_axes)
-                        glScalef(-1,1,1);
-                    glTranslatef(-w,0,0);
-                    glColor4f(1,1,1,0.5);
-                    float z = 10;
-                    float q = 20;
-                    glBegin(GL_TRIANGLE_STRIP);
-                        glVertex2f(0 - z, 0 - q);
-                        glVertex2f(w + z, 0 - q);
-                        glVertex2f(0 - z, 100 + q);
-                        glVertex2f(w + z, 100 + q);
-                    glEnd();
-                    glColor4f(0,0,0,0.9);
-                    for (char*c=a;*c!=0; c++)
-                        glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+                    ae.glyphs.push_back (GlyphData{std::move(modelview), a, 0.1, -0.05, 1., 0.});
                 }
             }
         }
     }
-
-    glEnableClientState(GL_VERTEX_ARRAY);
-    if (!phatTicks.empty())
-    {
-        glLineWidth(2);
-        glVertexPointer(4, GL_FLOAT, 0, &phatTicks[0]);
-        glDrawArrays(GL_LINES, 0, phatTicks.size());
-        glLineWidth(1);
-    }
-    if (!ticks.empty())
-    {
-        glVertexPointer(4, GL_FLOAT, 0, &ticks[0]);
-        glDrawArrays(GL_LINES, 0, ticks.size());
-    }
-    glDisableClientState(GL_VERTEX_ARRAY);
-
-    glEnable(GL_DEPTH_TEST);
-    glDepthMask(true);
-
-    g->setZoom (1);
 }
 
 
-std::vector<GLvector> RenderAxes::
-        getClippedFrustum()
+void RenderAxes::
+        drawElements( const RenderAxes::AxesElements& ae)
 {
-    return clippedFrustum;
+    if (!program_)
+    {
+        program_ = ShaderResource::loadGLSLProgramSource (
+                                          R"vertexshader(
+                                              attribute highp vec4 qt_Vertex;
+                                              attribute highp vec4 colors;
+                                              uniform highp mat4 qt_ModelViewMatrix;
+                                              uniform highp mat4 qt_ProjectionMatrix;
+                                              varying highp vec4 color;
+
+                                              void main() {
+                                                  gl_Position = qt_ProjectionMatrix * (qt_ModelViewMatrix * qt_Vertex);
+                                                  color = colors;
+                                              }
+                                          )vertexshader",
+                                          R"fragmentshader(
+                                              varying highp vec4 color;
+
+                                              void main() {
+                                                  gl_FragColor = color;
+                                              }
+                                          )fragmentshader");
+        if (program_->isLinked())
+        {
+            uni_ProjectionMatrix = program_->uniformLocation("qt_ProjectionMatrix");
+            uni_ModelViewMatrix = program_->uniformLocation("qt_ModelViewMatrix");
+            attrib_Vertex = program_->attributeLocation("qt_Vertex");
+            attrib_Color = program_->attributeLocation("colors");
+        }
+
+        orthoprogram_ = ShaderResource::loadGLSLProgramSource (
+                                          R"vertexshader(
+                                              attribute highp vec4 qt_Vertex;
+                                              attribute highp vec4 colors;
+                                              uniform highp mat4 qt_ProjectionMatrix;
+                                              varying highp vec4 color;
+
+                                              void main() {
+                                                  gl_Position = qt_ProjectionMatrix * qt_Vertex;
+                                                  color = colors;
+                                              }
+                                          )vertexshader",
+                                          R"fragmentshader(
+                                              varying highp vec4 color;
+
+                                              void main() {
+                                                  gl_FragColor = color;
+                                              }
+                                          )fragmentshader");
+        if (orthoprogram_->isLinked())
+        {
+            uni_OrthoProjectionMatrix = orthoprogram_->uniformLocation("qt_ProjectionMatrix");
+            attrib_OrthoVertex = orthoprogram_->attributeLocation("qt_Vertex");
+            attrib_OrthoColor = orthoprogram_->attributeLocation("colors");
+
+            matrixd ortho;
+            glhOrtho(ortho.v (), 0, 1, 0, 1, -1, 1);
+
+            GlState::glUseProgram (orthoprogram_->programId());
+            orthoprogram_->setUniformValue(uni_OrthoProjectionMatrix,
+                                      QMatrix4x4(GLmatrixf(ortho).transpose ().v ()));
+        }
+    }
+
+    if (!program_->isLinked () || !orthoprogram_->isLinked ())
+        return;
+
+    GlState::glDisable (GL_DEPTH_TEST);
+    glDepthMask(false);
+    GlState::glEnable (GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    GlState::glEnableVertexAttribArray (0);
+    GlState::glEnableVertexAttribArray (1);
+
+    if (!ae.orthovertices.empty () && orthoprogram_->isLinked ())
+    {
+        GlState::glUseProgram (orthoprogram_->programId());
+
+        if (!orthobuffer_)
+            GlException_SAFE_CALL( glGenBuffers(1, &orthobuffer_) );
+        GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, orthobuffer_) );
+        if (orthobuffer_size_ < ae.orthovertices.size () || ae.orthovertices.size () < 4*orthobuffer_size_)
+        {
+            GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*ae.orthovertices.size (), &ae.orthovertices[0], GL_STREAM_DRAW) );
+            orthobuffer_size_ = ae.orthovertices.size ();
+            orthoprogram_->setAttributeBuffer(attrib_OrthoVertex, GL_FLOAT, 0, 4, sizeof(Vertex));
+            orthoprogram_->setAttributeBuffer(attrib_OrthoColor, GL_FLOAT, sizeof(tvector<4,GLfloat>), 4, sizeof(Vertex));
+        }
+        else
+        {
+            glBufferSubData (GL_ARRAY_BUFFER, 0, sizeof(Vertex)*ae.orthovertices.size (), &ae.orthovertices[0]);
+        }
+
+        GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.orthovertices.size());
+    }
+
+    if (!ae.vertices.empty () && program_->isLinked ())
+    {
+        GlState::glUseProgram (program_->programId());
+
+        if (!vertexbuffer_)
+            GlException_SAFE_CALL( glGenBuffers(1, &vertexbuffer_) );
+        GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_) );
+        if (vertexbuffer_size_ < ae.vertices.size () || ae.vertices.size () < 4*vertexbuffer_size_)
+        {
+            GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*ae.vertices.size (), &ae.vertices[0], GL_STREAM_DRAW) );
+            vertexbuffer_size_ = ae.vertices.size ();
+            program_->setAttributeBuffer(attrib_Vertex, GL_FLOAT, 0, 4, sizeof(Vertex));
+            program_->setAttributeBuffer(attrib_Color, GL_FLOAT, sizeof(tvector<4,GLfloat>), 4, sizeof(Vertex));
+        }
+        else
+        {
+            glBufferSubData (GL_ARRAY_BUFFER, 0, sizeof(Vertex)*ae.vertices.size (), &ae.vertices[0]);
+        }
+
+        program_->setUniformValue(uni_ProjectionMatrix,
+                                  QMatrix4x4(GLmatrixf(gl_projection->projection).transpose ().v ()));
+        program_->setUniformValue(uni_ModelViewMatrix,
+                                  QMatrix4x4(GLmatrixf(gl_projection->modelview).transpose ().v ()));
+
+        GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.vertices.size());
+    }
+
+    GlState::glUseProgram (0);
+
+    GlState::glDisableVertexAttribArray (1);
+    GlState::glDisableVertexAttribArray (0);
+
+    GlException_SAFE_CALL( glyphs_->drawGlyphs (*gl_projection, ae.glyphs) );
+
+    GlState::glDisable (GL_BLEND);
+    GlState::glEnable (GL_DEPTH_TEST);
+    glDepthMask(true);
 }
-
-
-//void Renderer::
-//        frustumMinMaxT( float& min_t, float& max_t )
-//{
-//    max_t = 0;
-//    min_t = FLT_MAX;
-
-//    for ( GLvector v : clippedFrustum)
-//    {
-//        if (max_t < v[0])
-//            max_t = v[0];
-//        if (min_t > v[0])
-//            min_t = v[0];
-//    }
-//}
 
 
 } // namespace Render

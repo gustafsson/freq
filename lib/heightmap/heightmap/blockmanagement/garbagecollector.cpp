@@ -1,9 +1,9 @@
 #include "garbagecollector.h"
 #include "heightmap/blockcacheinfo.h"
 #include "heightmap/referenceinfo.h"
-#include "heightmap/render/glblock.h"
 #include "heightmap/visualizationparams.h"
 #include "heightmap/reference_hash.h"
+#include "heightmap/render/blocktextures.h"
 
 #include "tasktimer.h"
 #include "log.h"
@@ -24,7 +24,7 @@ namespace Heightmap {
 namespace Blocks {
 
 
-pBlock getOldestBlock(unsigned frame_counter, BlockCache::cache_t& cache, unsigned min_age) {
+pBlock getOldestBlock(unsigned frame_counter, const BlockCache::cache_t& cache, unsigned min_age) {
     typedef const BlockCache::cache_t::value_type pair;
     auto i = std::max_element(cache.begin(), cache.end(), [frame_counter](pair& a, pair& b) {
             unsigned age_a = frame_counter - a.second->frame_number_last_used;
@@ -65,71 +65,14 @@ unsigned GarbageCollector::
 
 
 pBlock GarbageCollector::
-        runOnce(unsigned frame_counter)
+        getOldestBlock(unsigned frame_counter)
 {
-    size_t free_memory = availableMemoryForSingleAllocation();
-    BlockCache::cache_t cacheCopy = cache_->clone();
-    size_t allocatedMemory = BlockCacheInfo::cacheByteSize (cacheCopy);
-
-    if (allocatedMemory < free_memory*MAX_FRACTION_FOR_CACHES)
-        return pBlock(); // No need to release memory
-
-    pBlock releasedBlock = getOldestBlock(frame_counter, cacheCopy, 2);
-    if (!releasedBlock)
-        return pBlock(); // Nothing to release
-
-    Heightmap::Block::pGlBlock glblock = releasedBlock->glblock;
-    size_t blockMemory = glblock
-            ? glblock->allocated_bytes_per_element() * releasedBlock->block_layout().texels_per_block ()
-            : 0;
-
-    if (true)
-    TaskInfo(format("Removing block %s last used %u frames ago. Freeing %s, total free %s, cache %s, %u blocks")
-                 % releasedBlock->getRegion ()
-                 % (frame_counter - releasedBlock->frame_number_last_used)
-                 % DataStorageVoid::getMemorySizeText( blockMemory )
-                 % DataStorageVoid::getMemorySizeText( free_memory )
-                 % DataStorageVoid::getMemorySizeText( allocatedMemory )
-                 % cacheCopy.size()
-                 );
-
-    return releasedBlock;
+    return ::Heightmap::Blocks::getOldestBlock(frame_counter, cache_->clone(), 2);
 }
 
 
 std::vector<pBlock> GarbageCollector::
-        runUntilComplete(unsigned frame_counter)
-{
-    BlockCache::cache_t cacheCopy = cache_->clone();
-    size_t free_memory = availableMemoryForSingleAllocation();
-    size_t allocatedMemory = BlockCacheInfo::cacheByteSize (cacheCopy);
-
-    auto sorted = getSorted(frame_counter);
-
-    std::vector<pBlock> R;
-    R.reserve (sorted.size ());
-
-    // Go from oldest to newest
-    for (pBlock b : sorted)
-    {
-        if (allocatedMemory < free_memory*MAX_FRACTION_FOR_CACHES)
-            break;
-
-        Heightmap::Block::pGlBlock glblock = b->glblock;
-        size_t blockMemory = glblock
-                ? glblock->allocated_bytes_per_element() * b->block_layout().texels_per_block ()
-                : 0;
-
-        allocatedMemory = clamped_sub(allocatedMemory, blockMemory);
-        R.push_back (b);
-    }
-
-    return R;
-}
-
-
-std::vector<pBlock> GarbageCollector::
-        releaseNOldest(unsigned frame_counter, unsigned N)
+        getNOldest(unsigned frame_counter, unsigned N)
 {
     auto sorted = getSorted(frame_counter);
 
@@ -146,7 +89,7 @@ std::vector<pBlock> GarbageCollector::
 
 
 std::vector<pBlock> GarbageCollector::
-        releaseAllNotUsedInThisFrame(unsigned frame_counter)
+        getAllNotUsedInThisFrame(unsigned frame_counter)
 {
     std::vector<pBlock> R;
     const BlockCache::cache_t C = cache_->clone (); // copy
@@ -155,13 +98,11 @@ std::vector<pBlock> GarbageCollector::
 
     for (BlockCache::cache_t::const_iterator itr = C.begin(); itr!=C.end(); itr++ )
     {
-        EXCEPTION_ASSERT_LESS_OR_EQUAL(4, itr->second.use_count ());
-        if (itr->second.use_count () == 4) // recent, cache, C and itr->second
-        {
-            if (frame_counter != itr->second->frame_number_last_used )
-                R.push_back (itr->second);
-        }
+        if (frame_counter != itr->second->frame_number_last_used)
+            R.push_back (itr->second);
     }
+
+    Log("Found %d blocks not used this frame") % R.size ();
 
     return R;
 }
@@ -170,10 +111,6 @@ std::vector<pBlock> GarbageCollector::
 GarbageCollector::Sorted GarbageCollector::
         getSorted(unsigned frame_counter)
 {
-    size_t free_memory = availableMemoryForSingleAllocation();
-    BlockCache::cache_t cacheCopy = cache_->clone();
-    size_t allocatedMemory = BlockCacheInfo::cacheByteSize (cacheCopy);
-
     // Sort with decreasing age
     GarbageCollector::Sorted sorted (
             [frame_counter](const pBlock& a, const pBlock& b) {
@@ -185,10 +122,7 @@ GarbageCollector::Sorted GarbageCollector::
             }
     );
 
-    if (allocatedMemory < free_memory*MAX_FRACTION_FOR_CACHES)
-        return sorted; // No need to release memory
-
-    for (auto& v : cacheCopy) {
+    for (auto& v : cache_->clone()) {
         unsigned age = frame_counter - v.second->frame_number_last_used;
         if (age>1) // Initial filtering
             sorted.insert (v.second);

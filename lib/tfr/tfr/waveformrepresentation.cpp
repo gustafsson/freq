@@ -1,5 +1,8 @@
 #include "waveformrepresentation.h"
 #include "neat_math.h"
+#include "signal/buffer.h"
+#include "tfr/chunk.h"
+#include "log.h"
 
 namespace Tfr {
 
@@ -20,9 +23,8 @@ pTransform WaveformRepresentationDesc::
 float WaveformRepresentationDesc::
         displayedTimeResolution( float FS, float /*hz*/ ) const
 {
-    return .025f / FS;
+    return .0025f / FS;
 }
-
 
 
 FreqAxis WaveformRepresentationDesc::
@@ -56,7 +58,7 @@ Signal::Interval WaveformRepresentationDesc::
     Signal::Interval J(clamped_sub(I.first, Signal::IntervalType(1)), I.last);
 
     if (expectedOutput)
-        *expectedOutput = J;
+        *expectedOutput = I;
 
     return J;
 }
@@ -65,7 +67,7 @@ Signal::Interval WaveformRepresentationDesc::
 Signal::Interval WaveformRepresentationDesc::
         affectedInterval( const Signal::Interval& I ) const
 {
-    // if a sample 'i' is valid it means that the line between i-1 and i is valid
+    // see requiredInterval
     return Signal::Interval(I.first, clamped_add(I.last, Signal::IntervalType(1)));
 }
 
@@ -74,6 +76,23 @@ const TransformDesc* WaveformRepresentation::
         transformDesc() const
 {
     return &desc;
+}
+
+
+pChunk WaveformRepresentation::
+        operator()( Signal::pMonoBuffer b )
+{
+    pChunk c = DummyTransform::operator() (b);
+    c->first_valid_sample++;
+    c->n_valid_samples--;
+    return c;
+}
+
+Signal::pMonoBuffer WaveformRepresentation::
+        inverse( pChunk chunk )
+{
+    EXCEPTION_ASSERTX(false, "waveformrepresentation: apparently missing ChunkFilter::NoInverseTag");
+    return Signal::pMonoBuffer();
 }
 
 } // namespace Tfr

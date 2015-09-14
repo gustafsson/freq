@@ -13,8 +13,10 @@ win32:CONFIG += debug_and_release
 CONFIG += staticlib warn_on
 CONFIG += c++11 buildflags
 CONFIG += tmpdir
+CONFIG += precompile_header_with_all_headers
 
-QT += opengl
+QT += opengl # to use QGLWidget
+QT += widgets # to use QApplication
 
 DEFINES += GPUMISC_LIBRARY
 
@@ -25,16 +27,24 @@ SOURCES += \
     datastoragestring.cpp \
     debugbuf.cpp \
     factor.cpp \
+    float16.cpp \
     geometricalgebra.cpp \
     GlException.cpp \
     glframebuffer.cpp \
     glinfo.cpp \
+    glgroupmarker.cpp \
     glprojection.cpp \
     glPushContext.cpp \
+    glstate.cpp \
+    glsyncobjectmutex.cpp \
     GlTexture.cpp \
     gltextureread.cpp \
+    gluerrorstring.cpp \
+    gluinvertmatrix.cpp \
+    gluperspective.cpp \
+    gluproject_ios.cpp \
     gluunproject.cpp \
-    log.cpp \
+    largememorypool.cpp \
     mappedvbovoid.cpp \
     neat_math.cpp \
     redirectstdout.cpp \
@@ -56,26 +66,35 @@ HEADERS += \
     debugstreams.h \
     deprecated.h \
     factor.h \
+    float16.h \
     gl.h \
     GlException.h \
     glframebuffer.h \
+    glgroupmarker.h \
     glinfo.h \
     glprojection.h \
     glPushContext.h \
+    glstate.h \
+    glsyncobjectmutex.h \
     GlTexture.h \
     gltextureread.h \
     GLvector.h \
     geometricalgebra.h \
+    gluerrorstring.h \
+    gluinvertmatrix.h \
+    gluperspective.h \
+    gluproject_ios.h \
     gluunproject.h \
     gpumisc_global.h \
     HasSingleton.h \
     InvokeOnDestruction.hpp \
-    log.h \
+    largememorypool.h \
     mappedvbo.h \
     mappedvbovoid.h \
     msc_stdc.h \
     neat_math.h \
     operate.h \
+    printmatrix.h \
     redirectstdout.h \
     redirectStream.h \
     releaseaftercontext.h \
@@ -87,7 +106,6 @@ HEADERS += \
     Statistics.h \
     StatisticsRandom.h \
     TAni.h \
-    texturereader.cu.h \
     ThreadChecker.h \
     throwInvalidArgument.h \
     tmatrix.h \
@@ -97,55 +115,6 @@ HEADERS += \
     unittest.h \
     unsignedf.h \
     vbo.h \
-
-useopencl {
-DEFINES += USE_OPENCL
-
-SOURCES += \
-    openclcontext.cpp \
-    openclexception.cpp \
-    openclmemorystorage.cpp \
-
-HEADERS += \
-    openclcontext.h \
-    openclexception.h \
-    openclmemoryaccess.h \
-    openclmemorystorage.h \
-
-    gpuamd:INCLUDEPATH += "$(AMDAPPSDKROOT)include"
-} #useopencl
-
-
-usecuda {
-DEFINES += USE_CUDA
-
-SOURCES += \
-    CudaException.cpp \
-    cudaglobalstorage.cpp \
-    cudaMemcpy3Dfix.cpp \
-    CudaProperties.cpp \
-    cudaUtil.cpp \
-    cuffthandlecontext.cpp \
-
-HEADERS += \
-    CudaException.h \
-    cudaglobalaccess.h \
-    cudaglobalstorage.h \
-    cudaKernels.h \
-    cudaMemcpy3Dfix.h \
-    cudaPitchedPtrType.h \
-    CudaProperties.h \
-    cudatemplates.cu.h \
-    cudaUtil.h \
-    cuda_vector_types_op.h \
-    cuffthandlecontext.h \
-    resamplecuda.cu.h \
-    texturereader.cu.h \
-
-!win32:INCLUDEPATH += /usr/local/cuda/include
-win32:INCLUDEPATH += "\$(CUDA_INC_PATH)"
-
-} #usecuda
 
 
 win32: INCLUDEPATH += \
