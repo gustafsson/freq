@@ -4,6 +4,7 @@
 // gpumisc
 #include "gl.h"
 #include "glPushContext.h"
+#include "glstate.h"
 
 namespace Heightmap {
 namespace Render {

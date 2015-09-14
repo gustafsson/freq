@@ -14,7 +14,6 @@ CONFIG += staticlib warn_on
 CONFIG += c++11 buildflags
 CONFIG += tmpdir
 CONFIG += precompile_header_with_all_headers
-CONFIG += legacy-opengl
 
 QT += opengl # to use QGLWidget
 QT += widgets # to use QApplication
