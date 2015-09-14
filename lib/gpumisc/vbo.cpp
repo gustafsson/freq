@@ -2,6 +2,7 @@
 #include "vbo.h"
 #include "tasktimer.h"
 #include "datastorage.h" // getMemorySizeText
+#include "glstate.h"
 
 #ifdef USE_CUDA
 #include "CudaException.h"

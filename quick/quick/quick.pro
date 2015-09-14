@@ -31,7 +31,6 @@ SAWEROOT = $$_PRO_FILE_PWD_/../..
 CONFIG += tmpdir buildflags
 CONFIG += precompile_header_with_all_headers
 CONFIG += freetype-gl
-CONFIG += legacy-opengl
 #QMAKEFEATURES = $$_PRO_FILE_PWD_/../../features
 
 INCLUDEPATH += \

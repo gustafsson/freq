@@ -14,36 +14,39 @@ public:
     typedef t T;
 
 	tmatrix( ) {}
-/*	tmatrix( const tmatrix<rows, t, cols -1> &b )
+
+    // huh, what are these for?
+    /*tmatrix( const tmatrix<rows, t, cols -1> &b )
 	{
 		*this = identity();
 		for(int i=0; i<cols-1; i++)
 			m[i] = b[i];
 	}*/
-	tmatrix( const tmatrix<rows-1, t, cols> &b )
+    /*tmatrix( const tmatrix<rows-1, t, cols> &b )
 	{
 		*this = identity();
 		for(int i=0; i<cols; i++)
 		for(int a=0; a<rows-1; a++)
 			m[i][a] = b[i][a];
-	}
+    }*/
 	/*tmatrix( const tmatrix<rows-1, t, cols -1> &b )
 	{
 		*this = identity();
 		for(int i=0; i<cols-1; i++)
 			m[i] = b[i];
 	}*/
-	tmatrix( const t *b )
+
+    // tmatrix is a POD-type so a move is no more efficient than a copy
+    // however: to avoid being lazy and copying more data than needed ask that copy construction is explicit
+    tmatrix( tmatrix &&a ) = default;
+    explicit tmatrix( const tmatrix &a ) = default;
+    tmatrix& operator=( tmatrix &&a ) = default;
+    tmatrix& operator=( const tmatrix &a ) = default;
+    explicit tmatrix( const t *b )
 	{
 		for(int i=0; i<cols; i++)
             m[i] = b + i*rows;
 	}
-    tmatrix( tmatrix &&a ) = default;
-    tmatrix( const tmatrix &b )
-    {
-        for(int i=0; i<cols; i++)
-            m[i] = b[i];
-    }
     template<class t2,
              class = typename std::enable_if <std::is_convertible<t2, t>::value>::type>
     explicit tmatrix( const tmatrix<rows,t2,cols> &b )

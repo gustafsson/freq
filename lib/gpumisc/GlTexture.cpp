@@ -3,6 +3,7 @@
 #include "GlException.h"
 #include "gl.h"
 #include "exceptionassert.h"
+#include "log.h"
 
 GlTexture::GlTexture()
 :	width( 0 ),

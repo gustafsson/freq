@@ -137,7 +137,7 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
         GlState::glUseProgram (program_->programId());
         GlState::glEnableVertexAttribArray (0);
 
-        matrixd modelview = P.modelview;
+        matrixd modelview { P.modelview };
         modelview *= matrixd::translate (b->start (), 0.5, 0);
         modelview *= matrixd::scale (1.0/b->sample_rate (), 0.5, 1);
         glUniformMatrix4fv (uniModelViewProjectionMatrix, 1, false, GLmatrixf(P.projection*modelview).v ());
@@ -233,6 +233,7 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
 
     GlState::glBindBuffer (GL_ARRAY_BUFFER, *first_vbo);
     vertex_format_xy* d;
+#if !defined(LEGACY_OPENGL) || defined(GL_ES_VERSION_3_0)
     if (gotVbo.first)
     {
         // map entire buffer when it's first allocated to prevent warnings that parts of the buffer to contain uninitialized buffer data
@@ -244,6 +245,9 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
         EXCEPTION_ASSERT_LESS_OR_EQUAL (4 + 2+2*texelCount, N_);
         d = (vertex_format_xy*)glMapBufferRange(GL_ARRAY_BUFFER, 0, (4+2+2*texelCount)*sizeof(vertex_format_xy), GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_WRITE_BIT);
     }
+#else
+    d = (vertex_format_xy*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+#endif
 
     float* p = CpuMemoryStorage::ReadOnly<1>(b->waveform_data()).ptr ();
 
@@ -300,7 +304,7 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
         GlState::glUseProgram (program_->programId());
         GlState::glEnableVertexAttribArray (0);
 
-        matrixd modelview = P.modelview;
+        matrixd modelview { P.modelview };
         modelview *= matrixd::translate (timeOffset, 0.5, 0);
         modelview *= matrixd::scale (1.0, 0.5, 1);
         glUniformMatrix4fv (uniModelViewProjectionMatrix, 1, false, GLmatrixf(P.projection*modelview).v ());

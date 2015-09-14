@@ -141,7 +141,7 @@ void SelectionRenderer::
     GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
     m_program->setAttributeBuffer(0, GL_FLOAT, 0, 3);
     glProjection p = *model->gl_projection.read ();
-    matrixd modelview = p.modelview;
+    matrixd modelview { p.modelview };
     modelview *= matrixd::translate (t1,h1,s1);
     modelview *= matrixd::scale (t2-t1,h2-h1,s2-s1);
     glUniformMatrix4fv (uniModelViewProjectionMatrix, 1, false, GLmatrixf(p.projection*modelview).v ());

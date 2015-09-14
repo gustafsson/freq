@@ -3,6 +3,7 @@
 // gpumisc
 #include "gl.h"
 #include "glPushContext.h"
+#include "glstate.h"
 
 // std
 #if defined(_MSC_VER)

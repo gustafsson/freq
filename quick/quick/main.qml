@@ -2,6 +2,7 @@ import QtQuick 2.2
 import QtQuick.Controls 1.2
 import OpenGLUnderQML 1.0
 import QtQuick.Layouts 1.1
+import QtGraphicalEffects 1.0
 
 Item {
     objectName: "root item "
@@ -80,9 +81,78 @@ Item {
                 sharedCamera.timepos = timepos;
                 sharedCamera.timezoom = timezoom;
             }
+
+
+            ColumnLayout {
+                anchors.fill: heightmap1
+                anchors.margins: 20
+
+                spacing: 15
+
+                Text {
+                    Layout.fillWidth: true
+                    id: text
+                    clip: false
+
+                    opacity: 0
+                    color: "black"
+                    wrapMode: Text.WordWrap
+                    text: "Scroll by dragging, rotate with two fingers together, zoom with two fingers in different directions. http://freq.consulting"
+
+                    Rectangle {
+                        id: textRect
+                        color: Qt.rgba(0.975, 0.975, 0.975, 0.8)
+                        anchors.margins: -8
+                        anchors.fill: parent
+                        z: -1
+
+                        SequentialAnimation on radius {
+                            running: false // super annoying
+                            NumberAnimation { to: 20; duration: 1000; easing.type: Easing.InQuad }
+                            NumberAnimation { to: 10; duration: 1000; easing.type: Easing.OutQuad }
+                            loops: Animation.Infinite
+                        }
+                    }
+
+                    SequentialAnimation on opacity {
+                        id: textAnimation
+                        ScriptAction { script: text.visible=true; }
+                        NumberAnimation { to: 1; duration: 200; easing.type: Easing.InQuart }
+                        PauseAnimation { duration: 15000 }
+                        NumberAnimation { to: 0; duration: 5000; easing.type: Easing.InQuart }
+                        ScriptAction { script: text.visible=false; }
+                    }
+                }
+
+                Item {
+                    Layout.fillHeight : true
+                }
+
+                Rectangle {
+                    color: Qt.rgba(0.975, 0.975, 0.975, 0.8)
+                    anchors.margins: -8
+                    anchors.fill: transformsettings
+                    z: -1
+                    Layout.maximumHeight: 0
+                    opacity: transformsettings.opacity
+                    visible: transformsettings.visible
+                }
+
+                TransformSettings {
+                    Layout.fillWidth: true
+                    id: transformsettings
+                    heightmap: heightmap1
+                }
+
+                /*MyComponent {
+                    Layout.fillWidth: true
+                }*/
+            }
         }
 
+
         LayoutSplitter {}
+
 
         Heightmap {
             id: heightmap2
@@ -110,69 +180,6 @@ Item {
         }
     }
 
-    ColumnLayout {
-        anchors.left: parent.left
-        anchors.top : parent.top
-        anchors.right : parent.right
-        anchors.margins: 20
-
-        spacing: 30
-        opacity: 0.75
-
-        Text {
-            Layout.fillWidth: true
-
-            id: text
-            color: "black"
-            wrapMode: Text.WordWrap
-            text: "Scroll by dragging, rotate with two fingers together, zoom with two fingers in different directions. http://freq.consulting"
-
-            SequentialAnimation on opacity {
-                id: textAnimation
-                ScriptAction { script: text.visible=true; }
-                NumberAnimation { to: 0.75; duration: 200; easing.type: Easing.InQuart }
-                PauseAnimation { duration: 15000 }
-                NumberAnimation { to: 0; duration: 5000; easing.type: Easing.InQuart }
-                ScriptAction { script: text.visible=false; }
-            }
-
-            Rectangle {
-                color: Qt.rgba(1, 1, 1, 1)
-                radius: 5
-                border.width: 1
-                border.color: "black"
-                anchors.fill: parent
-                anchors.margins: -7
-                z: -1
-
-                SequentialAnimation on radius {
-                    running: false // super annoying
-                    NumberAnimation { to: 20; duration: 1000; easing.type: Easing.InQuad }
-                    NumberAnimation { to: 10; duration: 1000; easing.type: Easing.OutQuad }
-                    loops: Animation.Infinite
-                }
-            }
-        }
-
-        TransformSettings {
-            Layout.fillWidth: true
-            id: transformsettings
-            heightmap: heightmap1
-        }
-
-        Rectangle {
-            color: Qt.rgba(1, 1, 1, 1)
-            radius: 5
-            border.width: 1
-            border.color: "black"
-            anchors.fill: transformsettings
-            anchors.margins: -7
-            z: -1
-            Layout.maximumHeight: 0
-            opacity: transformsettings.opacity
-            visible: transformsettings.visible
-        }
-    }
 
     Text {
         anchors.horizontalCenter: parent.horizontalCenter

@@ -137,7 +137,6 @@ CONFIG += otherfilesvs
 # Build settings
 CONFIG += sawelibs
 CONFIG += freetype-gl
-CONFIG += legacy-opengl
 #DEFINES += CUDA_MEMCHECK_TEST
 
 ####################

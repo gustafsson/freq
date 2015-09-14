@@ -138,7 +138,7 @@ void GlyphsFreetypeEmbedded::
 
         double w = print(text.c_str (), g.letter_spacing);
 
-        matrixd modelview = g.modelview;
+        matrixd modelview { g.modelview };
         modelview *= matrixd::scale (1/f,1/f,1.);
         modelview *= matrixd::translate (g.margin*f - w*g.align_x, -g.align_y*f, 0);
 
@@ -147,6 +147,9 @@ void GlyphsFreetypeEmbedded::
 
         float z = .3*f;
         float q = .3*f;
+        // these matrix multiplications would potentially be faster on the GPU,
+        // but as the different glyphs have different matrices it's faster to
+        // to do the matrix-vector multiplication on the CPU
         *quad++ = modelview * v4f(0 - z, 0 - q, 0, 1);
         *quad++ = modelview * v4f(w + z, 0 - q, 0, 1);
         *quad++ = modelview * v4f(w + z, f + q, 0, 1);

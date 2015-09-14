@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <limits>
 #include "printmatrix.h"
+#include "exceptionassert.h"
 
 glProjection::
         glProjection()

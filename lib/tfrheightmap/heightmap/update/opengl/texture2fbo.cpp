@@ -84,7 +84,12 @@ int Texture2Fbo::Params::
         GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo) );
         GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_format)*Y*2, 0, GL_STATIC_DRAW) );
       }
+
+#if !defined(LEGACY_OPENGL) || defined(GL_ES_VERSION_3_0)
     vertex_format* vertices = (vertex_format*)glMapBufferRange(GL_ARRAY_BUFFER, 0, Y*2*sizeof(vertex_format), GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_WRITE_BIT);
+#else
+    vertex_format* vertices = (vertex_format*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+#endif
 
     float iY = (region.b.scale - region.a.scale) / (Y-1.f);
     float iV = 1.f/(chunk_scale.max_frequency_scalar+1);

@@ -426,7 +426,7 @@ void RenderAxes::
                     if (size>1) {
                         float angle = atan2(v0[2]/SF, v0[0]/ST) * (180*M_1_PI);
 
-                        matrixd modelview = gl_projection->modelview;
+                        matrixd modelview { gl_projection->modelview };
                         modelview *= matrixd::translate (p[0], 0, p[2]);
                         modelview *= matrixd::rot (90,1,0,0);
                         modelview *= matrixd::scale (0.013*drawScaleT, 0.013*drawScaleF, 1);
@@ -443,7 +443,7 @@ void RenderAxes::
                         if (sign<0)
                             modelview *= matrixd::rot (180,0,0,1);
 
-                        ae.glyphs.push_back (GlyphData{modelview, a, 0.0, -0.05, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
+                        ae.glyphs.push_back (GlyphData{std::move(modelview), a, 0.0, -0.05, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
                     }
                 }
             } else if (fa.axis_scale != AxisScale_Unknown) {
@@ -473,7 +473,7 @@ void RenderAxes::
                     {
                         float angle = atan2(v0[2]/SF, v0[0]/ST) * (180*M_1_PI);
 
-                        matrixd modelview = gl_projection->modelview;
+                        matrixd modelview { gl_projection->modelview };
                         modelview *= matrixd::translate (p[0],0,p[2]);
                         modelview *= matrixd::rot (90,1,0,0);
                         modelview *= matrixd::scale (0.013*drawScaleT, 0.013*drawScaleF, 1);
@@ -490,7 +490,7 @@ void RenderAxes::
                         if (sign<0)
                             modelview *= matrixd::rot (180,0,0,1);
 
-                        ae.glyphs.push_back (GlyphData{modelview, a, 0.0, -0.05, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
+                        ae.glyphs.push_back (GlyphData{std::move(modelview), a, 0.0, -0.05, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
                     }
                 }
             }
@@ -651,7 +651,7 @@ void RenderAxes::
 
                 if (tone%12 == 0)
                 {
-                    matrixd modelview = gl_projection->modelview;
+                    matrixd modelview { gl_projection->modelview };
                     modelview *= matrixd::translate ( pp[0], 0, pp[2] );
                     modelview *= matrixd::rot (90,1,0,0);
 
@@ -663,7 +663,7 @@ void RenderAxes::
 
                     char a[100];
                     sprintf(a,"C%d", tone/12+1);
-                    ae.glyphs.push_back (GlyphData{modelview, a, 0.1, -0.05, 1., 0.});
+                    ae.glyphs.push_back (GlyphData{std::move(modelview), a, 0.1, -0.05, 1., 0.});
                 }
             }
         }

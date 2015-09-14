@@ -3,6 +3,7 @@
 #include "tasktimer.h"
 #include "gl.h"
 #include "log.h"
+#include "glstate.h"
 
 #ifdef LEGACY_OPENGL
 
@@ -34,7 +35,7 @@ Source2Pbo::Source2Pbo(
 Source2Pbo::~Source2Pbo()
 {
     if (!QOpenGLContext::currentContext ()) {
-        Log ("%s: destruction without gl context leaks pbo %d") % __FILE__ % chunk_pbo_;
+        Log ("%s: destruction without gl context leaks pbo %d") % __FILE__ % (unsigned)chunk_pbo_;
         return;
     }
 
