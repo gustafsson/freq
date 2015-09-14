@@ -18,6 +18,7 @@ Flow {
 
         CheckBox {
             id: transformCheckbox
+
             anchors.left: parent.left
             anchors.top: parent.top
             anchors.bottom: parent.bottom
