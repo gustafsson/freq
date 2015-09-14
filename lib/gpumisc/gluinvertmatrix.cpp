@@ -260,7 +260,7 @@ bool gluInvertMatrix(const double m[16], double invOut[16])
     return true;
 }
 
-matrixd invert(matrixd in)
+matrixd invert(const matrixd& in)
 {
     matrixd r;
     if (!gluInvertMatrix (in.v (), r.v ()))

@@ -36,8 +36,7 @@ void FrustumClip::
         update(const glProjecter& gl_projecter, double border_width, double border_height)
 {
     // http://web.archive.org/web/20120531231005/http://crazyjoke.free.fr/doc/3D/plane%20extraction.pdf
-    tmatrix<4, double> M = gl_projecter.mvp ();
-    M = M.transpose ();
+    tmatrix<4, double> M { gl_projecter.mvp ().transpose () };
     border_width = 1.f + 2.f*border_width;
     border_height = 1.f + 2.f*border_height;
     left   = M[3] + M[0]*border_width;

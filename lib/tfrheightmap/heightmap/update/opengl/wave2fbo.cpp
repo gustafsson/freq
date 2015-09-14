@@ -137,7 +137,7 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
         GlState::glUseProgram (program_->programId());
         GlState::glEnableVertexAttribArray (0);
 
-        matrixd modelview = P.modelview;
+        matrixd modelview { P.modelview };
         modelview *= matrixd::translate (b->start (), 0.5, 0);
         modelview *= matrixd::scale (1.0/b->sample_rate (), 0.5, 1);
         glUniformMatrix4fv (uniModelViewProjectionMatrix, 1, false, GLmatrixf(P.projection*modelview).v ());
@@ -304,7 +304,7 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
         GlState::glUseProgram (program_->programId());
         GlState::glEnableVertexAttribArray (0);
 
-        matrixd modelview = P.modelview;
+        matrixd modelview { P.modelview };
         modelview *= matrixd::translate (timeOffset, 0.5, 0);
         modelview *= matrixd::scale (1.0, 0.5, 1);
         glUniformMatrix4fv (uniModelViewProjectionMatrix, 1, false, GLmatrixf(P.projection*modelview).v ());
