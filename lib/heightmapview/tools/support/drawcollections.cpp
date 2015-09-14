@@ -59,10 +59,10 @@ void DrawCollections::
 
     const auto collections = model->collections ();
     unsigned N = collections.size();
-    if (N>1)
+    /*if (N>1)
         model->render_settings.color_mode = Heightmap::Render::RenderSettings::ColorMode_FixedColor;
     else
-        model->render_settings.color_mode = Heightmap::Render::RenderSettings::ColorMode_Rainbow;
+        model->render_settings.color_mode = Heightmap::Render::RenderSettings::ColorMode_Rainbow;*/
 
     bool fixed_color = model->render_settings.color_mode == Heightmap::Render::RenderSettings::ColorMode_FixedColor;
     if (N - !fixed_color != channel_colors.size ())
