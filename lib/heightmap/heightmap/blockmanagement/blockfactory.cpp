@@ -6,6 +6,8 @@
 #include "computationkernel.h"
 #include "gl.h"
 
+#include <float.h> // FLT_MAX
+
 //#define TIME_BLOCKFACTORY
 #define TIME_BLOCKFACTORY if(0)
 

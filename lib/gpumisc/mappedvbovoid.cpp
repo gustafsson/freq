@@ -4,6 +4,7 @@
                 // be included on windows
 #include "tasktimer.h"
 #include "computationkernel.h"
+#include "glstate.h"
 
 #ifdef USE_CUDA
 // cuda
