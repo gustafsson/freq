@@ -1,0 +1,10 @@
+install:
+  - set QTDIR=C:\Qt\5.5\msvc2013_64
+#  - set QTDIR=C:\Qt\5.5\mingw492_32
+  - set PATH=%PATH%;%QTDIR%\bin
+#  - set PATH=%PATH%;C:\MinGW\bin
+#  - set PATH=%PATH%;C:\Qt\Tools\mingw492_32
+build_script:
+  - cd quick
+  - qmake -r
+#  - mingw32-make
