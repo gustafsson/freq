@@ -34,6 +34,7 @@ Item {
 
                 MouseArea {
                     anchors.fill: parent
+                    anchors.margins: -10 // make it easier to hit
                     onClicked: {visible = false; textAnimation.start();}
                     z: 10
                 }
