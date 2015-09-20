@@ -153,5 +153,3 @@ profiling {
 
 ios: INCLUDEPATH += $$_PRO_FILE_PWD_/../../3rdparty/ios/include
 
-#system("basename '$$QMAKE_CC' | awk 'gsub(/[-+.]/, \"\") {print \"QMAKE_CC_\" $1}'")
-DEFINES += $$system("basename '$$QMAKE_CC' | sed s/[-+.]//g | awk '{print \"QMAKE_CC_\" $1}'")
