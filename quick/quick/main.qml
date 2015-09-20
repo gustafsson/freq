@@ -80,6 +80,7 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             height: 1
+            visibleTimeAxis: 0
 
             onTouchNavigation: {
                 // force orthogonal view of waveform
