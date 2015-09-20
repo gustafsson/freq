@@ -152,6 +152,7 @@ Item {
 
 
     Text {
+        visible: !heightmap.isIOS
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
 
