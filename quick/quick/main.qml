@@ -218,7 +218,7 @@ Item {
 
     Selection {
         id: selection
-        filteredHeightmap: waveform
+        filteredHeightmap: waveform.isIOS ? null : waveform
         renderOnHeightmap: heightmap
     }
 
