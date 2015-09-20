@@ -123,41 +123,6 @@ Item {
 
                 spacing: 15
 
-                Text {
-                    Layout.fillWidth: true
-                    id: text
-                    clip: false
-
-                    opacity: 0
-                    color: "black"
-                    wrapMode: Text.WordWrap
-                    text: "Scroll by dragging, rotate with two fingers together, zoom with two fingers in different directions. http://freq.consulting"
-
-                    Rectangle {
-                        id: textRect
-                        color: Qt.rgba(0.975, 0.975, 0.975, 0.8)
-                        anchors.margins: -8
-                        anchors.fill: parent
-                        z: -1
-
-                        SequentialAnimation on radius {
-                            running: false // super annoying
-                            NumberAnimation { to: 20; duration: 1000; easing.type: Easing.InQuad }
-                            NumberAnimation { to: 10; duration: 1000; easing.type: Easing.OutQuad }
-                            loops: Animation.Infinite
-                        }
-                    }
-
-                    SequentialAnimation on opacity {
-                        id: textAnimation
-                        ScriptAction { script: text.visible=true; }
-                        NumberAnimation { to: 1; duration: 200; easing.type: Easing.InQuart }
-                        PauseAnimation { duration: 15000 }
-                        NumberAnimation { to: 0; duration: 5000; easing.type: Easing.InQuart }
-                        ScriptAction { script: text.visible=false; }
-                    }
-                }
-
                 Item {
                     Layout.fillHeight : true
                 }
@@ -236,5 +201,9 @@ Item {
         }
 
         onUpdateSharedCamera: heightmap.touchNavigation()
+    }
+
+    Greeting {
+        anchors.fill: parent
     }
 }
