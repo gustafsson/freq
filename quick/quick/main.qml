@@ -115,39 +115,39 @@ Item {
                 sharedCamera.timepos = timepos;
                 sharedCamera.timezoom = timezoom;
             }
-
-
-            ColumnLayout {
-                anchors.fill: heightmap
-                anchors.margins: 20
-
-                spacing: 15
-
-                Item {
-                    Layout.fillHeight : true
-                }
-
-                Rectangle {
-                    color: Qt.rgba(0.975, 0.975, 0.975, 0.8)
-                    anchors.margins: -8
-                    anchors.fill: transformsettings
-                    z: -1
-                    Layout.maximumHeight: 0
-                    opacity: transformsettings.opacity
-                    visible: transformsettings.visible
-                }
-
-                TransformSettings {
-                    Layout.fillWidth: true
-                    id: transformsettings
-                    heightmap: heightmap
-                }
-
-                /*MyComponent {
-                    Layout.fillWidth: true
-                }*/
-            }
         }
+    }
+
+
+    ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: 20
+
+        spacing: 15
+
+        Item {
+            Layout.fillHeight : true
+        }
+
+        Rectangle {
+            color: Qt.rgba(0.975, 0.975, 0.975, 0.8)
+            anchors.margins: -8
+            anchors.fill: transformsettings
+            z: -1
+            Layout.maximumHeight: 0
+            opacity: transformsettings.opacity
+            visible: transformsettings.visible
+        }
+
+        TransformSettings {
+            Layout.fillWidth: true
+            id: transformsettings
+            heightmap: heightmap
+        }
+
+        /*MyComponent {
+            Layout.fillWidth: true
+        }*/
     }
 
 
