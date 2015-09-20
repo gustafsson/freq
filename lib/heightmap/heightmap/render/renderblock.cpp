@@ -79,7 +79,7 @@ void RenderBlock::Renderer::
 
     int subdivx = (int)max (0., subdivs - 1 - log2 (max (1., lod.t ()))); // t or s might be 0
     int subdivy = (int)max (0., subdivs - 1 - log2 (max (1., lod.s ())));
-    subdivx = subdivy = 0;
+    glUniform1f (render_block->uniVertexTextureBias, std::max(subdivx,subdivy));
 
     LOG_DIVS Log("%s / %g x %g -> %d x %d") % block->getVisibleRegion ()
             % lod.t () % lod.s() % subdivx % subdivy;
@@ -477,6 +477,8 @@ void RenderBlock::ShaderData::prepShader(BlockLayout block_size, RenderSettings*
     if (u_texSize1 != w || u_texSize2 != h)
         if (uniTexSize>=0) glUniform2f(uniTexSize, u_texSize1=w, u_texSize2=h);
 
+    if (uniVertexTextureBias<-1) uniVertexTextureBias = glGetUniformLocation (_shader_prog, "uniVertexTextureBias");
+
     if (attribVertex<-1) attribVertex = glGetAttribLocation (_shader_prog, "qt_Vertex");
 }
 
@@ -505,6 +507,7 @@ void RenderBlock::
     uniModelview=d->uniModelview;
     uniNormalMatrix=d->uniNormalMatrix;
     attribVertex=d->attribVertex;
+    uniVertexTextureBias=d->uniVertexTextureBias;
 
     GlState::glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
     GlState::glEnableVertexAttribArray (attribVertex);
@@ -595,29 +598,59 @@ void RenderBlock::
 {
     GlException_CHECK_ERROR();
 
-    if (h>2) h+=2;
-    if (w>2) w+=2;
-    int n_vertices = (int_div_ceil (w+stepx-1, stepx)*2 + 4)*
-                      int_div_ceil (h-1, stepy);
+
+    int n_vertices;
+    if (h>2 || w>2)
+    {
+        h+=2;
+        w+=2;
+
+        n_vertices = (int_div_ceil (w-2, stepx)*2 + 8)*
+                     (int_div_ceil (h-2, stepy)+1);
+    }
+    else
+    {
+        EXCEPTION_ASSERT_EQUALS(h,2);
+        EXCEPTION_ASSERT_EQUALS(w,2);
+        n_vertices = 4;
+    }
 
     vector<BLOCKindexType> indicesdata(n_vertices);
     BLOCKindexType *indices = &indicesdata[0];
 
-    for(int y=0; y<h-1; y+=stepy) {
-        int y2 = min(y + stepy,h-1);
+    if (h==2 && w==2) {
+        *indices++ = 0;
+        *indices++ = 1;
+        *indices++ = 2;
+        *indices++ = 3;
+    }
+    else
+    {
+        int y, y2;
+        for(int iy=1-stepy; iy<h-1; iy+=stepy) {
+            if (iy<1) {
+                y = 0;
+                y2 = 1;
+            } else {
+                y = max(0,iy);
+                y2 = min(y + stepy,h-1);
+            }
 
-        *indices++ = y*w;
+            *indices++ = y*w;
+            *indices++ = y*w;
+            *indices++ = y2*w;
 
-        for(int x=0; x<w+stepx-1; x+=stepx) {
-            if (x>=w) x=w-1;
-            *indices++ = y*w+x;
-            *indices++ = y2*w+x;
+            for(int x=1; x<w+stepx-1; x+=stepx) {
+                if (x>=w) x=w-1;
+                *indices++ = y*w+x;
+                *indices++ = y2*w+x;
+            }
+
+            // start new strip with degenerate triangle
+            *indices++ = y2*w+(w-1);
+            *indices++ = y2*w;
+            *indices++ = y2*w;
         }
-
-        // start new strip with degenerate triangle
-        *indices++ = y2*w+(w-1);
-        *indices++ = y2*w;
-        *indices++ = y2*w;
     }
 
     EXCEPTION_ASSERT_EQUALS(indices-&indicesdata[0], n_vertices);

@@ -15,6 +15,7 @@ uniform mediump vec2 tex_delta;
 uniform highp mat4 ModelViewProjectionMatrix;
 uniform highp mat4 ModelViewMatrix;
 uniform highp mat4 NormalMatrix;
+uniform lowp float vertexTextureBias;
 
 #ifdef DRAW3D
 mediump float heightValue(mediump float v) {
@@ -32,10 +33,10 @@ mediump float heightValue(mediump float v) {
 mediump float computeShadow(highp vec4 pos, mediump vec2 tex0) {
     mediump vec2 tex1 = tex0 - tex_delta;
     mediump vec2 tex2 = tex0 + tex_delta;
-    mediump float heightx1     = texture2D(tex, vec2(tex1.x, tex0.y)).x;
-    mediump float heightx2     = texture2D(tex, vec2(tex2.x, tex0.y)).x;
-    mediump float heighty1     = texture2D(tex, vec2(tex0.x, tex1.y)).x;
-    mediump float heighty2     = texture2D(tex, vec2(tex0.x, tex2.y)).x;
+    mediump float heightx1     = texture2DLod(tex, vec2(tex1.x, tex0.y), vertexTextureBias).x;
+    mediump float heightx2     = texture2DLod(tex, vec2(tex2.x, tex0.y), vertexTextureBias).x;
+    mediump float heighty1     = texture2DLod(tex, vec2(tex0.x, tex1.y), vertexTextureBias).x;
+    mediump float heighty2     = texture2DLod(tex, vec2(tex0.x, tex2.y), vertexTextureBias).x;
     heightx1 = heightValue(heightx1);
     heightx2 = heightValue(heightx2);
     heighty1 = heightValue(heighty1);

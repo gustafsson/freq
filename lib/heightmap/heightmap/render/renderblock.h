@@ -49,7 +49,8 @@ public:
     GLint uniModelviewprojection=-2,
             uniModelview=-2,
             uniNormalMatrix=-2,
-            attribVertex=-2;
+            attribVertex=-2,
+            uniVertexTextureBias=-2;
 
 private:
     friend class RenderBlock::Renderer;
@@ -98,7 +99,8 @@ private:
                 uniOffsTex=-2,
                 uniTexDelta=-2,
                 uniTexSize=-2,
-                attribVertex=-2;
+                attribVertex=-2,
+                uniVertexTextureBias=-2;
 
         int   u_tex=0,
               u_tex_color=0;
