@@ -66,16 +66,49 @@ Item {
         anchors.fill: parent
         spacing: 0
 
+
         Heightmap {
-            id: heightmap1
-            objectName: "heightmap1"
+            id: waveform
+            objectName: "waveform"
+            chain: chain
+            scalepos: 0.5
+            xangle: 90.0
+            yangle: 180.0
+            timepos: sharedCamera.timepos
+            timezoom: sharedCamera.timezoom
+            displayedTransform: "waveform"
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            height: 1
+
+            onTouchNavigation: {
+                // force orthogonal view of waveform
+                scalepos = 0.5;
+                xangle = 90.0;
+                yangle = 180.0;
+
+                sharedCamera.timepos = timepos;
+                sharedCamera.timezoom = timezoom;
+            }
+        }
+
+
+        LayoutSplitter {
+            prevSibbling: waveform
+            nextSibbling: heightmap
+        }
+
+
+        Heightmap {
+            id: heightmap
+            objectName: "heightmap"
             chain: chain
             selection: selection
             timepos: sharedCamera.timepos
             timezoom: sharedCamera.timezoom
             Layout.fillWidth: true
             Layout.fillHeight: true
-            height: 5
+            height: 6
 
             onTouchNavigation: {
                 sharedCamera.timepos = timepos;
@@ -84,7 +117,7 @@ Item {
 
 
             ColumnLayout {
-                anchors.fill: heightmap1
+                anchors.fill: heightmap
                 anchors.margins: 20
 
                 spacing: 15
@@ -141,41 +174,12 @@ Item {
                 TransformSettings {
                     Layout.fillWidth: true
                     id: transformsettings
-                    heightmap: heightmap1
+                    heightmap: heightmap
                 }
 
                 /*MyComponent {
                     Layout.fillWidth: true
                 }*/
-            }
-        }
-
-
-        LayoutSplitter {}
-
-
-        Heightmap {
-            id: heightmap2
-            objectName: "heightmap2"
-            chain: chain
-            scalepos: 0.5
-            xangle: 90.0
-            yangle: 180.0
-            timepos: sharedCamera.timepos
-            timezoom: sharedCamera.timezoom
-            displayedTransform: "waveform"
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            height: 1
-
-            onTouchNavigation: {
-                // force orthogonal view of waveform
-                scalepos = 0.5;
-                xangle = 90.0;
-                yangle = 180.0;
-
-                sharedCamera.timepos = timepos;
-                sharedCamera.timezoom = timezoom;
             }
         }
     }
@@ -189,7 +193,7 @@ Item {
         text: "  " + chain.title + "  "
 
         Component.onCompleted: {
-            heightmap1.touchNavigation.connect(touchNavigation)
+            heightmap.touchNavigation.connect(touchNavigation)
         }
 
         signal touchNavigation()
@@ -213,13 +217,13 @@ Item {
 
     Selection {
         id: selection
-        filteredHeightmap: heightmap2
-        renderOnHeightmap: heightmap1
+        filteredHeightmap: waveform
+        renderOnHeightmap: heightmap
     }
 
     OptimalTimeFrequencyResolution {
         id: optimalres
-        squircle: heightmap1
+        squircle: heightmap
         paused: false
 
         focus: true
@@ -230,6 +234,6 @@ Item {
             }
         }
 
-        onUpdateSharedCamera: heightmap1.touchNavigation()
+        onUpdateSharedCamera: heightmap.touchNavigation()
     }
 }

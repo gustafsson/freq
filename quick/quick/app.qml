@@ -4,7 +4,7 @@ import QtQuick.Controls 1.2
 ApplicationWindow {
     //    statusBar: StatusBar {
     //            visible: false
-    //            RowLayout { Label { text: heightmap1.displayedTransformDetails } }
+    //            RowLayout { Label { text: heightmap.displayedTransformDetails } }
     //        }
 
     id: appwindow
