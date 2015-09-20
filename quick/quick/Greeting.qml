@@ -20,7 +20,7 @@ Item {
 
             Text {
                 Layout.maximumWidth: greeting.width*0.7
-                Layout.margins: 8
+                Layout.margins: 13
 
                 text: qsTr("This view shows the frequencies that your microphone is currently recording. Scroll around by dragging, rotate with two fingers held together and zoom by moving two fingers in different directions. Try to whistle a bit, or clap your hands")
                 wrapMode: Text.Wrap
@@ -28,22 +28,26 @@ Item {
 
             Text {
                 Layout.alignment: Qt.AlignRight
-                Layout.margins: 13
+                Layout.rightMargin: 30
+                Layout.bottomMargin: 22
 
                 text: "Got it"
 
-                MouseArea {
-                    anchors.fill: parent
-                    anchors.margins: -10 // make it easier to hit
-                    onClicked: {visible = false; textAnimation.start();}
-                    z: 10
-                }
-
                 Rectangle {
                     color: Qt.rgba(0.675, 0.675, 0.975, 0.8)
-                    anchors.margins: -6
+                    anchors.leftMargin: -16
+                    anchors.rightMargin: -16
+                    anchors.topMargin: -8
+                    anchors.bottomMargin: -8
                     anchors.fill: parent
                     z: -1
+
+                    MouseArea {
+                        anchors.fill: parent
+                        anchors.margins: -20 // make it easier to hit
+                        onClicked: {visible = false; textAnimation.start();}
+                        z: 10
+                    }
                 }
             }
         }
@@ -54,7 +58,7 @@ Item {
 
         Rectangle {
             Layout.maximumWidth: 0
-            color: Qt.rgba(0.975, 0.975, 0.975, 0.8)
+            color: Qt.rgba(0.95, 0.95, 0.95, 0.8)
             Layout.margins: -8
             anchors.fill: infoBox
             z: -1
