@@ -1,17 +1,19 @@
-!macx-ios*:CONFIG += precompile_header
-PRECOMPILED_HEADER = lib$${TARGET}.h
-isEmpty(PCH_HEADERS): PCH_HEADERS = $$HEADERS
+unix {
+  !macx-ios*:CONFIG += precompile_header
+  PRECOMPILED_HEADER = lib$${TARGET}.h
+  isEmpty(PCH_HEADERS): PCH_HEADERS = $$HEADERS
 
-system( \
-  mkdir -p "$$OUT_PWD"; \
-  cd "$$OUT_PWD"; \
-  echo \\\x23ifndef __OBJC__ > "$$PRECOMPILED_HEADER"; \
-  echo \\\x23ifdef __cplusplus >> "$$PRECOMPILED_HEADER"; \
-  for a in $$PCH_HEADERS; do \
-    [ $$PRECOMPILED_HEADER == $a ] || echo \\\x23include \\\"$a\\\"; \
-  done >> "$$PRECOMPILED_HEADER"; \
-  echo \\\x23endif /\* __cplusplus \*/ >> "$$PRECOMPILED_HEADER"; \
-  echo \\\x23endif /\* __OBJC__ \*/ >> "$$PRECOMPILED_HEADER"; \
-)
+  system( \
+    mkdir -p "$$OUT_PWD"; \
+    cd "$$OUT_PWD"; \
+    echo \\\x23ifndef __OBJC__ > "$$PRECOMPILED_HEADER"; \
+    echo \\\x23ifdef __cplusplus >> "$$PRECOMPILED_HEADER"; \
+    for a in $$PCH_HEADERS; do \
+      [ $$PRECOMPILED_HEADER == $a ] || echo \\\x23include \\\"$a\\\"; \
+    done >> "$$PRECOMPILED_HEADER"; \
+    echo \\\x23endif /\* __cplusplus \*/ >> "$$PRECOMPILED_HEADER"; \
+    echo \\\x23endif /\* __OBJC__ \*/ >> "$$PRECOMPILED_HEADER"; \
+  )
 
-QMAKE_OBJCXXFLAGS_PRECOMPILE += -std=c++11 -stdlib=libc++ -Wno-c++1y-extensions
+  QMAKE_OBJCXXFLAGS_PRECOMPILE += -std=c++11 -stdlib=libc++ -Wno-c++1y-extensions
+}
