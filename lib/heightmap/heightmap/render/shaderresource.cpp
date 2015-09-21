@@ -3,6 +3,7 @@
 #include "exceptionassert.h"
 #include "log.h"
 #include "tasktimer.h"
+#include "glstate.h"
 
 // Qt
 #include <QOpenGLShaderProgram>
@@ -14,6 +15,12 @@
 using namespace std;
 
 namespace Heightmap {
+
+OpenGLShaderProgramGlState::
+        ~OpenGLShaderProgramGlState()
+{
+    GlState::notifyDeletedProgram (this->programId ());
+}
 
 ShaderPtr ShaderResource::
         loadGLSLProgram(const char *vertFileName, const char *fragFileName, const char* vertTop, const char* fragTop)
@@ -65,16 +72,18 @@ ShaderPtr ShaderResource::
     vertShader.replace (QRegExp("\\battribute\\b"),"in");
     vertShader.replace (QRegExp("\\bvarying\\b"),"out");
     vertShader.replace (QRegExp("\\btexture2D\\b"),"texture");
+    vertShader.replace (QRegExp("\\btexture2DLod\\b"),"textureLod");
     vertShader = "#version 150\n" + vertShader;
 
     fragShader.replace (QRegExp("\\bvarying\\b"),"in");
     fragShader.replace (QRegExp("\\bgl_FragColor\\b"),"out_FragColor");
     fragShader.replace (QRegExp("\\btexture2D\\b"),"texture");
+    fragShader.replace (QRegExp("\\btexture2DLod\\b"),"textureLod");
     fragShader = "out vec4 out_FragColor;\n" + fragShader;
     fragShader = "#version 150\n" + fragShader;
 #endif
 
-    QOpenGLShaderProgram* program = new QOpenGLShaderProgram();
+    OpenGLShaderProgramGlState* program = new OpenGLShaderProgramGlState;
     if (!vertShader.isEmpty ())
         program->addShaderFromSourceCode (QOpenGLShader::Vertex, vertShader);
     if (!fragShader.isEmpty ())

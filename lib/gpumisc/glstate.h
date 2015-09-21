@@ -17,6 +17,7 @@ namespace GlState
     void glBindBuffer(GLenum target, GLuint buffer);
     void glDeleteBuffers(GLsizei n, const GLuint *buffers);
     void glUseProgram(GLuint program);
+    void notifyDeletedProgram(GLuint program);
 
     void glEnableVertexAttribArray (GLuint index);
     void glDisableVertexAttribArray (GLuint index);

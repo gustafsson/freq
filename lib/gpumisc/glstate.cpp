@@ -99,6 +99,12 @@ void glUseProgram(GLuint program)
         ::glUseProgram(current.program = program);
 }
 
+void notifyDeletedProgram(GLuint program)
+{
+    if (program == current.program)
+        ::glUseProgram(current.program = 0);
+}
+
 void glEnableVertexAttribArray (GLuint index)
 {
     if (index < 4)
