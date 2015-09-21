@@ -87,7 +87,7 @@ Heightmap::Position TimelineView::
     int r = devicePixelRatio ();
     vectord win_coord( r*pos.x(), r*pos.y(), 0.1);
 
-    vectord world_coord = gl_projection.gluUnProject (win_coord, success);
+    vectord world_coord = glProjecter(gl_projection).unProject (win_coord, success);
 
     return Heightmap::Position( world_coord[0], world_coord[2] );
 }

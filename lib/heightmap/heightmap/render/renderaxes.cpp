@@ -37,9 +37,9 @@ RenderAxes::
     }
 
     if (orthobuffer_)
-        glDeleteBuffers (1, &orthobuffer_);
+        GlState::glDeleteBuffers (1, &orthobuffer_);
     if (vertexbuffer_)
-        glDeleteBuffers (1, &vertexbuffer_);
+        GlState::glDeleteBuffers (1, &vertexbuffer_);
 }
 
 

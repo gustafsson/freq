@@ -109,9 +109,9 @@ GlyphsFreetypeEmbedded::
     }
 
     if (glyphbuffer_)
-        glDeleteBuffers (1, &glyphbuffer_);
+        GlState::glDeleteBuffers (1, &glyphbuffer_);
     if (vertexbuffer_)
-        glDeleteBuffers (1, &vertexbuffer_);
+        GlState::glDeleteBuffers (1, &vertexbuffer_);
 }
 
 

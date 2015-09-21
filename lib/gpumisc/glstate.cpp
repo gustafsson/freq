@@ -85,6 +85,14 @@ void glBindBuffer(GLenum target, GLuint buffer)
     }
 }
 
+void glDeleteBuffers(GLsizei n, const GLuint *buffers)
+{
+    for (GLsizei i=0; i<n; i++)
+        if (current.arrayBufferBinding==buffers[i])
+            ::glBindBuffer (GL_ARRAY_BUFFER, current.arrayBufferBinding=0);
+    ::glDeleteBuffers (n, buffers);
+}
+
 void glUseProgram(GLuint program)
 {
     if (program != current.program && program != 0)

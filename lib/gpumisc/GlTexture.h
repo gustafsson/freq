@@ -93,7 +93,7 @@ public:
     This is used to check if the mipmap levels have been enabled for this texture.
     The texture must be bound when calling setMinFilter.
      */
-    unsigned int getMinFilter() { return min_filter; }
+    unsigned int getMinFilter() const { return min_filter; }
     void setMinFilter(unsigned int f);
 
 private:

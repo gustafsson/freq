@@ -17,8 +17,6 @@
 #include "glgroupmarker.h"
 #include "glstate.h"
 
-#include <QGLContext>
-
 //#ifdef GL_ES_VERSION_2_0
 #define DRAW_STRAIGHT_ONTO_BLOCK
 //#endif
@@ -174,7 +172,7 @@ MergerTexture::
         return;
     }
 
-    if (vbo_) glDeleteBuffers (1, &vbo_);
+    if (vbo_) GlState::glDeleteBuffers (1, &vbo_);
     vbo_ = 0;
 
     if (fbo_) glDeleteFramebuffers(1, &fbo_);
@@ -188,7 +186,7 @@ void MergerTexture::
     if (vbo_)
         return;
 
-    EXCEPTION_ASSERT(QGLContext::currentContext ());
+    EXCEPTION_ASSERT(QOpenGLContext::currentContext ());
 
     glGenFramebuffers(1, &fbo_);
 

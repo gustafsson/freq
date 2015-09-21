@@ -59,7 +59,7 @@ ResampleTexture::
         return;
     }
 
-    glDeleteBuffers (1, &vbo);
+    GlState::glDeleteBuffers (1, &vbo);
 }
 
 

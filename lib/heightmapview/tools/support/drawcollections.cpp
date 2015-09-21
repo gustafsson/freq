@@ -43,7 +43,7 @@ DrawCollections::~DrawCollections()
     }
 
     if (vbo_)
-        glDeleteBuffers (1,&vbo_);
+        GlState::glDeleteBuffers (1,&vbo_);
 }
 
 

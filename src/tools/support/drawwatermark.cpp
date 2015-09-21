@@ -1,8 +1,7 @@
 #include "drawwatermark.h"
 
-#include "gl.h"
-
 // Gpumisc
+#include "glstate.h"
 #include "GlTexture.h"
 #include "glPushContext.h"
 #include "GlException.h"

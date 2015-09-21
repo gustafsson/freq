@@ -83,7 +83,7 @@ DataStorage<float>::ptr GlTextureRead::
     memcpy(data->getCpuMemory(), src, data->numberOfBytes ());
     glUnmapBuffer(GL_PIXEL_PACK_BUFFER_ARB);
     GlState::glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
-    glDeleteBuffers (1, &pbo);
+    GlState::glDeleteBuffers (1, &pbo);
 
 
     // restore
@@ -138,7 +138,7 @@ DataStorage<unsigned char>::ptr GlTextureRead::
     memcpy(data->getCpuMemory(), src, data->numberOfBytes ());
     glUnmapBuffer(GL_PIXEL_PACK_BUFFER_ARB);
     GlState::glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
-    glDeleteBuffers (1, &pbo);
+    GlState::glDeleteBuffers (1, &pbo);
 
 
     // restore

@@ -279,7 +279,7 @@ void GlSyncObjectMutex::
             EXCEPTION_ASSERT_EQUALS( 0, memcmp(&result[0], &texture_update[0], N*sizeof(float)));
         }
 
-        GlException_SAFE_CALL( glDeleteBuffers (1, &vbo) );
+        GlException_SAFE_CALL( GlState::glDeleteBuffers (1, &vbo) );
         GlException_SAFE_CALL( glDeleteTextures (1, &texture) );
     } catch (...) {
         if (t.joinable ())
