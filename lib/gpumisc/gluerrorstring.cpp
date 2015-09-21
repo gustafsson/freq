@@ -1,5 +1,6 @@
 #include "gluerrorstring.h"
 #include "gl.h"
+#include <cstdio>
 
 char last_error_buffer[20];
 

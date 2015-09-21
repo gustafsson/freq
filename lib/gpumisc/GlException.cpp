@@ -1,4 +1,5 @@
 #include "GlException.h"
+#include "gluerrorstring.h"
 
 #include "gl.h"
 #include "backtrace.h"

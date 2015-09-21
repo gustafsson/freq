@@ -123,7 +123,7 @@ win32 {
 unix {
     !macx* {
         CONFIG(debug, debug|release):QMAKE_CXXFLAGS_DEBUG += -ggdb
-        QMAKE_CXX = colorgcc
+        QMAKE_CXXFLAGS += -Wno-unused-local-typedefs
     }
 
     CONFIG(release, debug|release) {

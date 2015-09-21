@@ -39,6 +39,7 @@
 # include <mutex>
 # include <thread>
 # include <assert.h>
+# include <condition_variable>
 
 namespace std_polyfill
 {

@@ -32,7 +32,7 @@ public:
     void addTask(std::packaged_task<F()>&& task)
     {
         queue_.push (std::packaged_task<void()>(
-                [task(std::move(task))] () mutable
+                [task=std::move(task)] () mutable
                 {
                     task();
                 }

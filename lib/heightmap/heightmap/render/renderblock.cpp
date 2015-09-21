@@ -223,20 +223,6 @@ void RenderBlock::
     }
 #endif
 
-#ifndef __APPLE__ // glewInit is not needed on Mac
-    if (0 != glewInit() ) {
-        Sawe::NonblockingMessageBox::show(
-                QMessageBox::Critical,
-                "Couldn't properly setup graphics",
-                "Sonic AWE failed to setup required graphics hardware.\n\n"
-                "If you think this messge is an error, please file this as a bug report at bugs.muchdifferent.com to help us fix this.",
-
-                "Couldn't initialize \"glew\"");
-
-        // fail
-        return;
-    }
-#endif
 
     // verify necessary OpenGL extensions
     const char* glversion = (const char*)glGetString(GL_VERSION);
