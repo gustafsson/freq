@@ -79,7 +79,7 @@ void RenderBlock::Renderer::
 
     int subdivx = (int)max (0., subdivs - 1 - log2 (max (1., lod.t ()))); // t or s might be 0
     int subdivy = (int)max (0., subdivs - 1 - log2 (max (1., lod.s ())));
-    glUniform1f (render_block->uniVertexTextureBias, std::max(subdivx,subdivy));
+    glUniform1f (render_block->uniVertexTextureBias, std::max(subdivx,subdivy)+1);
 
     LOG_DIVS Log("%s / %g x %g -> %d x %d") % block->getVisibleRegion ()
             % lod.t () % lod.s() % subdivx % subdivy;
@@ -477,7 +477,7 @@ void RenderBlock::ShaderData::prepShader(BlockLayout block_size, RenderSettings*
     if (u_texSize1 != w || u_texSize2 != h)
         if (uniTexSize>=0) glUniform2f(uniTexSize, u_texSize1=w, u_texSize2=h);
 
-    if (uniVertexTextureBias<-1) uniVertexTextureBias = glGetUniformLocation (_shader_prog, "uniVertexTextureBias");
+    if (uniVertexTextureBias<-1) uniVertexTextureBias = glGetUniformLocation (_shader_prog, "vertexTextureBias");
 
     if (attribVertex<-1) attribVertex = glGetAttribLocation (_shader_prog, "qt_Vertex");
 }

@@ -15,7 +15,7 @@ uniform mediump vec2 tex_delta;
 uniform highp mat4 ModelViewProjectionMatrix;
 uniform highp mat4 ModelViewMatrix;
 uniform highp mat4 NormalMatrix;
-uniform lowp float vertexTextureBias;
+uniform mediump float vertexTextureBias;
 
 #ifdef DRAW3D
 mediump float heightValue(mediump float v) {
@@ -76,7 +76,7 @@ void main()
     texCoord = tex0;
 
 #ifdef DRAW3D
-    mediump float height = texture2D(tex, tex0).x;
+    mediump float height = texture2DLod(tex, tex0, vertexTextureBias).x;
     //    height = texture2DLod(tex, texCoord, 0.0).x;
     height = heightValue(height);
 
