@@ -10,4 +10,4 @@ build_script:
   - cd quick
   - qmake -spec win32-g++
   - qmake -r
-  - make
+  - mingw32-make
