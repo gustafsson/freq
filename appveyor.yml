@@ -5,9 +5,9 @@ install:
   - set PATH=%PATH%;C:\MinGW\bin
   - set PATH=%PATH%;C:\Qt\Tools\mingw492_32
   - git submodule init
-  - git submodule update --depth 1 3rdparty\windows
+#  - git submodule update --depth 1 3rdparty\windows
   - dir /s /b /a:d C:\Qt\5.5
 build_script:
   - cd quick
-  - qmake -r -spec win32-g++
+  - qmake -r -Wall -spec win32-g++
   - mingw32-make
