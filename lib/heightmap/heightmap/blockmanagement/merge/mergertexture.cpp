@@ -482,22 +482,23 @@ void MergerTexture::
         VisualizationParams::ptr vp(new VisualizationParams);
 
         // VisualizationParams has only things that have nothing to do with MergerTexture.
-        pBlock block(new Block(ref,bl,vp,0));
-        GlTexture::ptr tex = block->texture ();
+        pBlock target_block(new Block(ref,bl,vp,0));
+        GlTexture::ptr target_tex = target_block->texture ();
 
-        Log("Source overlapping %s, visible %s") % block->getOverlappingRegion () % block->getVisibleRegion ();
-        MergerTexture(cache, bl).fillBlockFromOthers(block);
+        //Log("Source overlapping %s, visible %s") % target_block->getOverlappingRegion () % target_block->getVisibleRegion ();
+        MergerTexture(cache, bl).fillBlockFromOthers(target_block);
 
         DataStorage<float>::ptr data;
 
-        float expected1[]={ 0, 0, 0, 0,
-                            0, 0, 0, 0,
-                            0, 0, 0, 0,
-                            0, 0, 0, 0};
+        {
+            float expected[]={  0, 0, 0, 0,
+                                0, 0, 0, 0,
+                                0, 0, 0, 0,
+                                0, 0, 0, 0};
 
-        data = GlTextureRead(*tex).readFloat (0, GL_RED);
-        //data = block->block_data ()->cpu_copy;
-        COMPARE_DATASTORAGE(expected1, sizeof(expected1), data);
+            data = GlTextureRead(*target_tex).readFloat (0, GL_RED);
+            COMPARE_DATASTORAGE(expected, sizeof(expected), data);
+        }
 
         {
             float srcdata[]={ 1, 0, 0, 0,
@@ -513,20 +514,21 @@ void MergerTexture::
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             cache->insert(block);
-        }
+            MergerTexture(cache, bl).fillBlockFromOthers(target_block);
+            clearCache(cache);
 
-        MergerTexture(cache, bl).fillBlockFromOthers(block);
-        clearCache(cache);
-        float expected2[]={   1,  .5,   0,   0,
-                              0,   1,   2,   1,
-                              0,   0,   0,   0,
-                             .5, .25,   0,   0};
-        data = GlTextureRead(*tex).readFloat (0, GL_RED);
-        //data = block->block_data ()->cpu_copy;
-        //DataStorage<float>::ptr expected2ptr = CpuMemoryStorage::BorrowPtr(DataStorageSize(4,4), expected2);
-        //PRINT_DATASTORAGE(expected2ptr, "");
-        //PRINT_DATASTORAGE(data, "");
-        COMPARE_DATASTORAGE(expected2, sizeof(expected2), data);
+            float expected[]={    1,  .5,   0,   0,
+                                  0,   1,   2,   1,
+                                  0,   0,   0,   0,
+                                  .5, .25,   0,   0};
+            data = GlTextureRead(*target_tex).readFloat (0, GL_RED);
+
+            //DataStorage<float>::ptr expectedptr = CpuMemoryStorage::BorrowPtr(DataStorageSize(4,4), expected);
+            //PRINT_DATASTORAGE(expectedptr, "");
+            //PRINT_DATASTORAGE(data, "");
+
+            COMPARE_DATASTORAGE(expected, sizeof(expected), data);
+        }
 
         {
             float srcdata[]={ 1, 2, 3, 4,
@@ -540,25 +542,140 @@ void MergerTexture::
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             cache->insert(block);
+            MergerTexture(cache, bl).fillBlockFromOthers(target_block);
+            clearCache(cache);
+
+            float expected[]={    0, 0,    3,  4,
+                                  0, 0,    7,  8,
+                                  0, 0,   11,  12,
+                                  0, 0,   15,  15};
+
+            data = GlTextureRead(*target_tex).readFloat (0, GL_RED);
+
+            //DataStorage<float>::ptr expectedptr = CpuMemoryStorage::BorrowPtr(DataStorageSize(4,4), expected3);
+            //PRINT_DATASTORAGE(expectedptr, "");
+            //PRINT_DATASTORAGE(data, "");
+
+            COMPARE_DATASTORAGE(expected, sizeof(expected), data);
         }
 
-        MergerTexture(cache, bl).fillBlockFromOthers(block);
-        float expected3[]={   0, 0,    3,  4,
-                              0, 0,    7,  8,
-                              0, 0,   11,  12,
-                              0, 0,   15,  15};
+        {
+            float srcdata[]={ 11, 13, 12, 10,
+                              9, 8, 7, 6,
+                              1, 2, 3, 4,
+                              15, 14, 13, 16};
 
-        data = GlTextureRead(*tex).readFloat (0, GL_RED);
-        //data = block->block_data ()->cpu_copy;
+            pBlock block(new Block(ref.right (),bl,vp,0));
+            GlTexture::ptr tex = block->texture ();
+            tex->bindTexture ();
+            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
-        //DataStorage<float>::ptr expected3ptr = CpuMemoryStorage::BorrowPtr(DataStorageSize(4,4), expected3);
-        //PRINT_DATASTORAGE(expected3ptr, "");
-        //PRINT_DATASTORAGE(data, "");
+            cache->insert(block);
+            MergerTexture(cache, bl).fillBlockFromOthers(target_block);
+            clearCache(cache);
 
-        COMPARE_DATASTORAGE(expected3, sizeof(expected3), data);
-        clearCache(cache);
+            float expected[]={    0, 0,   13,  12,
+                                  0, 0,    9,  7,
+                                  0, 0,    3,  4,
+                                  0, 0,   15,  16};
 
-        tex.reset ();
+            data = GlTextureRead(*target_tex).readFloat (0, GL_RED);
+
+            //DataStorage<float>::ptr expectedptr = CpuMemoryStorage::BorrowPtr(DataStorageSize(4,4), expected4);
+            //PRINT_DATASTORAGE(expectedptr, "");
+            //PRINT_DATASTORAGE(data, "");
+
+            COMPARE_DATASTORAGE(expected, sizeof(expected), data);
+        }
+
+        {
+            float srcdata[]={ 11, 13, 12, 10,
+                              9, 8, 7, 6,
+                              1, 2, 3, 4,
+                              15, 14, 13, 16};
+
+            pBlock block(new Block(ref.left (),bl,vp,0));
+            GlTexture::ptr tex = block->texture ();
+            tex->bindTexture ();
+            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+
+            cache->insert(block);
+            MergerTexture(cache, bl).fillBlockFromOthers(target_block);
+            clearCache(cache);
+
+            float expected[]={    13, 13,  0,  0,
+                                  9,  8,   0,  0,
+                                  2,  4,   0,  0,
+                                  15, 16,  0,  0};
+
+            data = GlTextureRead(*target_tex).readFloat (0, GL_RED);
+
+            //DataStorage<float>::ptr expectedptr = CpuMemoryStorage::BorrowPtr(DataStorageSize(4,4), expected);
+            //PRINT_DATASTORAGE(expectedptr, "");
+            //PRINT_DATASTORAGE(data, "");
+
+            COMPARE_DATASTORAGE(expected, sizeof(expected), data);
+        }
+
+        {
+            float srcdata[]={ 11, 13, 12, 10,
+                              9, 8, 7, 6,
+                              1, 2, 3, 4,
+                              15, 14, 13, 16};
+
+            pBlock block(new Block(ref.bottom (),bl,vp,0));
+            GlTexture::ptr tex = block->texture ();
+            tex->bindTexture ();
+            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+
+            cache->insert(block);
+            MergerTexture(cache, bl).fillBlockFromOthers(target_block);
+            clearCache(cache);
+
+            float expected[]={    11, 13,  12, 10,
+                                  15, 14,  13, 16,
+                                  0,  0,   0,  0,
+                                  0,  0,   0,  0};
+
+            data = GlTextureRead(*target_tex).readFloat (0, GL_RED);
+
+            //DataStorage<float>::ptr expectedptr = CpuMemoryStorage::BorrowPtr(DataStorageSize(4,4), expected);
+            //PRINT_DATASTORAGE(expectedptr, "");
+            //PRINT_DATASTORAGE(data, "");
+
+            COMPARE_DATASTORAGE(expected, sizeof(expected), data);
+        }
+
+        {
+            float srcdata[]={ 11, 13, 12, 10,
+                              9, 8, 7, 6,
+                              1, 2, 3, 4,
+                              15, 14, 13, 16};
+
+            pBlock block(new Block(ref.top (),bl,vp,0));
+            GlTexture::ptr tex = block->texture ();
+            tex->bindTexture ();
+            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+
+            cache->insert(block);
+            MergerTexture(cache, bl).fillBlockFromOthers(target_block);
+            clearCache(cache);
+
+            float expected[]={   0,   0,   0,   0,
+                                 0,   0,   0,   0,
+                                 11,  13,  12,  10,
+                                 15,  14,  13,  16};
+
+            data = GlTextureRead(*target_tex).readFloat (0, GL_RED);
+
+            //DataStorage<float>::ptr expectedptr = CpuMemoryStorage::BorrowPtr(DataStorageSize(4,4), expected);
+            //PRINT_DATASTORAGE(expectedptr, "");
+            //PRINT_DATASTORAGE(data, "");
+
+            COMPARE_DATASTORAGE(expected, sizeof(expected), data);
+        }
+
+        target_tex.reset ();
     }
 }
 
