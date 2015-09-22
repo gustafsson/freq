@@ -239,12 +239,19 @@ DataStorage<float>::ptr GlTextureRead::
 
     DataStorage<float>::ptr data(new DataStorage<float>(width*number_of_components, height));
 
-    // Read through FBO instead
-    GlFrameBuffer fb(texture, width, height);
+    bool useFbo = false;
+    if (useFbo)
+    {
+        GlFrameBuffer fb(texture, width, height, level);
 
-    fb.bindFrameBuffer ();
-    glReadPixels (0, 0, width, height, format, GL_FLOAT, data->getCpuMemory());
-    fb.unbindFrameBuffer ();
+        fb.bindFrameBuffer ();
+        glReadPixels (0, 0, width, height, format, GL_FLOAT, data->getCpuMemory());
+        fb.unbindFrameBuffer ();
+    }
+    else
+    {
+        glGetTexImage(GL_TEXTURE_2D, level, format, GL_FLOAT, data->getCpuMemory());
+    }
 
     // restore
     GlException_SAFE_CALL( glPixelStorei (GL_PACK_ALIGNMENT, pack_alignment) );

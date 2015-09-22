@@ -17,8 +17,6 @@ class GlFrameBufferException: virtual public boost::exception, virtual public st
 GlFrameBuffer::
         GlFrameBuffer(int width, int height)
             :
-            fboId_(0),
-            depth_stencil_buffer_(0),
             own_texture_(new GlTexture),
             textureid_(own_texture_->getOpenGlTextureId ()),
             enable_depth_component_(true)
@@ -41,19 +39,17 @@ GlFrameBuffer::
 }
 
 GlFrameBuffer::
-        GlFrameBuffer(unsigned textureid, int width, int height)
+        GlFrameBuffer(unsigned textureid, int width, int height, int level)
     :
-    fboId_(0),
-    depth_stencil_buffer_(0),
-    own_texture_(0),
     textureid_(textureid),
-    enable_depth_component_(false),
     texture_width_(width),
-    texture_height_(height)
+    texture_height_(height),
+    level_(level)
 {
     EXCEPTION_ASSERT_LESS(0u, textureid);
     EXCEPTION_ASSERT_LESS(0, width);
     EXCEPTION_ASSERT_LESS(0, height);
+    EXCEPTION_ASSERT_LESS_OR_EQUAL(0, level);
 
     init();
 
@@ -73,9 +69,9 @@ GlFrameBuffer::
 }
 
 GlFrameBuffer::
-        GlFrameBuffer(const GlTexture& texture)
+        GlFrameBuffer(const GlTexture& texture, int level)
     :
-      GlFrameBuffer(texture.getOpenGlTextureId (), texture.getWidth (), texture.getHeight ())
+      GlFrameBuffer(texture.getOpenGlTextureId (), texture.getWidth (), texture.getHeight (), level)
 {
 }
 
@@ -181,7 +177,7 @@ void GlFrameBuffer::
                                   GL_COLOR_ATTACHMENT0,
                                   GL_TEXTURE_2D,
                                   textureid_,
-                                  0) );
+                                  level_) );
 
         if (enable_depth_component_)
         {
