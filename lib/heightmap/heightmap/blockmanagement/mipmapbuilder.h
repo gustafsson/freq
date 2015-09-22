@@ -35,7 +35,7 @@ public:
     };
 
     // mipmaps must already be allocated in t
-    void buildMipmaps(const GlTexture& t, MipmapOperator op=MipmapOperator_Max, int maxlevels = -1);
+    void buildMipmaps(const GlTexture& t, MipmapOperator op=MipmapOperator_Max, int levels = -1);
 
 private:
     struct ShaderInfo {

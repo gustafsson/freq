@@ -102,7 +102,7 @@ void MipmapBuilder::
 
 
 void MipmapBuilder::
-        buildMipmaps(const GlTexture& tex, MipmapOperator op, int maxlevels)
+        buildMipmaps(const GlTexture& tex, MipmapOperator op, int levels)
 {
     // assume mipmaps are allocated in tex
     if (op >= MipmapOperator_Last)
@@ -127,21 +127,20 @@ void MipmapBuilder::
     glVertexAttribPointer (info.qt_Vertex, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), 0);
     glVertexAttribPointer (info.qt_MultiTexCoord0, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), (float*)0 + 2);
 
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_);
     glBindTexture( GL_TEXTURE_2D, tex.getOpenGlTextureId ());
-
      // the results are the same with LINEAR_MIPMAP_LINEAR as well but this ensures that no unnecessary texture reads are performed
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST );
 
-    GlState::glDisable (GL_DEPTH_TEST);
+    GlState::glDisable (GL_DEPTH_TEST, true); // disable depth test before binding framebuffer without depth buffer
     GlState::glDisable (GL_CULL_FACE);
-    GlState::glDisable (GL_BLEND);
 
-    if (maxlevels<0)
-        maxlevels = tex.getWidth (); // whatever is bigger than log2(min(tex.getWidth (),tex.getHeight ()))
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_);
 
-    for (int level=1; level<maxlevels; level++)
+    if (levels<0)
+        levels = tex.getWidth (); // whatever is bigger than log2(min(tex.getWidth (),tex.getHeight ()))
+
+    for (int level=1; level<levels; level++)
     {
         int w = tex.getWidth () >> level;
         int h = tex.getHeight () >> level;
@@ -152,14 +151,14 @@ void MipmapBuilder::
         glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                GL_TEXTURE_2D, tex.getOpenGlTextureId (), level);
 
-        glClearColor (0.01+0.01*level,0,0,0);
-        glClear (GL_COLOR_BUFFER_BIT);
-
         glUniform2f(info.subtexeloffset, 0.25/w, 0.25/h);
         glUniform1f(info.level, level-1);
         glViewport(0, 0, w, h);
         GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
+
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, 0, 0);
 
     GlState::glEnable (GL_DEPTH_TEST);
     GlState::glEnable (GL_CULL_FACE);
@@ -220,7 +219,6 @@ void MipmapBuilder::
 
         GlTexture::ptr tex = Render::BlockTextures::get1 ();
         tex->bindTexture ();
-        glGenerateMipmap (GL_TEXTURE_2D);
         tex->setMinFilter (GL_LINEAR_MIPMAP_LINEAR);
         DataStorage<float>::ptr data0, level1, level2;
 
