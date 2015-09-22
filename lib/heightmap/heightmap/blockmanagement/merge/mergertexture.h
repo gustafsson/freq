@@ -42,12 +42,12 @@ private:
     unsigned program_;
 
     // glsl uniforms
-    int qt_Vertex = 0,
-        qt_MultiTexCoord0 = 0,
-        qt_Texture0 = 0,
-        invtexsize = 0,
-        uniProjection = 0,
-        uniModelView = 0;
+    int qt_Vertex = -2,
+        qt_MultiTexCoord0 = -2,
+        qt_Texture0 = -2,
+        invtexsize = -2,
+        uniProjection = -2,
+        uniModelView = -2;
 
     void init();
     Signal::Intervals fillBlockFromOthersInternal( pBlock block );
