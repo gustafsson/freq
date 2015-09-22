@@ -467,6 +467,7 @@ void MergerTexture::
     GlException_SAFE_CALL( glGenVertexArrays(1, &VertexArrayID) );
     GlException_SAFE_CALL( glBindVertexArray(VertexArrayID) );
 #endif
+    GlState::assume_default_gl_states ();
 
     testRegionBlockOperator();
 
