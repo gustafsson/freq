@@ -3,6 +3,7 @@
 
 #include "glprojection.h"
 #include "shared_state.h"
+#include "mipmapbuilder.h"
 
 #include <future>
 
@@ -43,11 +44,15 @@ public:
     void queueUpdate(pBlock b, DrawFunc && f);
     void clearQueue();
 
+    MipmapBuilder* mipmapbuilder() { return &mipmapbuilder_; }
+
 private:
     shared_state<std::list<std::pair<pBlock, DrawFunc>>> queue_;
     // keep DrawFunc in q_success_ until next processUpdates to not release resources before glFlush between frames
     std::list<std::pair<pBlock, DrawFunc>> q_success_;
     std::unique_ptr<Heightmap::BlockManagement::Fbo2Block> fbo2block_;
+
+    MipmapBuilder mipmapbuilder_;
 };
 
 

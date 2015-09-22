@@ -1,11 +1,11 @@
 #include "block.h"
 #include "GlTexture.h"
-#include "heightmap/render/blocktextures.h"
-#include "heightmap/blockmanagement/blockupdater.h"
-
 #include "tasktimer.h"
 #include "log.h"
 
+#include "heightmap/render/blocktextures.h"
+#include "heightmap/blockmanagement/blockupdater.h"
+#include "heightmap/blockmanagement/mipmapbuilder.h"
 
 //#define BLOCK_INFO
 #define BLOCK_INFO if(0)
@@ -92,7 +92,9 @@ void Block::
         {
             // recalculate mipmap if reenabled or got new texture
             texture_->setMinFilter (GL_LINEAR_MIPMAP_LINEAR);
-            glGenerateMipmap (GL_TEXTURE_2D);
+//            glGenerateMipmap (GL_TEXTURE_2D);
+
+            this->updater ()->mipmapbuilder ()->buildMipmaps (*texture_, BlockManagement::MipmapBuilder::MipmapOperator_Max, Render::BlockTextures::mipmaps+1);
         }
         else
         {
