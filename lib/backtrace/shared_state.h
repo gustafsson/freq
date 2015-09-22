@@ -285,7 +285,7 @@ public:
         read_ptr(const read_ptr&) = delete;
         read_ptr& operator=(read_ptr const&) = delete;
 
-        ~read_ptr() throw(...) {
+        ~read_ptr() {
             unlock ();
         }
 
@@ -402,7 +402,7 @@ public:
         write_ptr(const write_ptr&) = delete;
         write_ptr& operator=(write_ptr const&) = delete;
 
-        ~write_ptr() throw(...) {
+        ~write_ptr() {
             unlock ();
         }
 

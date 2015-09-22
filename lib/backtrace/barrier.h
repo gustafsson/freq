@@ -4,6 +4,7 @@
 #include <atomic>
 #include <mutex>
 #include <thread>
+#include <condition_variable>
 
 /**
  * @brief The spinning_barrier class should provide a lock-free spinning

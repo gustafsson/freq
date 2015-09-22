@@ -235,7 +235,7 @@ void GlFrameBuffer::
         init()
 {
 #ifndef __APPLE__ // glewInit is not needed on Mac
-    if (0==glGenRenderbuffersEXT)
+    if (0==glGenRenderbuffers)
     {
         DEBUG_INFO TaskInfo("Initializing glew");
 

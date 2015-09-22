@@ -1,3 +1,4 @@
+#if !defined(__GNUC__) || defined(__APPLE__)
 #include "prettifysegfault.h"
 #include "backtrace.h"
 #include "signalname.h"
@@ -504,3 +505,4 @@ void PrettifySegfault::
         EXCEPTION_ASSERT(breaks_RAII_assumptions::destructor_was_called);
     }
 }
+#endif

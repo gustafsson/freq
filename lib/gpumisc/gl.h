@@ -25,7 +25,8 @@
 # endif
 #include "gluerrorstring.h"
 #else
-#    include <GL/glew.h> // glew.h includes gl.h
+# include <GL/glew.h> // glew.h includes gl.h
+# include <QtGui> // include <QtGui/qopengl.h> by including the QtGui framework
 #endif
 
 #endif // GL_H

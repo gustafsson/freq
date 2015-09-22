@@ -112,7 +112,7 @@ std::vector<vectord> clipPlane( const std::vector<vectord>& p, const tvector<4,d
 
             // TODO why [-.1, 1.1]?
             //if (!isnan(s) && -.1 <= s && s <= 1.1)
-            if (!isnan(s) && 0 <= s && s <= 1)
+            if (!std::isnan(s) && 0 <= s && s <= 1)
             {
                 break;
             }
@@ -148,7 +148,7 @@ std::vector<vectord> clipPlane( const std::vector<vectord>& p, const tvector<4,d
             double s;
             vectord xy = planeIntersection( *a, *b, s, plane );
 
-            if (!isnan(s) && -.1 <= s && s <= 1.1)
+            if (!std::isnan(s) && -.1 <= s && s <= 1.1)
             //if (!isnan(s) && 0 <= s && s <= 1)
             {
                 r.push_back( xy );
