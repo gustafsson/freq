@@ -8,6 +8,8 @@
         <file>mergertexture0.frag</file>
         <file>freetype-gl-text.frag</file>
         <file>freetype-gl-text.vert</file>
+        <file>mipmapbuilder.frag</file>
+        <file>mipmapbuilder.vert</file>
     </qresource>
     <qresource prefix="/fonts">
         <file alias="Vera.ttf">fonts/Vera.ttf</file>
