@@ -339,24 +339,25 @@ void BlockTexturesImpl::
     EXCEPTION_ASSERT_LESS(0u,w);
     EXCEPTION_ASSERT_LESS(0u,h);
 
-    int mipmaplevels = 1 + std::min(BlockTextures::mipmaps,(int)log2(std::min(w,h)));
+    int levels = 1 + std::min(BlockTextures::mipmaps,(int)log2(std::min(w,h)));
     if (!mipmaps)
-        mipmaplevels = 1;
+        levels = 1;
 
 #if defined(GL_ES_VERSION_2_0)
     // https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_storage.txt
     #ifdef GL_ES_VERSION_3_0
-        GlException_SAFE_CALL( glTexStorage2D ( GL_TEXTURE_2D, mipmaplevels, GL_R16F, w, h));
+        GlException_SAFE_CALL( glTexStorage2D ( GL_TEXTURE_2D, levels, GL_R16F, w, h));
     #else
-        GlException_SAFE_CALL( glTexStorage2DEXT ( GL_TEXTURE_2D, mipmaplevels, GL_R16F_EXT, w, h));
+        GlException_SAFE_CALL( glTexStorage2DEXT ( GL_TEXTURE_2D, levels, GL_R16F_EXT, w, h));
     #endif
 #else
 //    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // GL 1.4
-    for (int i=0; i<mipmaplevels; i++)
+    for (int i=0; i<levels; i++)
         GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, i, GL_R16F, w>>i, h>>i, 0, GL_RED, GL_FLOAT, 0) );
 //    GlException_SAFE_CALL( glTexStorage2D (GL_TEXTURE_2D, mipmaplevels, GL_R16F, w, h) ); // GL 4.2
 
 #endif
+    // glGenerateMipmap (GL_TEXTURE_2D); // make sure all mipmaps are allocated
 
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
