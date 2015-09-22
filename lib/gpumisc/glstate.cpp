@@ -193,4 +193,11 @@ void assume_default_gl_states ()
     current.reset ();
 }
 
+void assume_default_qt_quick_states ()
+{
+    assume_default_gl_states();
+    setGlIsEnabled (GL_DEPTH_TEST, true);
+    setGlIsEnabled (GL_BLEND, true);
+}
+
 }

@@ -43,6 +43,14 @@ namespace GlState
      * reenabled on the next sync.
      */
     void assume_default_gl_states ();
+
+    /**
+     * @brief assume_default_qt_quick_states sets the states that Qt Quick sets.
+     * It is close to default_gl_states but not exactly the same.
+     *
+     * Note that QGLWidget uses the default gl states.
+     */
+    void assume_default_qt_quick_states ();
 }
 
 #endif // GLSTATE_H

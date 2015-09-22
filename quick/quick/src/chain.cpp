@@ -94,9 +94,7 @@ void Chain::handleWindowChanged(QQuickWindow* win)
 
 void setStates()
 {
-    GlState::assume_default_gl_states ();
-    GlState::setGlIsEnabled (GL_DEPTH_TEST, true);
-    GlState::setGlIsEnabled (GL_BLEND, true);
+    GlState::assume_default_gt_quick_states ();
     GlState::glDisable (GL_BLEND);
 
 #ifdef GL_ES_VERSION_2_0
