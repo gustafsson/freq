@@ -8,6 +8,5 @@ install:
   - git submodule update --depth 1 3rdparty\windows
 build_script:
   - cd quick
-  - qmake -spec win32-g++
-  - qmake -r
+  - qmake -r -spec win32-g++
   - mingw32-make
