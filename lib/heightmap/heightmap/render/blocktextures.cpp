@@ -19,6 +19,18 @@
 namespace Heightmap {
 namespace Render {
 
+/**
+ * @brief mipmaps should match how the number of mipmap levels being used
+ * in heightmap.frag.
+ */
+#if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
+// slow GPU
+const int BlockTextures::mipmaps=0;
+#else
+const int BlockTextures::mipmaps=5;
+#endif
+
+
 class BlockTexturesImpl
 {
 public:
@@ -323,12 +335,16 @@ void BlockTexturesImpl::
 {
     glBindTexture(GL_TEXTURE_2D, name);
     // Compatible with GlFrameBuffer
-#if defined(GL_ES_VERSION_2_0)
-    // https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_storage.txt
-    int mipmaplevels = std::max(1,std::min(1+BlockTextures::mipmaps,(int)log2(std::max(w,h))-1));
+
+    EXCEPTION_ASSERT_LESS(0u,w);
+    EXCEPTION_ASSERT_LESS(0u,h);
+
+    int mipmaplevels = 1 + std::min(BlockTextures::mipmaps,(int)log2(std::min(w,h)));
     if (!mipmaps)
         mipmaplevels = 1;
 
+#if defined(GL_ES_VERSION_2_0)
+    // https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_storage.txt
     #ifdef GL_ES_VERSION_3_0
         GlException_SAFE_CALL( glTexStorage2D ( GL_TEXTURE_2D, mipmaplevels, GL_R16F, w, h));
     #else
@@ -336,8 +352,9 @@ void BlockTexturesImpl::
     #endif
 #else
 //    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // GL 1.4
-    GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, w, h, 0, GL_RED, GL_FLOAT, 0) );
-//    GlException_SAFE_CALL( glTexStorage2D (GL_TEXTURE_2D, mipmaplevels, GL_R16F, w, h) ); // GL 4.0
+    for (int i=0; i<mipmaplevels; i++)
+        GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, i, GL_R16F, w>>i, h>>i, 0, GL_RED, GL_FLOAT, 0) );
+//    GlException_SAFE_CALL( glTexStorage2D (GL_TEXTURE_2D, mipmaplevels, GL_R16F, w, h) ); // GL 4.2
 
 #endif
 

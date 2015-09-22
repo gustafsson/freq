@@ -97,12 +97,7 @@ public:
      * @brief mipmaps should match how the number of mipmap levels being used
      * in heightmap.frag.
      */
-#if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
-    // slow GPU
-    static const int mipmaps=0;
-#else
-    static const int mipmaps=5;
-#endif
+    static const int mipmaps;
 
     /**
      * @brief setupTexture
