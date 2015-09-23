@@ -4,6 +4,7 @@
 #include "fbo2block.h"
 #include "heightmap/render/blocktextures.h"
 #include "glgroupmarker.h"
+#include "mipmapbuilder.h"
 
 #include <unordered_map>
 
@@ -116,6 +117,16 @@ void BlockUpdater::
     queue_->clear();
     q_success_.clear ();
     fbo2block_.reset ();
+    mipmapbuilder_.reset ();
+}
+
+
+MipmapBuilder* BlockUpdater::
+        mipmapbuilder()
+{
+    if (!mipmapbuilder_)
+        mipmapbuilder_.reset(new MipmapBuilder);
+    return mipmapbuilder_.get ();
 }
 
 

@@ -3,7 +3,6 @@
 
 #include "glprojection.h"
 #include "shared_state.h"
-#include "mipmapbuilder.h"
 
 #include <future>
 
@@ -15,7 +14,7 @@ class Block;
 
 namespace BlockManagement {
 class Fbo2Block;
-
+class MipmapBuilder;
 
 /**
  * @brief The BlockUpdater class is safe to use from multiple threads.
@@ -44,7 +43,7 @@ public:
     void queueUpdate(pBlock b, DrawFunc && f);
     void clearQueue();
 
-    MipmapBuilder* mipmapbuilder() { return &mipmapbuilder_; }
+    MipmapBuilder* mipmapbuilder();
 
 private:
     shared_state<std::list<std::pair<pBlock, DrawFunc>>> queue_;
@@ -52,7 +51,7 @@ private:
     std::list<std::pair<pBlock, DrawFunc>> q_success_;
     std::unique_ptr<Heightmap::BlockManagement::Fbo2Block> fbo2block_;
 
-    MipmapBuilder mipmapbuilder_;
+    std::unique_ptr<MipmapBuilder> mipmapbuilder_;
 };
 
 
