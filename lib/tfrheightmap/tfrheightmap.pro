@@ -3,8 +3,8 @@
 
 TARGET = tfrheightmap
 TEMPLATE = lib
-win32:TEMPLATE = vclib
-win32:CONFIG += debug_and_release
+win32-msvc*:TEMPLATE = vclib
+win32-msvc*:CONFIG += debug_and_release
 
 CONFIG += staticlib warn_on
 CONFIG += c++11 buildflags

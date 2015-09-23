@@ -18,13 +18,13 @@ customtarget {
 
 testlib {
     TEMPLATE = lib
-    win32:TEMPLATE = vclib
+    win32-msvc*:TEMPLATE = vclib
     CONFIG += sharedlib
     DEFINES += SAWE_EXPORTDLL
 } else {
     DEFINES += SAWE_NODLL
     TEMPLATE = app
-    win32:TEMPLATE = vcapp
+    win32-msvc*:TEMPLATE = vcapp
     win32:CONFIG -= embed_manifest_dll
     win32:CONFIG += embed_manifest_exe
     macx:CONFIG -= app_bundle
