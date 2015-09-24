@@ -5,7 +5,7 @@
 message("buildflags for $$_PRO_FILE_PWD_ with $$QMAKESPEC")
 
 CONFIG += legacy-opengl
-win32:CONFIG += debug_and_release
+win32-msvc*:CONFIG += debug_and_release
 CONFIG += warn_on
 !macx-ios*:CONFIG += openmp
 CONFIG(debug, debug|release): DEFINES += _DEBUG
@@ -152,4 +152,5 @@ profiling {
 }
 
 ios: INCLUDEPATH += $$_PRO_FILE_PWD_/../../3rdparty/ios/include
+win32: INCLUDEPATH += $$_PRO_FILE_PWD_/../../3rdparty/windows
 

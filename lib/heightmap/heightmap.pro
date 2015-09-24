@@ -3,8 +3,8 @@
 
 TARGET = heightmap
 TEMPLATE = lib
-win32:TEMPLATE = vclib
-win32:CONFIG += debug_and_release
+win32-msvc*:TEMPLATE = vclib
+win32-msvc*:CONFIG += debug_and_release
 
 CONFIG += staticlib warn_on
 CONFIG += c++11 buildflags
@@ -42,7 +42,6 @@ macx:exists(/opt/local/include/): INCLUDEPATH += /opt/local/include/ # macports
 macx:exists(/usr/local/include/): INCLUDEPATH += /usr/local/include/ # homebrew
 
 OTHER_FILES += \
-    LICENSE \
     *.pro \
 
 win32 { 
