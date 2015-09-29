@@ -93,5 +93,6 @@ void GlTexture::bindTexture()
 
 void GlTexture::setMinFilter (unsigned int f)
 {
-    GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter=f) );
+    if (min_filter!=f)
+        GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter=f) );
 }
