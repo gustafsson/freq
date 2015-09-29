@@ -110,6 +110,9 @@ void MipmapBuilder::
 
     EXCEPTION_ASSERT_EQUALS((int)tex.getMinFilter (), GL_LINEAR_MIPMAP_LINEAR);
 
+    int prev_fbo = 0;
+    glGetIntegerv (GL_FRAMEBUFFER_BINDING, &prev_fbo);
+
     init();
     ShaderInfo& info = shaders_[op];
     if (!info.p->isLinked ())
@@ -166,7 +169,7 @@ void MipmapBuilder::
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, QOpenGLContext::currentContext ()->defaultFramebufferObject ());
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, prev_fbo);
 
     GlState::glDisableVertexAttribArray (info.qt_MultiTexCoord0);
     GlState::glDisableVertexAttribArray (info.qt_Vertex);
