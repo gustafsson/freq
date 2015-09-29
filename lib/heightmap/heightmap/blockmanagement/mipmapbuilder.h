@@ -20,15 +20,17 @@ public:
     ~MipmapBuilder();
 
     /**
-     * @brief The MipmapOperator enum specifies which folding function to use to build the mip
+     * @brief The MipmapOperator enum specifies which folding function to use to build the mipmap
+     * https://en.wikipedia.org/wiki/Generalized_mean
      */
     enum MipmapOperator {
         MipmapOperator_ArithmeticMean, // M1, just a regular "mean", equivalent to glGenerateMipmap (GL_TEXTURE_2D)
-        MipmapOperator_GeometricMean, // M0, pow(x1*x2*...*xN,1/N), aka log-average (but this is different from the logarithmic mean)
-        MipmapOperator_HarmonicMean, // N/(1/x1 + 1/x2 + ... + 1/xN)
-        MipmapOperator_SqrMean, // M2, aka gamma corrected mean, for Gamma=2.0
-        MipmapOperator_Max, // Minf
-        MipmapOperator_Min, // M-inf
+        MipmapOperator_GeometricMean,  // M0, pow(x1*x2*...*xN,1/N), log-average (but this is different from the logarithmic mean)
+        MipmapOperator_HarmonicMean,   // M-1, N/(1/x1 + 1/x2 + ... + 1/xN)
+        MipmapOperator_QuadraticMean,  // M2, RMS, gamma corrected mean, for Gamma=2.0
+        MipmapOperator_CubicMean,      // M3, RMS, gamma corrected mean, for Gamma=2.0
+        MipmapOperator_Max,            // Minf
+        MipmapOperator_Min,            // M-inf
 
         // OTA: On the Performance of the Order-Truncate-Average-Ratio Spectral Filter
         // This is not really an implementation of OTA, but rather inspired from OTA.

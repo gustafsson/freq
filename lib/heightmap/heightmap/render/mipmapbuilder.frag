@@ -22,8 +22,10 @@ void main(void)
     r = sqrt(sqrt(v.x*v.y)*sqrt(v.z*v.w));
 #elif defined(MipmapOperator_HarmonicMean)
     r = 4./(1./v.x + 1./v.y + 1./v.z + 1./v.w);
-#elif defined(MipmapOperator_SqrMean)
+#elif defined(MipmapOperator_QuadraticMean)
     r = sqrt(v.x*v.x+v.y*v.y+v.z*v.z+v.w*v.w)*0.5;
+#elif defined(MipmapOperator_CubicMean)
+    r = pow((v.x*v.x*v.x+v.y*v.y*v.y+v.z*v.z*v.z+v.w*v.w*v.w)*0.25, 1.0/3.0);
 #elif defined(MipmapOperator_Max)
     r = max(max(v.x,v.y),max(v.z,v.w));
 #elif defined(MipmapOperator_Min)

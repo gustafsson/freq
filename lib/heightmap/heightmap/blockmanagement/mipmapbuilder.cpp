@@ -55,8 +55,11 @@ void MipmapBuilder::
         case MipmapOperator_HarmonicMean:
             info.p = ShaderResource::loadGLSLProgram (":/shaders/mipmapbuilder.vert",":/shaders/mipmapbuilder.frag",0,"#define MipmapOperator_HarmonicMean");
             break;
-        case MipmapOperator_SqrMean:
-            info.p = ShaderResource::loadGLSLProgram (":/shaders/mipmapbuilder.vert",":/shaders/mipmapbuilder.frag",0,"#define MipmapOperator_SqrMean");
+        case MipmapOperator_QuadraticMean:
+            info.p = ShaderResource::loadGLSLProgram (":/shaders/mipmapbuilder.vert",":/shaders/mipmapbuilder.frag",0,"#define MipmapOperator_QuadraticMean");
+            break;
+        case MipmapOperator_CubicMean:
+            info.p = ShaderResource::loadGLSLProgram (":/shaders/mipmapbuilder.vert",":/shaders/mipmapbuilder.frag",0,"#define MipmapOperator_CubicMean");
             break;
         case MipmapOperator_Max:
             info.p = ShaderResource::loadGLSLProgram (":/shaders/mipmapbuilder.vert",":/shaders/mipmapbuilder.frag",0,"#define MipmapOperator_Max");
@@ -335,7 +338,7 @@ void MipmapBuilder::
             tex->bindTexture ();
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
-            GlException_SAFE_CALL( MipmapBuilder().buildMipmaps (*tex, MipmapOperator_SqrMean) );
+            GlException_SAFE_CALL( MipmapBuilder().buildMipmaps (*tex, MipmapOperator_QuadraticMean) );
 
             float expected1[]={ 4.0585938147, 5.8710938147,
                                 11.6796876022, 13.6562495911 };
