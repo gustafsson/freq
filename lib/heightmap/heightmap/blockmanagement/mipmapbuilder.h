@@ -40,7 +40,7 @@ public:
     };
 
     // mipmaps must already be allocated in t, max_level must be smaller than GL_TEXTURE_MAX_LEVEL, max_level=-1 uses GL_TEXTURE_MAX_LEVEL
-    void buildMipmaps(const GlTexture& t, MipmapOperator op=MipmapOperator_Max, int max_level = -1);
+    void generateMipmap(const GlTexture& t, MipmapOperator op=MipmapOperator_Max, int max_level = -1);
 
 private:
     struct ShaderInfo {

@@ -229,14 +229,14 @@ pBlock Collection::
     if (block)
         return block;
 
-    createMissingBlocks(Render::RenderSet::makeSet (ref), true);
+    createMissingBlocks(Render::RenderSet::makeSet (ref));
 
     return cache_->find( ref );
 }
 
 
 void Collection::
-         createMissingBlocks(const Render::RenderSet::references_t& R, bool use_mipmap)
+         createMissingBlocks(const Render::RenderSet::references_t& R)
 {
     Render::RenderSet::references_t missing;
 
@@ -247,11 +247,6 @@ void Collection::
             auto i = cache.find(r.first);
             if (i == cache.end())
                 missing.insert (r);
-            else
-            {
-                // Use the most recent texture data
-                i->second->showNewTexture(use_mipmap);
-            }
         }
     }
 
@@ -291,9 +286,6 @@ void Collection::
 
     for (const pBlock& block : blocks_to_init)
     {
-        // Use the most recent texture data
-        block->showNewTexture (use_mipmap);
-
         // Make this block available for rendering
         cache_->insert (block);
     }

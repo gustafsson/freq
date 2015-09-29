@@ -33,19 +33,8 @@ namespace Heightmap {
         unsigned frame_number_last_used;
 
         // OpenGL data to render
-        // Probably need to double-buffer this so that drawing FROM this
-        // does not collide with drawing TO this texture. But how, all draw
-        // calls are asynchronous ...
         pGlTexture texture() const;
-        // OpenGL data to use as source when updating with new content
-        pGlTexture sourceTexture() const;
-        // Call after glFlush to 't'
-        void setTexture(pGlTexture t);
-
-        // The block must exist for one whole frame before it can receive
-        // updates from another thread. This prevents the texture from being
-        // corrupted by having two threads writing to it at the same time.
-        void showNewTexture(bool use_mipmap);
+        void generateMipmap(); // will only generate mipmaps if the min filter is using mipmaps
 
         Heightmap::BlockManagement::BlockUpdater* updater();
 
@@ -71,9 +60,7 @@ namespace Heightmap {
         const float sample_rate_;
 
         const VisualizationParams::const_ptr visualization_params_;
-        pGlTexture new_texture_;
         pGlTexture texture_;
-        pGlTexture texture_hold_; // @see setTextureReady
         Heightmap::BlockManagement::BlockUpdater* updater_;
 
     public:

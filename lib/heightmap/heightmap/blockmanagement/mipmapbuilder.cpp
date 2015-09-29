@@ -105,7 +105,7 @@ void MipmapBuilder::
 
 
 void MipmapBuilder::
-        buildMipmaps(const GlTexture& tex, MipmapOperator op, int max_level)
+        generateMipmap(const GlTexture& tex, MipmapOperator op, int max_level)
 {
     GlException_CHECK_ERROR();
 
@@ -243,7 +243,7 @@ void MipmapBuilder::
             tex->bindTexture ();
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
-            GlException_SAFE_CALL( MipmapBuilder().buildMipmaps (*tex, MipmapOperator_ArithmeticMean) );
+            GlException_SAFE_CALL( MipmapBuilder().generateMipmap (*tex, MipmapOperator_ArithmeticMean) );
 
             float expected1[]={ 14/4., 22/4.,
                                 46/4., 54/4. };
@@ -281,7 +281,7 @@ void MipmapBuilder::
             tex->bindTexture ();
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
-            GlException_SAFE_CALL( MipmapBuilder().buildMipmaps (*tex, MipmapOperator_GeometricMean) );
+            GlException_SAFE_CALL( MipmapBuilder().generateMipmap (*tex, MipmapOperator_GeometricMean) );
 
             float expected1[]={ 2.78125, 5.0898438147,
                                 11.3125, 13.3359371933 };
@@ -310,7 +310,7 @@ void MipmapBuilder::
             tex->bindTexture ();
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
-            GlException_SAFE_CALL( MipmapBuilder().buildMipmaps (*tex, MipmapOperator_HarmonicMean) );
+            GlException_SAFE_CALL( MipmapBuilder().generateMipmap (*tex, MipmapOperator_HarmonicMean) );
 
             float expected1[]={ 2.14257809265, 4.69921856949,
                                 11.125, 13.1796876022 };
@@ -338,7 +338,7 @@ void MipmapBuilder::
             tex->bindTexture ();
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
-            GlException_SAFE_CALL( MipmapBuilder().buildMipmaps (*tex, MipmapOperator_QuadraticMean) );
+            GlException_SAFE_CALL( MipmapBuilder().generateMipmap (*tex, MipmapOperator_QuadraticMean) );
 
             float expected1[]={ 4.0585938147, 5.8710938147,
                                 11.6796876022, 13.6562495911 };
@@ -367,7 +367,7 @@ void MipmapBuilder::
             tex->bindTexture ();
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
-            GlException_SAFE_CALL( MipmapBuilder().buildMipmaps (*tex, MipmapOperator_Max) );
+            GlException_SAFE_CALL( MipmapBuilder().generateMipmap (*tex, MipmapOperator_Max) );
 
             float expected1[]={ 6,  8,
                                  14, 16 };
@@ -394,7 +394,7 @@ void MipmapBuilder::
             tex->bindTexture ();
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
-            GlException_SAFE_CALL( MipmapBuilder().buildMipmaps (*tex, MipmapOperator_Max) );
+            GlException_SAFE_CALL( MipmapBuilder().generateMipmap (*tex, MipmapOperator_Max) );
 
             float expected1[]={ 16, 14,
                                  8,  6 };
@@ -421,7 +421,7 @@ void MipmapBuilder::
             tex->bindTexture ();
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
-            GlException_SAFE_CALL( MipmapBuilder().buildMipmaps (*tex, MipmapOperator_Min) );
+            GlException_SAFE_CALL( MipmapBuilder().generateMipmap (*tex, MipmapOperator_Min) );
 
             float expected1[]={ 1,  3,
                                  9, 11 };
@@ -448,7 +448,7 @@ void MipmapBuilder::
             tex->bindTexture ();
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
-            GlException_SAFE_CALL( MipmapBuilder().buildMipmaps (*tex, MipmapOperator_OTA) );
+            GlException_SAFE_CALL( MipmapBuilder().generateMipmap (*tex, MipmapOperator_OTA) );
 
             float expected1[]={ (2+5)/2.,   (7+4)/2.,
                                 (10+13)/2., (12+16)/2. };

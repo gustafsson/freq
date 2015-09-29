@@ -37,7 +37,7 @@ void BlockUpdater::
           *
           * Then after a glFlush the update thread can write to the block, but not before
           * the glFlush as the merged texture might not be ready. updater_->processUpdates
-          * should check this and put the update on hold until showNewTexture has been called,
+          * should check this and put the update on hold until generateMipmap has been called,
           * indicating that a new frame has begun an thus that there has been a glFlush since
           * MergerTexture.
           */
@@ -65,18 +65,13 @@ void BlockUpdater::
     q_success_.clear ();
 
     list<pair<pBlock, DrawFunc>> q_failed;
-    map<Heightmap::pBlock,GlTexture::ptr> textures;
     for (auto i = p.begin (); i != p.end (); i++)
     {
         const pBlock& block = i->first;
 
         glProjection M;
-        if (isMainThread)
-            textures[block] = block->sourceTexture ();
-        else
-            textures[block] = Heightmap::Render::BlockTextures::get1 ();
 
-        auto fbo_mapping = fbo2block_->begin (block->getOverlappingRegion (), block->sourceTexture (), textures[block], M);
+        auto fbo_mapping = fbo2block_->begin (block->getOverlappingRegion (), block->texture (), block->texture (), M);
 
         for (auto j = i->second.begin (); j != i->second.end (); j++)
         {
@@ -89,10 +84,9 @@ void BlockUpdater::
         }
 
         fbo_mapping.release ();
-    }
 
-    for (const auto& v : textures)
-        v.first->setTexture(v.second);
+        block->generateMipmap();
+    }
 
     // reinsert failed draw attempts
     auto w = queue_.write ();
