@@ -100,7 +100,8 @@ vectord::T glProjecter::
 {
     vectord screen1 = project( p1 );
     vectord screen2 = project( p2 );
-    return (screen2-screen1).length();
+    screen1 -= screen2;
+    return std::sqrt(screen1[0]*screen1[0]+screen1[1]*screen1[1]);
 }
 
 
