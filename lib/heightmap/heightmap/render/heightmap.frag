@@ -54,7 +54,7 @@ void main()
     //float v = max(max(v4.x, v4.y), max(v4.z, v4.w));
     //float v = (v4.x + v4.y + v4.z + v4.w) / 4.0;
 
-    mediump float v = texture2D(tex, texCoord, 0.0).x;
+    mediump float v = texture2D(tex, texCoord).x;
 #ifdef USE_MIPMAP
     if (yNormalize>0.0)
     {
