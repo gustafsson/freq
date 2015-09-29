@@ -211,7 +211,8 @@ void MergerTexture::
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
     GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    GlException_SAFE_CALL( programp_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture.frag") );
+//    GlException_SAFE_CALL( programp_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture.frag") );
+    GlException_SAFE_CALL( programp_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture0.frag") );
     program_ = programp_->programId();
 
     qt_Vertex = glGetAttribLocation (program_, "qt_Vertex");
