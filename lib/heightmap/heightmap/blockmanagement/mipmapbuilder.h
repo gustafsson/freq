@@ -19,23 +19,26 @@ public:
     MipmapBuilder();
     ~MipmapBuilder();
 
+    /**
+     * @brief The MipmapOperator enum specifies which folding function to use to build the mip
+     */
     enum MipmapOperator {
-        MipmapOperator_ArithmeticMean, // just a regular "mean", equivalent to glGenerateMipmap (GL_TEXTURE_2D)
-        MipmapOperator_GeometricMean, // pow(x1*x2*...*xN,1/N), aka log-average (but this is different from the logarithmic mean)
-        MipmapOperator_HarmonicMean, // 1/(1/x1 + 1/x2 + ... + 1/xN)
-        MipmapOperator_SqrMean, // aka gamma corrected mean, for Gamma=2.0
-        MipmapOperator_Max,
-        MipmapOperator_Min,
+        MipmapOperator_ArithmeticMean, // M1, just a regular "mean", equivalent to glGenerateMipmap (GL_TEXTURE_2D)
+        MipmapOperator_GeometricMean, // M0, pow(x1*x2*...*xN,1/N), aka log-average (but this is different from the logarithmic mean)
+        MipmapOperator_HarmonicMean, // N/(1/x1 + 1/x2 + ... + 1/xN)
+        MipmapOperator_SqrMean, // M2, aka gamma corrected mean, for Gamma=2.0
+        MipmapOperator_Max, // Minf
+        MipmapOperator_Min, // M-inf
 
         // OTA: On the Performance of the Order-Truncate-Average-Ratio Spectral Filter
         // This is not really an implementation of OTA, but rather inspired from OTA.
-        MipmapOperator_OTA,
+        MipmapOperator_OTA, // discard 1st and 4th quartile, take the (arithmetic) mean of the middle
 
         MipmapOperator_Last
     };
 
-    // mipmaps must already be allocated in t
-    void buildMipmaps(const GlTexture& t, MipmapOperator op=MipmapOperator_Max, int levels = -1);
+    // mipmaps must already be allocated in t, max_level must be smaller than GL_TEXTURE_MAX_LEVEL, max_level=-1 uses GL_TEXTURE_MAX_LEVEL
+    void buildMipmaps(const GlTexture& t, MipmapOperator op=MipmapOperator_Max, int max_level = -1);
 
 private:
     struct ShaderInfo {

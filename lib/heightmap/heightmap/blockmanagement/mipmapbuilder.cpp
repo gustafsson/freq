@@ -102,8 +102,10 @@ void MipmapBuilder::
 
 
 void MipmapBuilder::
-        buildMipmaps(const GlTexture& tex, MipmapOperator op, int levels)
+        buildMipmaps(const GlTexture& tex, MipmapOperator op, int max_level)
 {
+    GlException_CHECK_ERROR();
+
     // assume mipmaps are allocated in tex
     if (op >= MipmapOperator_Last)
         EXCEPTION_ASSERTX(op, "Unknown MipmapOperator");
@@ -131,28 +133,31 @@ void MipmapBuilder::
     glVertexAttribPointer (info.qt_MultiTexCoord0, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), (float*)0 + 2);
 
     glBindTexture( GL_TEXTURE_2D, tex.getOpenGlTextureId ());
-     // the results are the same with LINEAR_MIPMAP_LINEAR as well but this ensures that no unnecessary texture reads are performed
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST );
+
+    if (max_level < 0)
+    {
+        glGetTexParameteriv( GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, &max_level );
+        // or OpenGL default: max_level = 1000;
+    }
 
     GlState::glDisable (GL_DEPTH_TEST, true); // disable depth test before binding framebuffer without depth buffer
     GlState::glDisable (GL_CULL_FACE);
 
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_);
 
-    if (levels<0)
-        levels = tex.getWidth (); // whatever is bigger than log2(min(tex.getWidth (),tex.getHeight ()))
-
-    for (int level=1; level<levels; level++)
+    int w = tex.getWidth ();
+    int h = tex.getHeight ();
+    // https://www.opengl.org/registry/specs/EXT/framebuffer_object.txt
+    for (int level=1; level<=max_level && (w>1 || h>1); level++)
     {
-        int w = tex.getWidth () >> level;
-        int h = tex.getHeight () >> level;
-
-        if (w == 0 || h == 0)
-            break;
+        w = std::max(1, w/2);
+        h = std::max(1, h/2);
 
         glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                GL_TEXTURE_2D, tex.getOpenGlTextureId (), level);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, level-1);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, level-1);
 
         glUniform2f(info.subtexeloffset, 0.25/w, 0.25/h);
         glUniform1f(info.level, level-1);
@@ -160,20 +165,21 @@ void MipmapBuilder::
         GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, max_level);
     glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D, 0, 0);
 
     GlState::glEnable (GL_DEPTH_TEST);
     GlState::glEnable (GL_CULL_FACE);
 
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, prev_fbo);
 
     GlState::glDisableVertexAttribArray (info.qt_MultiTexCoord0);
     GlState::glDisableVertexAttribArray (info.qt_Vertex);
     GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    GlException_CHECK_ERROR();
 }
 
 
