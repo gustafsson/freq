@@ -97,7 +97,7 @@ public:
      * @brief mipmaps should match how the number of mipmap levels being used
      * in heightmap.frag.
      */
-    static const int mipmaps;
+    static const int max_level;
 
     /**
      * @brief setupTexture
@@ -107,7 +107,7 @@ public:
      * @param mipmaps defaults to mipmaps>0
      */
     static void setupTexture(unsigned name, unsigned width, unsigned height);
-    static void setupTexture(unsigned name, unsigned width, unsigned height, bool mipmaps);
+    static void setupTexture(unsigned name, unsigned width, unsigned height, bool max_level);
 
     /**
      * @brief allocated_bytes_per_element

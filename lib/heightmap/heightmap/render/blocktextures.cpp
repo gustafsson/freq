@@ -25,9 +25,9 @@ namespace Render {
  */
 #if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
 // slow GPU
-const int BlockTextures::mipmaps=0;
+const int BlockTextures::max_level=0;
 #else
-const int BlockTextures::mipmaps=5;
+const int BlockTextures::max_level=5;
 #endif
 
 
@@ -326,7 +326,7 @@ int BlockTexturesImpl::
 void BlockTexturesImpl::
         setupTexture(unsigned name, unsigned w, unsigned h)
 {
-    setupTexture(name, w, h, BlockTextures::mipmaps > 0);
+    setupTexture(name, w, h, BlockTextures::max_level > 0);
 }
 
 
@@ -339,26 +339,35 @@ void BlockTexturesImpl::
     EXCEPTION_ASSERT_LESS(0u,w);
     EXCEPTION_ASSERT_LESS(0u,h);
 
-    int levels = 1 + std::min(BlockTextures::mipmaps,(int)log2(std::min(w,h)));
+    int max_level = std::min(BlockTextures::max_level,(int)log2(std::max(w,h)));
     if (!mipmaps)
-        levels = 1;
+        max_level = 0;
 
 #if defined(GL_ES_VERSION_2_0)
     // https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_storage.txt
     #ifdef GL_ES_VERSION_3_0
-        GlException_SAFE_CALL( glTexStorage2D ( GL_TEXTURE_2D, levels, GL_R16F, w, h));
+        GlException_SAFE_CALL( glTexStorage2D ( GL_TEXTURE_2D, max_level+1, GL_R16F, w, h));
     #else
-        GlException_SAFE_CALL( glTexStorage2DEXT ( GL_TEXTURE_2D, levels, GL_R16F_EXT, w, h));
+        GlException_SAFE_CALL( glTexStorage2DEXT ( GL_TEXTURE_2D, max_level+1, GL_R16F_EXT, w, h));
     #endif
 #else
 //    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // GL 1.4
-    for (int i=0; i<levels; i++)
-        GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, i, GL_R16F, w>>i, h>>i, 0, GL_RED, GL_FLOAT, 0) );
+    // must create all mipmap levels for mipmapping to be complete
+    for (int i=0; i<=max_level; i++)
+    {
+        int wi = std::max(1u, w>>i);
+        int hi = std::max(1u, h>>i);
+        GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, i, GL_R16F, wi, hi, 0, GL_RED, GL_FLOAT, 0) );
+        if (wi==1 || hi==1)
+            break;
+    }
+
 //    GlException_SAFE_CALL( glTexStorage2D (GL_TEXTURE_2D, mipmaplevels, GL_R16F, w, h) ); // GL 4.2
 
 #endif
-    // glGenerateMipmap (GL_TEXTURE_2D); // make sure all mipmaps are allocated
+    //    glGenerateMipmap (GL_TEXTURE_2D); // another way to make sure all mipmaps are allocated, but this allocates more than necessary
 
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, max_level );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
