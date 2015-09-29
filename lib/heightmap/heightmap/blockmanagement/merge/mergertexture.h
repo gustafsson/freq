@@ -50,7 +50,7 @@ private:
         uniModelView = -2;
 
     void init();
-    Signal::Intervals fillBlockFromOthersInternal( pBlock block );
+    Signal::Intervals fillBlockFromOthersInternal( Block const* block );
 
     /**
       Add block information from another block

@@ -56,43 +56,58 @@ namespace Heightmap {
 namespace BlockManagement {
 namespace Merge {
 
-typedef pair<Region,pBlock> RegionBlock;
+typedef pair<Region,Block const*> RegionBlock;
 typedef vector<RegionBlock> RegionBlockVector;
 
-RegionBlockVector& operator-=(RegionBlockVector& R, Region t)
+RegionBlockVector operator-(RegionBlockVector const& R, Region t)
 {
     RegionBlockVector C;
-    C.reserve (R.size ());
+    C.reserve (R.size ()+8);
 
-    for (auto v : R) {
-        Region r = v.first;
+    for (const auto& v : R) {
+        Region const& r = v.first;
+
         if (r.a.time >= t.b.time || r.b.time <= t.a.time || r.a.scale >= t.b.scale || r.b.scale <= t.a.scale) {
             // keep whole
             C.push_back (v);
             continue;
         }
 
+        // There is an interception
         if (r.a.scale < t.a.scale) {
-            // keep bottom
+            // keep bottom, possibly including left and right
             C.push_back (RegionBlock(Region(Position(r.a.time, r.a.scale),Position(r.b.time,t.a.scale)),v.second));
         }
         if (r.b.scale > t.b.scale) {
-            // keep top
+            // keep top, possibly including left and right
             C.push_back (RegionBlock(Region(Position(r.a.time, t.b.scale),Position(r.b.time,r.b.scale)),v.second));
         }
         if (r.a.time < t.a.time) {
-            // keep left
+            // keep left, strictly left of, but not above or below
             C.push_back (RegionBlock(Region(Position(r.a.time, max(r.a.scale,t.a.scale)),Position(t.a.time,min(r.b.scale,t.b.scale))),v.second));
         }
         if (r.b.time > t.b.time) {
-            // keep right
+            // keep right, strictly right of, but not above or below
             C.push_back (RegionBlock(Region(Position(t.b.time, max(r.a.scale,t.a.scale)),Position(r.b.time,min(r.b.scale,t.b.scale))),v.second));
         }
     }
 
-    return R = C;
+    return C;
 }
 
+RegionBlockVector& operator-=(RegionBlockVector& R, Region t)
+{
+    (R-t).swap(R);
+    return R;
+}
+
+Region operator&(const Region& x, const Region& y) {
+    Region r { Position(std::max(x.a.time, y.a.time), std::max(x.a.scale, y.a.scale)),
+               Position(std::min(x.b.time, y.b.time), std::min(x.b.scale, y.b.scale)) };
+    r.b.time = std::max(r.a.time, r.b.time);
+    r.b.scale = std::max(r.a.scale, r.b.scale);
+    return r;
+}
 
 void testRegionBlockOperator() {
     // RegionBlockVector& operator-=(RegionBlockVector& R, Region t) should work
@@ -106,7 +121,7 @@ void testRegionBlockOperator() {
         BlockLayout bl(128,128,100);
         RegionFactory rf(bl);
         auto f = [&rf](Reference r) { return rf.getVisible (r); };
-        RegionBlockVector V = {RegionBlock(f(ref),pBlock())};
+        RegionBlockVector V = {RegionBlock(f(ref),nullptr)};
 
         V -= f(ref.left ());
         EXCEPTION_ASSERT_EQUALS( V.size(), 1u );
@@ -115,13 +130,13 @@ void testRegionBlockOperator() {
         EXCEPTION_ASSERT_EQUALS( V.size(), 1u );
         EXCEPTION_ASSERT_EQUALS( V[0].first, f(ref.right ().bottom ()) );
 
-        V = {RegionBlock(f(ref),pBlock())};
+        V = {RegionBlock(f(ref),nullptr)};
         V -= f(ref.right ().top ());
         EXCEPTION_ASSERT_EQUALS( V.size(), 2u );
         EXCEPTION_ASSERT_EQUALS( V[0].first, f(ref.bottom ()) );
         EXCEPTION_ASSERT_EQUALS( V[1].first, f(ref.top ().left ()) );
 
-        V = {RegionBlock(f(ref),pBlock())};
+        V = {RegionBlock(f(ref),nullptr)};
         V -= f(ref.sibblingLeft ());
         EXCEPTION_ASSERT_EQUALS( V.size(), 1u );
         EXCEPTION_ASSERT_EQUALS( V[0].first, f(ref) );
@@ -139,7 +154,7 @@ void testRegionBlockOperator() {
         V -= f(ref.parentHorizontal ());
         EXCEPTION_ASSERT_EQUALS( V.size(), 0u );
 
-        V = {RegionBlock(f(ref),pBlock())};
+        V = {RegionBlock(f(ref),nullptr)};
         V -= f(ref.parentHorizontal ().top ());
         EXCEPTION_ASSERT_EQUALS( V.size(), 1u );
         EXCEPTION_ASSERT_EQUALS( V[0].first, f(ref.parentHorizontal ().bottom ().right ()) );
@@ -265,8 +280,8 @@ Signal::Intervals MergerTexture::
     {
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_);
 
-        for (pBlock b : blocks)
-            I |= fillBlockFromOthersInternal (b);
+        for (const pBlock& b : blocks)
+            I |= fillBlockFromOthersInternal (b.get ());
 
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, QOpenGLContext::currentContext ()->defaultFramebufferObject ());
     }
@@ -292,23 +307,23 @@ Signal::Intervals MergerTexture::
 
 
 Signal::Intervals MergerTexture::
-        fillBlockFromOthersInternal( pBlock block )
+        fillBlockFromOthersInternal( const Block* out_block )
 {
     Signal::Intervals missing_details;
 
-    VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Stubbing new block %s") % block->getVisibleRegion ());
+    VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Stubbing new block %s") % out_block->getVisibleRegion ());
 
-    Region r = block->getOverlappingRegion ();
+    Region out_r = out_block->getOverlappingRegion ();
 
     matrixd projection;
-    glhOrtho (projection.v (), r.a.time, r.b.time, r.a.scale, r.b.scale, -10, 10);
+    glhOrtho (projection.v (), out_r.a.time, out_r.b.time, out_r.a.scale, out_r.b.scale, -10, 10);
 
     glUniformMatrix4fv (uniProjection, 1, false, GLmatrixf(projection).v ());
 
 #ifdef DRAW_STRAIGHT_ONTO_BLOCK
-    glBindTexture (GL_TEXTURE_2D, block->texture ()->getOpenGlTextureId ());
+    glBindTexture (GL_TEXTURE_2D, out_block->texture ()->getOpenGlTextureId ());
     glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                           GL_TEXTURE_2D, block->texture ()->getOpenGlTextureId (), 0);
+                           GL_TEXTURE_2D, out_block->texture ()->getOpenGlTextureId (), 0);
 #endif
 
     glClear( GL_COLOR_BUFFER_BIT );
@@ -319,36 +334,65 @@ Signal::Intervals MergerTexture::
         // Largest first
         RegionBlockVector largeblocks;
         RegionBlockVector smallblocks;
+        smallblocks.reserve (cache_clone.size ());
 
-        for (const auto& c : cache_clone)
+        for (auto const& c : cache_clone)
         {
-            const pBlock& bl = c.second;
-            const Region& r2 = bl->getOverlappingRegion ();
+            Block* const& bl = c.second.get ();
+            Region const& in_r = bl->getVisibleRegion ();
+            Region r = in_r & out_r;
 
             // If r2 doesn't overlap r at all
-            if (r2.a.scale >= r.b.scale || r2.b.scale <= r.a.scale )
-                continue;
-            if (r2.a.time >= r.b.time || r2.b.time <= r.a.time )
+            if (r.scale () * r.time () == 0)
                 continue;
 
-            bool is_small_s = r2.scale () <= r.scale ();
-            bool is_small_t = r2.time () <= r.time ();
+            bool is_small_s = in_r.scale () <= out_r.scale ();
+            bool is_small_t = in_r.time () <= out_r.time ();
             if (is_small_s && is_small_t)
-                smallblocks.push_back (RegionBlock(r2,bl));
+                smallblocks.push_back (RegionBlock(r,bl));
             else
-                largeblocks.push_back (RegionBlock(r2,bl));
+                largeblocks.push_back (RegionBlock(r,bl));
         }
 
-        RegionBlockVector missing_details_region{RegionBlock(r,block)};
-        for (auto r : smallblocks) {
-            largeblocks -= r.first;
-            missing_details_region -= r.first;
+        // sort smallblocks by covered area, descendingly. I.e blocks that are least useful area last
+        std::sort(smallblocks.begin (), smallblocks.end (),
+                  [out_r](const RegionBlockVector::value_type& a,const RegionBlockVector::value_type& b)
+        {
+            return a.first.time ()*a.first.scale () > b.first.time ()*b.first.scale ();
+        });
+
+        // remove redundant smallblocks, walk backwards, most likely to have redudant blocks by the end
+        for (auto i = smallblocks.end (); i!=smallblocks.begin ();)
+        {
+            i--;
+
+            RegionBlockVector V{RegionBlock(i->first,nullptr)};
+            // is r already covered?
+
+            for (auto j = smallblocks.begin (); j!=smallblocks.end (); j++)
+            {
+                if (i==j)
+                    continue;
+                V -= j->first;
+            }
+
+            if (V.empty ())
+                i = smallblocks.erase (i);
+            if (V.size ()==1)
+                i->first = V[0].first;
+        }
+
+        // figure out which regions are not covered by any smallblock
+        RegionBlockVector missing_details_region{RegionBlock(out_r,out_block)};
+        for (const auto& v : smallblocks) {
+            largeblocks -= v.first;
+            missing_details_region -= v.first;
         }
 
         double fs = block_layout_.sample_rate ();
-        for (auto v: missing_details_region)
+        for (const auto& v: missing_details_region)
         {
-            Region r2 = v.first;
+            const Region& r2 = v.first;
             if (r2.b.time <= 0 || r2.b.scale <= 0 || r2.a.scale >= 1)
                 continue;
 
@@ -356,15 +400,17 @@ Signal::Intervals MergerTexture::
             missing_details |= Signal::Interval((r2.a.time-d)*fs, (r2.b.time+d)*fs+1);
         }
 
-        for (auto v : largeblocks)
+        // remove duplicate consecutive blocks in largeblocks left by operator-=
+        std::unique(largeblocks.begin (), largeblocks.end (), [](const RegionBlockVector::value_type& a,const RegionBlockVector::value_type& b){return a.second == b.second;});
+        for (const auto& v : largeblocks)
         {
-            auto bl = v.second;
+            const auto& bl = v.second;
             mergeBlock( bl->getOverlappingRegion (), bl->texture ()->getOpenGlTextureId () );
         }
 
-        for (auto v : smallblocks)
+        for (const auto& v : smallblocks)
         {
-            auto bl = v.second;
+            const auto& bl = v.second;
             mergeBlock( bl->getOverlappingRegion (), bl->texture ()->getOpenGlTextureId () );
         }
 
@@ -372,7 +418,7 @@ Signal::Intervals MergerTexture::
         // set "missing_details = block->getInterval ()" to recompute the results
     }
     else
-        missing_details = block->getInterval ();
+        missing_details = out_block->getInterval ();
 
 #ifdef DRAW_STRAIGHT_ONTO_BLOCK
     // The texture image will not be detached if the texture is deleted but it
@@ -412,6 +458,8 @@ void MergerTexture::
 void MergerTexture::
         mergeBlock( const Region& ri, int texture )
 {
+    EXCEPTION_ASSERT_NOTEQUALS(texture,0);
+
     VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Filling with %d from %s") % texture % ri);
 
     matrixd modelview = matrixd::identity ();
