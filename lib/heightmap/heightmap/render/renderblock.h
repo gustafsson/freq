@@ -23,7 +23,7 @@ public:
         Renderer(RenderBlock* render_block, BlockLayout block_size, glProjecter gl_projecter);
         ~Renderer();
 
-        void renderBlock( pBlock ref, LevelOfDetail lod);
+        void renderBlock( pBlock ref, CornerResolution lod );
 
     private:
         RenderBlock* render_block;
@@ -50,7 +50,8 @@ public:
             uniModelview=-2,
             uniNormalMatrix=-2,
             attribVertex=-2,
-            uniVertexTextureBias=-2;
+            uniVertexTextureBiasX=-2,
+            uniVertexTextureBiasY=-2;
 
 private:
     friend class RenderBlock::Renderer;
@@ -100,7 +101,8 @@ private:
                 uniTexDelta=-2,
                 uniTexSize=-2,
                 attribVertex=-2,
-                uniVertexTextureBias=-2;
+                uniVertexTextureBiasX=-2,
+                uniVertexTextureBiasY=-2;
 
         int   u_tex=0,
               u_tex_color=0;
@@ -144,9 +146,9 @@ private:
 #ifdef GL_ES_VERSION_2_0
     static const int subdivs = 4;
 #else
-    static const int subdivs = 2;
+    static const int subdivs = 4;
 #endif
-    pVbo _mesh_index_buffer[subdivs*subdivs];
+    pVbo _mesh_index_buffer[subdivs];
 
     void checkExtensions();
     void beginVboRendering(BlockLayout block_size);

@@ -17,8 +17,8 @@ namespace Render {
 class RenderSet
 {
 public:
-    typedef std::unordered_map<Reference,LevelOfDetail> references_t;
-    static references_t makeSet(Reference, LevelOfDetail lod = true);
+    typedef std::unordered_map<Reference,CornerResolution> references_t;
+    static references_t makeSet(Reference);
 
     RenderSet(RenderInfo* render_info, float L);
 

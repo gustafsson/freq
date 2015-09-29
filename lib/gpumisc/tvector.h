@@ -71,6 +71,11 @@ public:
         for(int i=N; i--;) v[i] += b[i];
         return *this;
     }
+    template<typename t2>
+    tvector& operator-=(const tvector<N,t2>& b) {
+        for(int i=N; i--;) v[i] -= b[i];
+        return *this;
+    }
     tvector operator*(type b) const {
                 tvector r;
                 for(int i=N; i--;) r[i] = v[i] * b;

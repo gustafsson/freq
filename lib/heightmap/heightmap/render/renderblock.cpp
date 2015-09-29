@@ -62,7 +62,7 @@ RenderBlock::Renderer::~Renderer()
 
 
 void RenderBlock::Renderer::
-        renderBlock( pBlock block, LevelOfDetail lod )
+        renderBlock( pBlock block, CornerResolution cr )
 {
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 
@@ -77,14 +77,19 @@ void RenderBlock::Renderer::
     glUniformMatrix4fv (render_block->uniModelview, 1, false, GLmatrixf(blockProj.modelview ()).v ());
     glUniformMatrix4fv (render_block->uniNormalMatrix, 1, false, GLmatrixf(blockProj.modelview_inverse ()).transpose ().v ());
 
-    int subdivx = (int)max (0., subdivs - 1 - log2 (max (1., lod.t ()))); // t or s might be 0
-    int subdivy = (int)max (0., subdivs - 1 - log2 (max (1., lod.s ())));
-    glUniform1f (render_block->uniVertexTextureBias, std::max(subdivx,subdivy)+1);
+    float mintp =  min(min(min(cr.x00, cr.x01), min(cr.x10, cr.x11)),
+                       min(min(cr.y00, cr.y01), min(cr.y10, cr.y11)));
+    int subdiv = max(0, min(subdivs-1, (int)log2(mintp)));
+    glUniform4f (render_block->uniVertexTextureBiasX, cr.x00, cr.x01, cr.x10, cr.x11);
+    glUniform4f (render_block->uniVertexTextureBiasY, cr.y00, cr.y01, cr.y10, cr.y11);
 
-    LOG_DIVS Log("%s / %g x %g -> %d x %d") % block->getVisibleRegion ()
-            % lod.t () % lod.s() % subdivx % subdivy;
+    LOG_DIVS Log("%s x(%g, %g, %g, %g) y(%g, %g, %g, %g) -> %d")
+            % block->getVisibleRegion ()
+            % cr.x00 % cr.x01 % cr.x10 % cr.x11
+            % cr.y00 % cr.y01 % cr.y10 % cr.y11
+            % subdiv;
 
-    const auto& pVbo = *render_block->_mesh_index_buffer[subdivy*subdivs+subdivx];
+    const auto& pVbo = *render_block->_mesh_index_buffer[subdiv];
     unsigned vbo = pVbo;
     GLsizei n = pVbo.size () / sizeof(BLOCKindexType);
     if (prev_vbo != vbo)
@@ -105,7 +110,7 @@ void RenderBlock::Renderer::
     GlException_CHECK_ERROR();
 
     if (DRAW_POINTS) {
-        GlState::glDrawArrays(GL_POINTS, 0, n);
+        GlState::glDrawElements(GL_POINTS, n, BLOCK_INDEX_TYPE, 0);
     } else if (DRAW_WIREFRAME) {
 #ifdef GL_ES_VERSION_2_0
         GlState::glDrawElements(GL_LINE_STRIP, n, BLOCK_INDEX_TYPE, 0);
@@ -477,7 +482,8 @@ void RenderBlock::ShaderData::prepShader(BlockLayout block_size, RenderSettings*
     if (u_texSize1 != w || u_texSize2 != h)
         if (uniTexSize>=0) glUniform2f(uniTexSize, u_texSize1=w, u_texSize2=h);
 
-    if (uniVertexTextureBias<-1) uniVertexTextureBias = glGetUniformLocation (_shader_prog, "vertexTextureBias");
+    if (uniVertexTextureBiasX<-1) uniVertexTextureBiasX = glGetUniformLocation (_shader_prog, "vertexTextureBiasX");
+    if (uniVertexTextureBiasY<-1) uniVertexTextureBiasY = glGetUniformLocation (_shader_prog, "vertexTextureBiasY");
 
     if (attribVertex<-1) attribVertex = glGetAttribLocation (_shader_prog, "qt_Vertex");
 }
@@ -497,7 +503,7 @@ void RenderBlock::
 
 
     ShaderSettings shadersettings;
-    shadersettings.use_mipmap = render_settings->y_normalize > 0 && Render::BlockTextures::mipmaps > 0;
+    shadersettings.use_mipmap = render_settings->y_normalize > 0 && Render::BlockTextures::max_level > 0;
     shadersettings.draw3d = !render_settings->draw_flat;
     shadersettings.drawIsarithm = render_settings->draw_contour_plot;
     ShaderData* d=getShader(shadersettings);
@@ -507,7 +513,8 @@ void RenderBlock::
     uniModelview=d->uniModelview;
     uniNormalMatrix=d->uniNormalMatrix;
     attribVertex=d->attribVertex;
-    uniVertexTextureBias=d->uniVertexTextureBias;
+    uniVertexTextureBiasX=d->uniVertexTextureBiasX;
+    uniVertexTextureBiasY=d->uniVertexTextureBiasY;
 
     GlState::glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
     GlState::glEnableVertexAttribArray (attribVertex);
@@ -570,14 +577,13 @@ void RenderBlock::
     // edge dropout to eliminate visible glitches
     if (w > 2 && h > 2)
     {
-        for (int y=0;y<subdivs;y++)
-            for (int x=0;x<subdivs;x++)
-                createMeshIndexBuffer(w, h, _mesh_index_buffer[y*subdivs+x], 1<<x, 1<<y);
+        for (int i=0;i<subdivs;i++)
+            createMeshIndexBuffer(w, h, _mesh_index_buffer[i], 1<<i, 1<<i);
     }
     else
     {
         createMeshIndexBuffer(w, h, _mesh_index_buffer[0], 1, 1);
-        for (int i=1;i<subdivs*subdivs;i++)
+        for (int i=1;i<subdivs;i++)
             _mesh_index_buffer[i] = _mesh_index_buffer[0];
     }
 
