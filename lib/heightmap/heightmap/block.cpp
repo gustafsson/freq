@@ -74,6 +74,7 @@ void Block::
 
     Block::pGlTexture t;
     t.swap (new_texture_);
+
     if (t) {
         // hold on to the old texture until the next frame to prevent the other thread from
         // replacing its contents right away
@@ -94,7 +95,7 @@ void Block::
             texture_->setMinFilter (GL_LINEAR_MIPMAP_LINEAR);
 //            glGenerateMipmap (GL_TEXTURE_2D);
 
-            this->updater ()->mipmapbuilder ()->buildMipmaps (*texture_, BlockManagement::MipmapBuilder::MipmapOperator_Max, Render::BlockTextures::mipmaps+1);
+            this->updater ()->mipmapbuilder ()->buildMipmaps (*texture_, BlockManagement::MipmapBuilder::MipmapOperator_Max, Render::BlockTextures::max_level);
         }
         else
         {
