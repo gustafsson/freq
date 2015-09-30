@@ -24,26 +24,26 @@ void main(void)
         // minifying both x and y
         for (t.x = t1.x; t.x<=t2.x; t.x+=invtexsize.x)
             for (t.y = t1.y; t.y<=t2.y; t.y+=invtexsize.y)
-                v = max(v, texture2D(qt_Texture0, t).x);
+                v = max(v, texture2DLod(qt_Texture0, t, 0.0).x);
     }
     else if (dt.x > invtexsize.x)
     {
         // minifying x but not y
         t.y = qt_TexCoord0.y;
         for (t.x = t1.x; t.x<=t2.x; t.x+=invtexsize.x)
-            v = max(v, texture2D(qt_Texture0, t).x);
+            v = max(v, texture2DLod(qt_Texture0, t, 0.0).x);
     }
     else if (dt.y > invtexsize.y)
     {
         // minifying y but not x
         t.x = qt_TexCoord0.x;
         for (t.y = t1.y; t.y<=t2.y; t.y+=invtexsize.y)
-            v = max(v, texture2D(qt_Texture0, t).x);
+            v = max(v, texture2DLod(qt_Texture0, t, 0.0).x);
     }
     else
     {
         // magnifying or equal
-        v = texture2D(qt_Texture0, qt_TexCoord0).x;
+        v = texture2DLod(qt_Texture0, qt_TexCoord0, 0.0).x;
     }
 
 

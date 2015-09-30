@@ -166,16 +166,18 @@ void testRegionBlockOperator() {
 
 
 MergerTexture::
-        MergerTexture(BlockCache::const_ptr cache, BlockLayout block_layout, bool disable_merge)
+        MergerTexture(BlockCache::const_ptr cache, BlockLayout block_layout, int quality)
     :
       cache_(cache),
       fbo_(0),
       vbo_(0),
       tex_(0),
       block_layout_(block_layout),
-      disable_merge_(disable_merge)
+      quality_(quality)
 {
     EXCEPTION_ASSERT(cache_);
+    EXCEPTION_ASSERT_LESS_OR_EQUAL(0, quality);
+    EXCEPTION_ASSERT_LESS_OR_EQUAL(quality,2);
 }
 
 
@@ -226,8 +228,21 @@ void MergerTexture::
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
     GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-//    GlException_SAFE_CALL( programp_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture.frag") );
-    GlException_SAFE_CALL( programp_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture0.frag") );
+    switch(quality_)
+    {
+    case 0:
+        GlException_SAFE_CALL( programp_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture0.frag") );
+        break;
+    case 1:
+        GlException_SAFE_CALL( programp_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture1.frag") );
+        break;
+    case 2:
+        GlException_SAFE_CALL( programp_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture.frag") );
+        break;
+    default:
+        EXCEPTION_ASSERTX(false, boost::format("Unknown quality: %d") % quality_);
+    }
+
     program_ = programp_->programId();
 
     qt_Vertex = glGetAttribLocation (program_, "qt_Vertex");
@@ -329,7 +344,8 @@ Signal::Intervals MergerTexture::
     glClear( GL_COLOR_BUFFER_BIT );
 //    clearBlock (r);
 
-    if (!disable_merge_)
+    bool disable_merge = false;
+    if (!disable_merge)
     {
         // Largest first
         RegionBlockVector largeblocks;
@@ -480,6 +496,7 @@ void MergerTexture::
 #include "log.h"
 #include "cpumemorystorage.h"
 #include "heightmap/render/blocktextures.h"
+#include "heightmap/blockmanagement/mipmapbuilder.h"
 #include <QtWidgets> // QApplication
 #include <QtOpenGL> // QGLWidget
 
@@ -559,7 +576,7 @@ void MergerTexture::
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             cache->insert(block);
-            MergerTexture(cache, bl).fillBlockFromOthers(target_block);
+            MergerTexture(cache, bl, 2).fillBlockFromOthers(target_block);
             clearCache(cache);
 
             float expected[]={    1,  .5,   0,   0,
@@ -585,9 +602,11 @@ void MergerTexture::
             GlTexture::ptr tex = block->texture ();
             tex->bindTexture ();
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+            tex->setMinFilter (GL_NEAREST_MIPMAP_NEAREST);
+            MipmapBuilder().generateMipmap (*tex, MipmapBuilder::MipmapOperator_Max);
 
             cache->insert(block);
-            MergerTexture(cache, bl).fillBlockFromOthers(target_block);
+            MergerTexture(cache, bl, 2).fillBlockFromOthers(target_block);
             clearCache(cache);
 
             float expected[]={    0, 0,    3,  4,
@@ -616,7 +635,7 @@ void MergerTexture::
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             cache->insert(block);
-            MergerTexture(cache, bl).fillBlockFromOthers(target_block);
+            MergerTexture(cache, bl, 2).fillBlockFromOthers(target_block);
             clearCache(cache);
 
             float expected[]={    0, 0,   13,  12,
@@ -645,7 +664,7 @@ void MergerTexture::
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             cache->insert(block);
-            MergerTexture(cache, bl).fillBlockFromOthers(target_block);
+            MergerTexture(cache, bl, 2).fillBlockFromOthers(target_block);
             clearCache(cache);
 
             float expected[]={    13, 13,  0,  0,
@@ -674,7 +693,7 @@ void MergerTexture::
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             cache->insert(block);
-            MergerTexture(cache, bl).fillBlockFromOthers(target_block);
+            MergerTexture(cache, bl, 2).fillBlockFromOthers(target_block);
             clearCache(cache);
 
             float expected[]={    11, 13,  12, 10,
@@ -703,7 +722,7 @@ void MergerTexture::
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             cache->insert(block);
-            MergerTexture(cache, bl).fillBlockFromOthers(target_block);
+            MergerTexture(cache, bl, 2).fillBlockFromOthers(target_block);
             clearCache(cache);
 
             float expected[]={   0,   0,   0,   0,

@@ -15,11 +15,15 @@ namespace Merge {
  * stub the contents of a new block.
  *
  * It should use OpenGL textures to do the merge.
+ *
+ * If quality: 0 MergerTexture will simply rely on mipmaps to have done proper filtering in advance.
+ * If quality: 1 MergerTexture will rely on mipmaps "one level down", i.e take the max out of four neightbours.
+ * If quality: 2 MergerTexture will examine all individual texels underlying a target texel.
  */
 class MergerTexture
 {
 public:
-    MergerTexture(BlockCache::const_ptr cache, BlockLayout block_layout, bool disable_merge=false);
+    MergerTexture(BlockCache::const_ptr cache, BlockLayout block_layout, int quality=1);
     ~MergerTexture();
 
     /**
@@ -36,7 +40,7 @@ private:
     unsigned vbo_;
     GlTexture::ptr tex_;
     const BlockLayout block_layout_;
-    const bool disable_merge_;
+    const int quality_;
     BlockCache::cache_t cache_clone;
     ShaderPtr programp_;
     unsigned program_;

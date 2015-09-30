@@ -40,8 +40,8 @@ int UnitTest::
 
         RUNTEST(Heightmap::FreqAxis);
         RUNTEST(Heightmap::Block);
-        RUNTEST(Heightmap::BlockManagement::Merge::MergerTexture);
         RUNTEST(Heightmap::BlockManagement::MipmapBuilder);
+        RUNTEST(Heightmap::BlockManagement::Merge::MergerTexture);
         RUNTEST(Heightmap::BlockManagement::BlockFactory);
         RUNTEST(Heightmap::BlockManagement::BlockInitializer);
         RUNTEST(Heightmap::BlockLayout);
