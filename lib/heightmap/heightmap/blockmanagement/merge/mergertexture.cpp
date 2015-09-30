@@ -301,6 +301,9 @@ Signal::Intervals MergerTexture::
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, QOpenGLContext::currentContext ()->defaultFramebufferObject ());
     }
 
+    bool has_ota = false;
+    if (!cache_clone.empty ())
+        has_ota = cache_clone.begin ()->second->texture_ota();
     cache_clone.clear ();
 
     GlState::glDisableVertexAttribArray (qt_MultiTexCoord0);
@@ -311,7 +314,10 @@ Signal::Intervals MergerTexture::
     GlState::glEnable (GL_CULL_FACE);
 
     for (const pBlock& b : blocks)
+    {
+        b->enableOta (has_ota);
         b->generateMipmap ();
+    }
 
     GlException_CHECK_ERROR();
 

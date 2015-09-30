@@ -34,7 +34,9 @@ namespace Heightmap {
 
         // OpenGL data to render
         pGlTexture texture() const;
+        int texture_ota() const;
         void generateMipmap(); // will only generate mipmaps if the min filter is using mipmaps
+        void enableOta(bool v);
 
         Heightmap::BlockManagement::BlockUpdater* updater();
 
@@ -60,7 +62,7 @@ namespace Heightmap {
         const float sample_rate_;
 
         const VisualizationParams::const_ptr visualization_params_;
-        pGlTexture texture_;
+        pGlTexture texture_, texture_ota_;
         Heightmap::BlockManagement::BlockUpdater* updater_;
 
     public:

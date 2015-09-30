@@ -3,6 +3,9 @@ attribute highp vec4 qt_Vertex;
 varying highp float vertex_height;
 varying mediump float shadow;
 varying highp vec2 texCoord;
+#ifdef USE_MIPMAP
+varying mediump float vbias;
+#endif
 
 uniform highp sampler2D tex;
 uniform mediump float flatness;
@@ -83,6 +86,9 @@ void main()
                            mix(mix(by.x, by.z, tex0.x), mix(by.y, by.w, tex0.x), tex0.y));
     vb = log2(vb);
     mediump float bias = min(vb.x,vb.y);
+#ifdef USE_MIPMAP
+    vbias = bias;
+#endif
 #ifdef DRAW3D
     mediump float height = texture2DLod(tex, tex0, bias).x;
     height = heightValue(height);
@@ -100,7 +106,7 @@ void main()
 
     // edge dropout to eliminate visible glitches between blocks
     if (pos.x<0.0 || pos.z<0.0 || pos.x>1.0 || pos.z>1.0)
-        pos.y *= 0.0;
+        pos.y = 0.0;
 #else
     highp vec4 pos = qt_Vertex.xzyw; // swizzle
 #endif

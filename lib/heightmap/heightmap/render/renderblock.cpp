@@ -98,6 +98,9 @@ void RenderBlock::Renderer::
         prev_vbo = vbo;
     }
     glBindTexture (GL_TEXTURE_2D, block->texture ()->getOpenGlTextureId ());
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture (GL_TEXTURE_2D, block->texture_ota ());
+    glActiveTexture(GL_TEXTURE0);
     draw(n);
 
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
@@ -370,7 +373,10 @@ void RenderBlock::ShaderData::prepShader(BlockLayout block_size, RenderSettings*
     if (uniVertText0>=0) if (u_tex != 0) glUniform1i(uniVertText0, u_tex=0); // GL_TEXTURE0 + i
 
     if (uniVertText2<-1) uniVertText2 = glGetUniformLocation(_shader_prog, "tex_color");
-    if (u_tex_color != 1) glUniform1i(uniVertText2, u_tex_color=1);
+    if (uniVertText2>=0) if (u_tex_color != 1) glUniform1i(uniVertText2, u_tex_color=1);
+
+    if (uniVertTextOta<-1) uniVertTextOta = glGetUniformLocation(_shader_prog, "tex_ota");
+    if (uniVertTextOta>=0) if (u_tex_ota != 2) glUniform1i(uniVertTextOta, u_tex_ota=2); // GL_TEXTURE0 + i
 
     if (uniFixedColor<-1) uniFixedColor = glGetUniformLocation(_shader_prog, "fixedColor");
     tvector<4, float> fixed_color;
@@ -552,6 +558,8 @@ void RenderBlock::
 {
     GlException_CHECK_ERROR();
 
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, 0);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, 0);
     glActiveTexture(GL_TEXTURE0);

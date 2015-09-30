@@ -34,7 +34,7 @@ public:
 
         // OTA: On the Performance of the Order-Truncate-Average-Ratio Spectral Filter
         // This is not really an implementation of OTA, but rather inspired from OTA.
-        MipmapOperator_OTA, // discard 1st and 4th quartile, take the (arithmetic) mean of the middle
+        MipmapOperator_OTA, // discard 1st and 4th quartile, take the (arithmetic) mean of the middle, an approximation of median
 
         MipmapOperator_Last
     };

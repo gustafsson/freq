@@ -153,7 +153,8 @@ Render::RenderSet::references_t Renderer::
 void Renderer::
         createMissingBlocks(const Render::RenderSet::references_t& R)
 {
-    bool use_mipmap = render_settings.y_normalize > 0;
+    bool use_ota = render_settings.y_normalize > 0;
+    bool use_mipmap = true;
 
     // check all blocks if mipmap settings have changed, or if mipmap is needed for a new texture
     int wanted_mipmap = use_mipmap ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR;
@@ -161,14 +162,23 @@ void Renderer::
         BlockCache::cache_t cache = Collection::cache (collection)->clone ();
         for (const auto& v : cache)
         {
+            bool domipmap = false;
+            if (use_ota != (bool)v.second->texture_ota())
+            {
+                v.second->enableOta (use_ota);
+                domipmap |= use_ota;
+            }
+
             int f = v.second->texture ()->getMinFilter ();
             if (wanted_mipmap != f) // if changed
             {
                 v.second->texture ()->bindTexture ();
                 v.second->texture ()->setMinFilter (wanted_mipmap);
-                if (use_mipmap)
-                    v.second->generateMipmap (); // will check min filter and only regenerate if used
+                domipmap |= use_mipmap;
             }
+
+            if (domipmap)
+                v.second->generateMipmap (); // will check min filter and only regenerate if used
         }
     }
 

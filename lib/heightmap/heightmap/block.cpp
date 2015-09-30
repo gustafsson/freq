@@ -47,6 +47,13 @@ Block::pGlTexture Block::
 }
 
 
+int Block::
+        texture_ota() const
+{
+    return texture_ota_ ? texture_ota_ ->getOpenGlTextureId () : 0;
+}
+
+
 void Block::
         generateMipmap()
 {
@@ -59,6 +66,30 @@ void Block::
     }
 
     this->updater ()->mipmapbuilder ()->generateMipmap (*texture_, BlockManagement::MipmapBuilder::MipmapOperator_Max, Render::BlockTextures::max_level);
+
+    if (texture_ota_)
+        this->updater ()->mipmapbuilder ()->generateMipmap (*texture_ota_, *texture_, BlockManagement::MipmapBuilder::MipmapOperator_OTA);
+}
+
+
+void Block::
+        enableOta(bool v)
+{
+    if (v && !texture_ota_)
+    {
+        // could use a separate Render::BlockTextures for this to conserve memory
+        // besides, as only the highest mipmaps are actually used there could be a single texture only used in building
+        GLuint tex;
+        int w = Render::BlockTextures::getWidth ()/2;
+        int h = Render::BlockTextures::getHeight ()/2;
+        glGenTextures (1, &tex); // GlTexture becomes responsible for glDeleteTextures
+        texture_ota_.reset (new GlTexture(tex, w, h, true));
+        Render::BlockTextures::setupTexture(tex, w, h, 1000);
+        texture_ota_->setMinFilter(GL_LINEAR_MIPMAP_LINEAR);
+    }
+
+    if (!v && texture_ota_)
+        texture_ota_.reset ();
 }
 
 

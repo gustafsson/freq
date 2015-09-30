@@ -86,6 +86,7 @@ private:
                 uniNormalMatrix=-2;
 
         GLint uniVertText0=-2,
+                uniVertTextOta=-2,
                 uniVertText2=-2,
                 uniColorTextureFactor=-2,
                 uniFixedColor=-2,
@@ -105,7 +106,8 @@ private:
                 uniVertexTextureBiasY=-2;
 
         int   u_tex=0,
-              u_tex_color=0;
+              u_tex_color=0,
+              u_tex_ota=0;
         tvector<4, float>
               u_fixed_color,
               u_clearColor;
