@@ -113,8 +113,6 @@ void MipmapBuilder::
     if (op >= MipmapOperator_Last)
         EXCEPTION_ASSERTX(op, "Unknown MipmapOperator");
 
-    EXCEPTION_ASSERT_EQUALS((int)tex.getMinFilter (), GL_LINEAR_MIPMAP_LINEAR);
-
     int prev_fbo = 0;
     glGetIntegerv (GL_FRAMEBUFFER_BINDING, &prev_fbo);
 
@@ -150,6 +148,7 @@ void MipmapBuilder::
 
     int w = tex.getWidth ();
     int h = tex.getHeight ();
+
     // https://www.opengl.org/registry/specs/EXT/framebuffer_object.txt
     for (int level=1; level<=max_level && (w>1 || h>1); level++)
     {
@@ -158,7 +157,6 @@ void MipmapBuilder::
 
         glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                GL_TEXTURE_2D, tex.getOpenGlTextureId (), level);
-
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, level-1);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, level-1);
 
@@ -170,6 +168,99 @@ void MipmapBuilder::
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, max_level);
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, 0, 0);
+
+    GlState::glEnable (GL_DEPTH_TEST);
+    GlState::glEnable (GL_CULL_FACE);
+
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, prev_fbo);
+
+    GlState::glDisableVertexAttribArray (info.qt_MultiTexCoord0);
+    GlState::glDisableVertexAttribArray (info.qt_Vertex);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    GlException_CHECK_ERROR();
+}
+
+
+void MipmapBuilder::
+        generateMipmap(const GlTexture& tex, const GlTexture& base_level, MipmapOperator op, int max_level)
+{
+    GlException_CHECK_ERROR();
+
+    // assume mipmaps are allocated in tex
+    if (op >= MipmapOperator_Last)
+        EXCEPTION_ASSERTX(op, "Unknown MipmapOperator");
+
+    int prev_fbo = 0;
+    glGetIntegerv (GL_FRAMEBUFFER_BINDING, &prev_fbo);
+
+    init();
+    ShaderInfo& info = shaders_[op];
+    if (!info.p->isLinked ())
+        return;
+
+    GlState::glUseProgram (info.p->programId());
+
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+    GlState::glEnableVertexAttribArray (info.qt_Vertex);
+    GlState::glEnableVertexAttribArray (info.qt_MultiTexCoord0);
+
+    struct vertex_format {
+        float x, y, u, v;
+    };
+    glVertexAttribPointer (info.qt_Vertex, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), 0);
+    glVertexAttribPointer (info.qt_MultiTexCoord0, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), (float*)0 + 2);
+
+    if (max_level < 0)
+    {
+        glBindTexture( GL_TEXTURE_2D, tex.getOpenGlTextureId ());
+        glGetTexParameteriv( GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, &max_level );
+        // or OpenGL default: max_level = 1000;
+    }
+
+    GlState::glDisable (GL_DEPTH_TEST, true); // disable depth test before binding framebuffer without depth buffer
+    GlState::glDisable (GL_CULL_FACE);
+
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_);
+
+    int w = tex.getWidth ()*2;
+    int h = tex.getHeight ()*2;
+
+    // https://www.opengl.org/registry/specs/EXT/framebuffer_object.txt
+    for (int level=1; level<=max_level && (w>1 || h>1); level++)
+    {
+        w = std::max(1, w/2);
+        h = std::max(1, h/2);
+
+        int map_level = level;
+        if (level==1)
+        {
+            glBindTexture( GL_TEXTURE_2D, base_level.getOpenGlTextureId ());
+        }
+        else
+        {
+            map_level = level-1;
+            if (level==2)
+                glBindTexture( GL_TEXTURE_2D, tex.getOpenGlTextureId ());
+        }
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                               GL_TEXTURE_2D, tex.getOpenGlTextureId (), level-1);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, map_level-1);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, map_level-1);
+
+        glUniform2f(info.subtexeloffset, 0.25/w, 0.25/h);
+        glUniform1f(info.level, map_level-1);
+        glViewport(0, 0, w, h);
+        GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    }
+
+    glBindTexture( GL_TEXTURE_2D, tex.getOpenGlTextureId ());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, max_level-1);
+    glBindTexture( GL_TEXTURE_2D, base_level.getOpenGlTextureId ());
+
     glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D, 0, 0);
 
@@ -328,7 +419,6 @@ void MipmapBuilder::
             COMPARE_DATASTORAGE(expected2, sizeof(expected2), level2);
         }
 
-
         {
             float srcdata[]={ 1, 2, 3, 4,
                               5, 6, 7, 8,
@@ -345,6 +435,35 @@ void MipmapBuilder::
             float sum = 0;
             for (int i=0; i<16; i++) sum +=srcdata[i]*srcdata[i];
             float expected2[]={ std::sqrtf(sum/16.f) - 0.00547695f }; // error due to mediump. 9.66406286102
+            data0 = GlTextureRead(*tex).readFloat (0, GL_RED);
+            level1 = GlTextureRead(*tex).readFloat (1, GL_RED);
+            level2 = GlTextureRead(*tex).readFloat (2, GL_RED);
+
+            //DataStorage<float>::ptr expectedptr = CpuMemoryStorage::BorrowPtr(DataStorageSize(4,4), expected);
+            //PRINT_DATASTORAGE(expectedptr, "");
+            //PRINT_DATASTORAGE(data, "");
+
+            COMPARE_DATASTORAGE(srcdata, sizeof(srcdata), data0);
+            COMPARE_DATASTORAGE(expected1, sizeof(expected1), level1);
+            COMPARE_DATASTORAGE(expected2, sizeof(expected2), level2);
+        }
+
+        {
+            float srcdata[]={ 1, 2, 3, 4,
+                              5, 6, 7, 8,
+                              9, 10, 11, 12,
+                              13, 14, 15, 16};
+
+            tex->bindTexture ();
+            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+
+            GlException_SAFE_CALL( MipmapBuilder().generateMipmap (*tex, MipmapOperator_CubicMean) );
+
+            float expected1[]={ 4.4375, 6.1835938147,
+                                11.851562807, 13.8046876022 };
+            float sum = 0;
+            for (int i=0; i<16; i++) sum +=srcdata[i]*srcdata[i]*srcdata[i];
+            float expected2[]={ std::pow(sum/16.f,1.f/3) - 0.0107109f }; // error due to mediump
             data0 = GlTextureRead(*tex).readFloat (0, GL_RED);
             level1 = GlTextureRead(*tex).readFloat (1, GL_RED);
             level2 = GlTextureRead(*tex).readFloat (2, GL_RED);
@@ -464,6 +583,38 @@ void MipmapBuilder::
             COMPARE_DATASTORAGE(srcdata, sizeof(srcdata), data0);
             COMPARE_DATASTORAGE(expected1, sizeof(expected1), level1);
             COMPARE_DATASTORAGE(expected2, sizeof(expected2), level2);
+        }
+
+        {
+            GLuint utex2;
+            int w = Render::BlockTextures::getWidth ()/2;
+            int h = Render::BlockTextures::getHeight ()/2;
+            glGenTextures (1, &utex2); // GlTexture becomes responsible for glDeleteTextures
+            GlTexture::ptr tex2 (new GlTexture(utex2, w, h, true));
+            Render::BlockTextures::setupTexture(utex2, w, h, 1000);
+
+            GlException_SAFE_CALL( MipmapBuilder().generateMipmap (*tex, MipmapOperator_Max) );
+            GlException_SAFE_CALL( MipmapBuilder().generateMipmap (*tex2, *tex, MipmapOperator_OTA) );
+
+            {
+                float expected1[]={ 614,  8528,
+                                    14128, 16496 };
+                float expected2[]={ 16496 };
+                level1 = GlTextureRead(*tex).readFloat (1, GL_RED);
+                level2 = GlTextureRead(*tex).readFloat (2, GL_RED);
+                COMPARE_DATASTORAGE(expected1, sizeof(expected1), level1);
+                COMPARE_DATASTORAGE(expected2, sizeof(expected2), level2);
+            }
+
+            {
+                float expected1[]={ (2+5)/2.,   (7+4)/2.,
+                                    (10+13)/2., (12+16)/2. };
+                float expected2[]={ ((10+13)/2. + (7+4)/2.)/2. };
+                level1 = GlTextureRead(*tex2).readFloat (0, GL_RED);
+                level2 = GlTextureRead(*tex2).readFloat (1, GL_RED);
+                COMPARE_DATASTORAGE(expected1, sizeof(expected1), level1);
+                COMPARE_DATASTORAGE(expected2, sizeof(expected2), level2);
+            }
         }
     }
 }

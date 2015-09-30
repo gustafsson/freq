@@ -19,7 +19,8 @@ void main(void)
 #if defined(MipmapOperator_ArithmeticMean)
     r = (v.x+v.y+v.z+v.w)*0.25;
 #elif defined(MipmapOperator_GeometricMean)
-    r = sqrt(sqrt(v.x*v.y)*sqrt(v.z*v.w));
+    r = sqrt(sqrt(v.x*v.y*v.z*v.w));
+    //r = pow(v.x*v.y*v.z*v.w,0.25);
 #elif defined(MipmapOperator_HarmonicMean)
     r = 4./(1./v.x + 1./v.y + 1./v.z + 1./v.w);
 #elif defined(MipmapOperator_QuadraticMean)

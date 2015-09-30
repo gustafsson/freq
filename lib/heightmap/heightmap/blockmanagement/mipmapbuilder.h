@@ -39,8 +39,12 @@ public:
         MipmapOperator_Last
     };
 
-    // mipmaps must already be allocated in t, max_level must be smaller than GL_TEXTURE_MAX_LEVEL, max_level=-1 uses GL_TEXTURE_MAX_LEVEL
-    void generateMipmap(const GlTexture& t, MipmapOperator op=MipmapOperator_Max, int max_level = -1);
+    // mipmaps must already be allocated in t, max_level must be smaller than GL_TEXTURE_MAX_LEVEL, max_level=-1 uses the texture parameter GL_TEXTURE_MAX_LEVEL
+    void generateMipmap(const GlTexture& t, MipmapOperator op, int max_level = 1000);
+
+    // Use a different base level. 't' should be equal in size to the first mipmap level in base_level. This is useful for combining
+    // two different MipmapOperators of one and the same texture in a shader.
+    void generateMipmap(const GlTexture& t, const GlTexture& base_level, MipmapOperator op, int max_level = 1000);
 
 private:
     struct ShaderInfo {
