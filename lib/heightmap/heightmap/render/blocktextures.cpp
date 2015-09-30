@@ -53,7 +53,7 @@ public:
     unsigned getHeight() const { return height_; }
 
     static void setupTexture(unsigned name, unsigned width, unsigned height);
-    static void setupTexture(unsigned name, unsigned width, unsigned height, bool mipmaps);
+    static void setupTexture(unsigned name, unsigned width, unsigned height, int max_level);
     static unsigned allocated_bytes_per_element();
 
 private:
@@ -193,9 +193,9 @@ void BlockTextures::
 
 
 void BlockTextures::
-        setupTexture(unsigned name, unsigned width, unsigned height, bool mipmaps)
+        setupTexture(unsigned name, unsigned width, unsigned height, int max_level)
 {
-    BlockTexturesImpl::setupTexture (name,width,height,mipmaps);
+    BlockTexturesImpl::setupTexture (name,width,height,max_level);
 }
 
 
@@ -326,12 +326,12 @@ int BlockTexturesImpl::
 void BlockTexturesImpl::
         setupTexture(unsigned name, unsigned w, unsigned h)
 {
-    setupTexture(name, w, h, BlockTextures::max_level > 0);
+    setupTexture(name, w, h, BlockTextures::max_level);
 }
 
 
 void BlockTexturesImpl::
-        setupTexture(unsigned name, unsigned w, unsigned h, bool mipmaps)
+        setupTexture(unsigned name, unsigned w, unsigned h, int max_level)
 {
     glBindTexture(GL_TEXTURE_2D, name);
     // Compatible with GlFrameBuffer
@@ -339,9 +339,7 @@ void BlockTexturesImpl::
     EXCEPTION_ASSERT_LESS(0u,w);
     EXCEPTION_ASSERT_LESS(0u,h);
 
-    int max_level = std::min(BlockTextures::max_level,(int)log2(std::max(w,h)));
-    if (!mipmaps)
-        max_level = 0;
+    max_level = std::min(max_level,(int)log2(std::max(w,h)));
 
 #if defined(GL_ES_VERSION_2_0)
     // https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_storage.txt
