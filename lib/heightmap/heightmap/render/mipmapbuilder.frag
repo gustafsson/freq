@@ -1,7 +1,5 @@
 uniform mediump sampler2D qt_Texture0;
 
-uniform mediump float level;
-
 varying mediump vec2 qt_TexCoord0;
 varying mediump vec2 qt_TexCoord1;
 varying mediump vec2 qt_TexCoord2;
@@ -10,10 +8,10 @@ varying mediump vec2 qt_TexCoord3;
 void main(void)
 {
     mediump vec4 v = vec4(
-                    texture2DLod(qt_Texture0, qt_TexCoord0, level).x,
-                    texture2DLod(qt_Texture0, qt_TexCoord1, level).x,
-                    texture2DLod(qt_Texture0, qt_TexCoord2, level).x,
-                    texture2DLod(qt_Texture0, qt_TexCoord3, level).x);
+                    texture2D(qt_Texture0, qt_TexCoord0, -1.0).x,
+                    texture2D(qt_Texture0, qt_TexCoord1, -1.0).x,
+                    texture2D(qt_Texture0, qt_TexCoord2, -1.0).x,
+                    texture2D(qt_Texture0, qt_TexCoord3, -1.0).x);
 
     mediump float r;
 #if defined(MipmapOperator_ArithmeticMean)
@@ -24,7 +22,8 @@ void main(void)
 #elif defined(MipmapOperator_HarmonicMean)
     r = 4./(1./v.x + 1./v.y + 1./v.z + 1./v.w);
 #elif defined(MipmapOperator_QuadraticMean)
-    r = sqrt(v.x*v.x+v.y*v.y+v.z*v.z+v.w*v.w)*0.5;
+    r = length(v)*0.5;
+    //r = sqrt((v.x*v.x+v.y*v.y+v.z*v.z+v.w*v.w)*0.25);
 #elif defined(MipmapOperator_CubicMean)
     r = pow((v.x*v.x*v.x+v.y*v.y*v.y+v.z*v.z*v.z+v.w*v.w*v.w)*0.25, 1.0/3.0);
 #elif defined(MipmapOperator_Max)

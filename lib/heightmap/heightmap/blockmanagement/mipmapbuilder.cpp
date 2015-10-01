@@ -285,6 +285,7 @@ void MipmapBuilder::
 #include "heightmap/render/blocktextures.h"
 #include "gltextureread.h"
 #include "datastoragestring.h"
+#include "heightmap/blocklayout.h"
 
 #include <QtWidgets> // QApplication
 #include <QtOpenGL> // QGLWidget
