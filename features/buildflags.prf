@@ -28,6 +28,7 @@ macx* {
     QMAKE_CXXFLAGS += -Wno-unused-parameter
     QMAKE_CXXFLAGS -= -Wunknown-pragmas
     QMAKE_CXXFLAGS += -Wno-unknown-pragmas
+    QMAKE_CXXFLAGS += -Wno-unused-local-typedef
 }
 
 macx {
