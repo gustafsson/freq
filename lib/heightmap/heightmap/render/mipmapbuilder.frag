@@ -7,6 +7,7 @@ varying mediump vec2 qt_TexCoord3;
 
 void main(void)
 {
+    // Use textureGather on GLSL version 400 or GLSL?
     mediump vec4 v = vec4(
                     texture2D(qt_Texture0, qt_TexCoord0, -1.0).x,
                     texture2D(qt_Texture0, qt_TexCoord1, -1.0).x,

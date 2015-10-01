@@ -42,6 +42,7 @@ mediump float computeShadow(highp vec4 pos, mediump vec2 tex0, mediump vec2 vb) 
     mediump float heightx2     = texture2DLod(tex, vec2(tex0.x+dx, tex0.y), bias).x;
     mediump float heighty1     = texture2DLod(tex, vec2(tex0.x, tex0.y-dy), bias).x;
     mediump float heighty2     = texture2DLod(tex, vec2(tex0.x, tex0.y+dy), bias).x;
+    // Use textureGrad on GLSL version 130 or GLSL version 300 es
     heightx1 = heightValue(heightx1);
     heightx2 = heightValue(heightx2);
     heighty1 = heightValue(heighty1);

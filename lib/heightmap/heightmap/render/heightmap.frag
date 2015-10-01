@@ -77,6 +77,8 @@ void main()
 
 #define scalefactor 0.2
         v = mix(v, scalefactor*(1.0 + (v-median)/median), yNormalize);
+        if (median==0.0)
+            v = 0.0;
     }
 #endif
 
