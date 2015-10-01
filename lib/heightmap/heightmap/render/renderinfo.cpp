@@ -137,7 +137,7 @@ Region RenderInfo::
 bool RenderInfo::
         computePixelsPerUnit( Region r, double& pixelsPerTimeTexel, double& pixelsPerScaleTexel ) const
 {
-    vectord corner[]=
+    std::vector<vectord> clippedCorners =
     {
         vectord( r.a.time, 0, r.a.scale),
         vectord( r.a.time, 0, r.b.scale),
@@ -149,7 +149,7 @@ bool RenderInfo::
     // resolution needed from the point of the block that is closest to
     // the camera, start by finding that point
     vectord closest_i;
-    std::vector<vectord> clippedCorners = frustum_clip.clipFrustum(corner, &closest_i); // about 10 us
+    frustum_clip.clipFrustum(clippedCorners, &closest_i); // about 10 us
     if (clippedCorners.empty ())
         return false;
 

@@ -78,37 +78,39 @@ vectord planeIntersection( vectord const& pt1, vectord const& pt2, double &s, co
     return p;
 }
 
-vector<vectord> clipPlane( const vector<vectord>& p, const vectord& p0, const vectord& n )
+void clipPlane( vector<vectord>& p, const vectord& p0, const vectord& n )
 {
     tvector<4,double> plane(n[0], n[1], n[2], -(p0 % n));
     return clipPlane( p, plane );
 }
 
-std::vector<vectord> clipPlane( const std::vector<vectord>& p, const tvector<4,double>& plane )
+void clipPlane( vector<vectord>& p, const tvector<4,double>& plane )
 {
     if (p.empty())
-        return vector<vectord>();
+        return;
 
     vectord n(plane[0], plane[1], plane[2]);
     double d = -plane[3];
 
     unsigned i;
+    vectord a, b;
+    bool a_side, b_side;
 
-    vectord const* a, * b = &p[p.size()-1];
-    bool a_side, b_side = d - (*b % n) < 0;
+    b = p[p.size()-1];
+    b_side = d - (b % n) < 0;
     for (i=0; i<p.size(); i++) {
         a = b;
-        b = &p[i];
+        b = p[i];
 
         a_side = b_side;
-        b_side = d - (*b % n) < 0;
+        b_side = d - (b % n) < 0;
 
         if (a_side != b_side )
         {
-            vectord dir = *b-*a;
+            vectord dir = b-a;
 
             // planeIntersection
-            double s = (d - (*a % n))/(dir % n);
+            double s = (d - (a % n))/(dir % n);
 
             // TODO why [-.1, 1.1]?
             //if (!isnan(s) && -.1 <= s && s <= 1.1)
@@ -122,41 +124,38 @@ std::vector<vectord> clipPlane( const std::vector<vectord>& p, const tvector<4,d
     if (i==p.size())
     {
         if (!b_side)
-            return vector<vectord>();
-        else
-            return p; // copy
+            p.clear ();
+        return;
     }
 
-    vector<vectord> r;
-    r.reserve(2*p.size());
+    b = p[p.size()-1];
+    b_side = d - (b % n) < 0;
 
-    b = &p[p.size()-1];
-    b_side = d - (*b % n) < 0;
-
-    for (unsigned i=0; i<p.size(); i++) {
+    for (auto i = p.begin (); i!=p.end (); ) {
         a = b;
-        b = &p[i];
+        b = *i;
 
         a_side = b_side;
-        b_side = d - (*b % n) <0;
-
-        if (a_side)
-            r.push_back( *a );
+        b_side = d - (b % n) <0;
 
         if (a_side != b_side )
         {
             double s;
-            vectord xy = planeIntersection( *a, *b, s, plane );
+            vectord xy = planeIntersection( a, b, s, plane );
 
             if (!isnan(s) && -.1 <= s && s <= 1.1)
-            //if (!isnan(s) && 0 <= s && s <= 1)
+                //if (!isnan(s) && 0 <= s && s <= 1)
             {
-                r.push_back( xy );
+                i = p.insert (i, xy);
+                i++;
             }
         }
-    }
 
-    return r;
+        if (!b_side)
+            i = p.erase (i);
+        else
+            i++;
+    }
 }
 
 } // namespace GeometricAlgebra
@@ -191,7 +190,7 @@ void test() {
 
     {
         // closestPointOnPoly computes the closest point 'r' in a polygon.
-        std::vector<vectord> l = {
+        vector<vectord> l = {
             vectord(0,0,0),
             vectord(0,1,0),
             vectord(1,0,0)};
@@ -207,15 +206,15 @@ void test() {
         c = closestPointOnPoly( l, vectord(1.1, 1.1, 0));
         EXCEPTION_ASSERT_EQUALS(c, vectord(0.5, 0.5, 0));
 
-        l = std::vector<vectord>{vectord(1,0,0)};
+        l = vector<vectord>{vectord(1,0,0)};
         c = closestPointOnPoly( l, vectord(1.1, 1.1, 0));
         EXCEPTION_ASSERT_EQUALS(c, vectord(1, 0, 0));
 
-        l = std::vector<vectord>{vectord(1,0,0), vectord(1,0,0)};
+        l = vector<vectord>{vectord(1,0,0), vectord(1,0,0)};
         c = closestPointOnPoly( l, vectord(1.1, 1.1, 0));
         EXCEPTION_ASSERT_EQUALS(c, vectord(1, 0, 0));
 
-        l = std::vector<vectord>{
+        l = vector<vectord>{
             vectord(0,0,0),
             vectord(0,1,0),
             vectord(0,1,0),
@@ -241,39 +240,39 @@ void test() {
 
     {
         // clipPlane clips a polygon with a plane.
-        std::vector<vectord> r, p = {
+        vector<vectord> r, p = {
             vectord(0,0,0),
             vectord(0,1,0),
             vectord(1,0,0)};
         vectord p0(0.5,0,0);
         vectord n(1,0,0);
-        r = clipPlane( p, p0, n );
+        clipPlane( r=p, p0, n );
         EXCEPTION_ASSERT_EQUALS(r.size (), 3u);
-        EXCEPTION_ASSERT_EQUALS(r[0], vectord(1,0,0));
-        EXCEPTION_ASSERT_EQUALS(r[1], vectord(0.5,0,0));
-        EXCEPTION_ASSERT_EQUALS(r[2], vectord(0.5,0.5,0));
+        EXCEPTION_ASSERT_EQUALS(r[0], vectord(0.5,0,0));
+        EXCEPTION_ASSERT_EQUALS(r[1], vectord(0.5,0.5,0));
+        EXCEPTION_ASSERT_EQUALS(r[2], vectord(1,0,0));
 
         p0 = vectord(0,0,0);
         n = vectord(1,0,0);
-        r = clipPlane( p, p0, n );
+        clipPlane( r=p, p0, n );
         EXCEPTION_ASSERT_EQUALS(r.size (), 3u);
-        EXCEPTION_ASSERT_EQUALS(r[0], vectord(1,0,0));
-        EXCEPTION_ASSERT_EQUALS(r[1], vectord(0,0,0));
-        EXCEPTION_ASSERT_EQUALS(r[2], vectord(0,1,0));
+        EXCEPTION_ASSERT_EQUALS(r[0], vectord(0,0,0));
+        EXCEPTION_ASSERT_EQUALS(r[1], vectord(0,1,0));
+        EXCEPTION_ASSERT_EQUALS(r[2], vectord(1,0,0));
 
         p0 = vectord(1,0,0);
         n = vectord(1,0,0);
-        r = clipPlane( p, p0, n );
+        clipPlane( r=p, p0, n );
         EXCEPTION_ASSERT_EQUALS(r.size (), 0u);
 
         p0 = vectord(0,0,0);
         n = vectord(-1,0,0);
-        r = clipPlane( p, p0, n );
+        clipPlane( r=p, p0, n );
         EXCEPTION_ASSERT_EQUALS(r.size (), 0u);
 
         p0 = vectord(0.5,0,0);
         n = vectord(-1,0,0);
-        r = clipPlane( p, p0, n );
+        clipPlane( r=p, p0, n );
         EXCEPTION_ASSERT_EQUALS(r.size (), 4u);
         EXCEPTION_ASSERT_EQUALS(r[0], vectord(0.5,0,0));
         EXCEPTION_ASSERT_EQUALS(r[1], vectord(0,0,0));
@@ -282,7 +281,7 @@ void test() {
 
         p0 = vectord(2,0,0);
         n = vectord(1,0,0);
-        r = clipPlane( p, p0, n );
+        clipPlane( r=p, p0, n );
         EXCEPTION_ASSERT_EQUALS(r.size (), 0u);
     }
 }

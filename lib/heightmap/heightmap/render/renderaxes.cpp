@@ -127,21 +127,15 @@ void RenderAxes::
     }
 
     // 2 clip entire sound to frustum
-    std::vector<vectord> clippedFrustum;
+    std::vector<vectord> clippedFrustum = {
+        vectord( 0, 0, 0),
+        vectord( 0, 0, 1),
+        vectord( T, 0, 1),
+        vectord( T, 0, 0),
+    };
 
     vectord closest_i;
-    {   //float T = collection->worker->source()->length();
-        vectord corner[4]=
-        {
-            vectord( 0, 0, 0),
-            vectord( 0, 0, 1),
-            vectord( T, 0, 1),
-            vectord( T, 0, 0),
-        };
-
-        clippedFrustum = frustum_clip.clipFrustum (corner, &closest_i);
-    }
-
+    frustum_clip.clipFrustum (clippedFrustum, &closest_i);
 
     // 3 find inside
     vectord inside;
@@ -184,9 +178,8 @@ void RenderAxes::
     vectord x(1,0,0), z(0,0,1);
 
     FreqAxis fa = display_scale;
-    // loop along all sides
-    typedef tvector<4,GLfloat> GLvectorF;
 
+    // loop along all sides
     for (unsigned i=0; i<clippedFrustum.size(); i++)
     {
         unsigned j=(i+1)%clippedFrustum.size();

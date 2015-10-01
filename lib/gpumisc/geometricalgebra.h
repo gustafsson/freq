@@ -49,8 +49,8 @@ vectord planeIntersection( vectord const& pt1, vectord const& pt2, double &s, co
  * @param p0,n Defines the plane.
  * @return The polygon on the frontside of the plane.
  */
-std::vector<vectord> clipPlane( const std::vector<vectord>& p, const vectord& p0, const vectord& n );
-std::vector<vectord> clipPlane( const std::vector<vectord>& p, const tvector<4,double>& plane );
+void clipPlane( std::vector<vectord>& p, const vectord& p0, const vectord& n );
+void clipPlane( std::vector<vectord>& p, const tvector<4,double>& plane );
 
 void test();
 
