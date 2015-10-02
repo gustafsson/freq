@@ -18,7 +18,6 @@ class RenderSet
 {
 public:
     typedef std::unordered_map<Reference,CornerResolution> references_t;
-    static references_t makeSet(Reference);
 
     RenderSet(RenderInfo* render_info, float L);
 
@@ -45,6 +44,7 @@ private:
     RenderInfo*     render_info;
     float           L;
 
+    static references_t makeSet(Reference);
     references_t    computeChildrenRenderSet( Reference ref );
 
 public:

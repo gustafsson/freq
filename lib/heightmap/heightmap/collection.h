@@ -19,6 +19,7 @@
 
 // std
 #include <vector>
+#include <unordered_set>
 
 /*
 TODO: rewrite this section
@@ -143,7 +144,7 @@ public:
 
 
     pBlock      getBlock( const Reference& ref );
-    void        createMissingBlocks(const Render::RenderSet::references_t& R);
+    void        prepareBlocks(const Render::RenderSet::references_t& R);
     int         runGarbageCollection( bool aggressive=false );
 
 
@@ -198,6 +199,7 @@ private:
 
 
     void        removeBlock( pBlock b );
+    void        createMissingBlocks(const std::unordered_set<Reference>& missing);
 };
 
 } // namespace Heightmap

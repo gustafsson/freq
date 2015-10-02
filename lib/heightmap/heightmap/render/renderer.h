@@ -45,7 +45,7 @@ private:
 
     void setupGlStates(float scaley);
     Render::RenderSet::references_t getRenderSet(float L);
-    void createMissingBlocks(const Render::RenderSet::references_t& R);
+    void prepareBlocks(const Render::RenderSet::references_t& R);
     void drawBlocks(const Render::RenderSet::references_t& R);
     void drawReferences(const Render::RenderSet::references_t& R, bool drawcross=true);
 };

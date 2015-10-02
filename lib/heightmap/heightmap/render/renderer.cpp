@@ -79,7 +79,7 @@ void Renderer::
     float yscalelimit = render_settings.drawcrosseswhen0 ? 0.0004f : 0.f;
     bool draw = render_settings.y_scale > yscalelimit;
     if (draw)
-        createMissingBlocks(R);
+        prepareBlocks(R);
 
     setupGlStates(scaley);
 
@@ -134,9 +134,11 @@ void Renderer::
 Render::RenderSet::references_t Renderer::
         getRenderSet(float L)
 {
-    BlockLayout bl                   = collection.read ()->block_layout ();
-    Reference ref                    = collection.read ()->entireHeightmap();
-    VisualizationParams::const_ptr vp = collection.read ()->visualization_params ();
+    auto cr = collection.read ();
+    BlockLayout bl                   = cr->block_layout ();
+    Reference ref                    = cr->entireHeightmap();
+    VisualizationParams::const_ptr vp = cr->visualization_params ();
+    cr.unlock ();
     Render::RenderInfo render_info(&gl_projecter, bl, vp, render_settings.redundancy);
     Render::RenderSet::references_t R = Render::RenderSet(&render_info, L).computeRenderSet( ref );
 
@@ -151,7 +153,7 @@ Render::RenderSet::references_t Renderer::
 
 
 void Renderer::
-        createMissingBlocks(const Render::RenderSet::references_t& R)
+        prepareBlocks (const Render::RenderSet::references_t& R)
 {
     bool use_ota = render_settings.y_normalize > 0;
     bool use_mipmap = true;
@@ -182,7 +184,7 @@ void Renderer::
         }
     }
 
-    collection->createMissingBlocks (R);
+    collection->prepareBlocks (R);
 }
 
 
@@ -195,10 +197,7 @@ void Renderer::
     Render::RenderSet::references_t failed;
 
     {
-        auto collection = this->collection.read ();
-        int frame_number = collection->frame_number ();
-        BlockLayout bl = collection->block_layout ();
-        collection.unlock ();
+        BlockLayout bl = collection.read ()->block_layout ();
 
         // Copy the block list
         auto cache = Collection::cache (this->collection)->clone ();
@@ -213,7 +212,6 @@ void Renderer::
             {
                 pBlock block = i->second;
                 block_renderer.renderBlock(block, v.second);
-                block->frame_number_last_used = frame_number;
                 render_settings.drawn_blocks++;
             }
             else

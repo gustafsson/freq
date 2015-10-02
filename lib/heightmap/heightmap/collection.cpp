@@ -15,7 +15,6 @@
 
 // boost
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/unordered_set.hpp>
 
 // std
 #include <string>
@@ -229,25 +228,34 @@ pBlock Collection::
     if (block)
         return block;
 
-    createMissingBlocks(Render::RenderSet::makeSet (ref));
+    createMissingBlocks({ref});
 
     return cache_->find( ref );
 }
 
 
 void Collection::
-         createMissingBlocks(const Render::RenderSet::references_t& R)
+         prepareBlocks(const Render::RenderSet::references_t& R)
 {
-    Render::RenderSet::references_t missing;
+    std::unordered_set<Reference> missing;
 
+    BlockCache::cache_t cache = cache_->clone ();
+
+    // entireHeightmap should always be included so that it can be used to fill new blocks
+    Reference entire = entireHeightmap();
+    auto i = cache.find (entire);
+    if (i == cache.end())
+        missing.insert (entire);
+    else
+        i->second->frame_number_last_used = _frame_counter;
+
+    for (const auto& r : R)
     {
-        BlockCache::cache_t cache = cache_->clone ();
-        for (const auto& r : R)
-        {
-            auto i = cache.find(r.first);
-            if (i == cache.end())
-                missing.insert (r);
-        }
+        auto i = cache.find(r.first);
+        if (i == cache.end())
+            missing.insert (r.first);
+        else
+            i->second->frame_number_last_used = _frame_counter;
     }
 
     if (missing.empty ())
@@ -256,6 +264,13 @@ void Collection::
         return;
     }
 
+    createMissingBlocks(missing);
+}
+
+
+void Collection::
+         createMissingBlocks(const std::unordered_set<Reference>& missing)
+{
     VERBOSE_EACH_FRAME_COLLECTION TaskTimer tt("Collection::createMissingBlocks %d new", missing.size());
 
     std::vector<pBlock> blocks_to_init;
@@ -263,7 +278,7 @@ void Collection::
 
     for (const auto& ref : missing )
     {
-        pBlock block = block_factory_->createBlock (ref.first);
+        pBlock block = block_factory_->createBlock (ref);
         if (block)
         {
             blocks_to_init.push_back (block);
