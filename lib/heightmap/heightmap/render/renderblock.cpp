@@ -77,11 +77,24 @@ void RenderBlock::Renderer::
     glUniformMatrix4fv (render_block->uniModelview, 1, false, GLmatrixf(blockProj.modelview ()).v ());
     glUniformMatrix4fv (render_block->uniNormalMatrix, 1, false, GLmatrixf(blockProj.modelview_inverse ()).transpose ().v ());
 
-    float mintp =  min(min(min(cr.x00, cr.x01), min(cr.x10, cr.x11)),
-                       min(min(cr.y00, cr.y01), min(cr.y10, cr.y11)));
+    // This would still coorect, mintp should not be above or equal to 2 though, as that wouldn't have triggered use of that block
+    //float mintp =  min(min(min(cr.x00, cr.x01), min(cr.x10, cr.x11)),
+    //                   min(min(cr.y00, cr.y01), min(cr.y10, cr.y11)));
+
+    // This is a good approximate
+    float mintp =  (cr.x00 + cr.x01 + cr.x10 + cr.x11 +
+                    cr.y00 + cr.y01 + cr.y10 + cr.y11)/16.0;
+
+    // could adapt mintp dynamically depending on rendering performance, for instance let RenderBlock::Renderer time it's own lifetime and update RenderBlock
+#if defined(GL_ES_VERSION_2_0)
+    // don't get too detailed vertices
+    mintp = max(mintp, 4);
+    //    mintp = exp2(subdivs-1.f); max
+#endif
+
+    glUniform4f (render_block->uniVertexTextureBiasX, std::max(mintp, cr.x00), std::max(mintp, cr.x01), std::max(mintp, cr.x10), std::max(mintp, cr.x11));
+    glUniform4f (render_block->uniVertexTextureBiasY, std::max(mintp, cr.y00), std::max(mintp, cr.y01), std::max(mintp, cr.y10), std::max(mintp, cr.y11));
     int subdiv = max(0, min(subdivs-1, (int)log2(mintp)));
-    glUniform4f (render_block->uniVertexTextureBiasX, cr.x00, cr.x01, cr.x10, cr.x11);
-    glUniform4f (render_block->uniVertexTextureBiasY, cr.y00, cr.y01, cr.y10, cr.y11);
 
     LOG_DIVS Log("%s x(%g, %g, %g, %g) y(%g, %g, %g, %g) -> %d")
             % block->getVisibleRegion ()
