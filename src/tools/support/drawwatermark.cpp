@@ -103,7 +103,7 @@ void DrawWatermark::
     glColor4f(1,1,1,1);
 
     {
-        GlTexture::ScopeBinding bindTexture = img->getScopeBinding();
+        img->bindTexture();
 
         GlState::glBindBuffer(GL_ARRAY_BUFFER, *postexvbo);
         glEnableClientState(GL_VERTEX_ARRAY);

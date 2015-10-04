@@ -66,9 +66,7 @@ public:
 	~GlTexture();
 
     /**
-    Binds this texture with glBindTexture and enables 2D texturing
-    with glEnable. Then removes the binding and disables 2D texturing
-    when the object goes out of scope.
+    Binds this texture with glBindTexture to GL_TEXTURE_2D.
     */
     void bindTexture();
 

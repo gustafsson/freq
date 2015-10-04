@@ -138,7 +138,7 @@ void DrawImage::
     glVertexPointer(2, GL_FLOAT, sizeof(float)*4, (float*)0 + 2);
 
     {
-        GlTexture::ScopeBinding bindTexture = img_->getScopeBinding();
+        img_->bindTexture();
         GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
 
