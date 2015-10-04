@@ -21,6 +21,9 @@ GlFrameBuffer::
             textureid_(own_texture_->getOpenGlTextureId ()),
             enable_depth_component_(true)
 {
+    EXCEPTION_ASSERT_LESS(0, width);
+    EXCEPTION_ASSERT_LESS(0, height);
+
     init();
 
     try
