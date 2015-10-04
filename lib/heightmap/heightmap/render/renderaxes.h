@@ -14,6 +14,9 @@
 namespace Heightmap {
 namespace Render {
 
+/**
+ * @brief The RenderAxes class should compute which glyphs to draw along the frustum edges, and then ask IGlyphs to draw them.
+ */
 class RenderAxes
 {
 public:
@@ -36,7 +39,20 @@ public:
                    FreqAxis display_scale, float T );
 
 private:
+    struct Side {
+        vectord const p1;
+        vectord const p2;
+        vectord::T const timePerPixel1;
+        vectord::T const scalePerPixel1;
+        vectord::T const timePerPixel2;
+        vectord::T const scalePerPixel2;
+    };
+
     void getElements( RenderAxes::AxesElements& ae, float T );
+    template<bool taxis>
+    void drawSide( RenderAxes::AxesElements& ae, const Side& s, const vectord::T timePerPixel_closest, const vectord::T scalePerPixel_closest, const vectord v0, const vectord inside );
+    void drawPiano( RenderAxes::AxesElements& ae, const Side& s, const vectord& p1_0, const vectord& inside );
+
     void drawElements( const AxesElements& );
 
     const RenderSettings* render_settings;

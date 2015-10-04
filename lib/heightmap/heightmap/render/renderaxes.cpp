@@ -52,6 +52,7 @@ void RenderAxes::
     this->gl_projection = gl_projection;
     this->display_scale = display_scale;
 
+    // calling .clear on a std::vector this will (typically) not free memory and as such won't require a malloc in getElements and std::vector can push_back into allocated memory.
     ae_.glyphs.clear ();
     ae_.vertices.clear ();
     ae_.orthovertices.clear ();
@@ -155,17 +156,35 @@ void RenderAxes::
     vectord::T timePerPixel_inside, scalePerPixel_inside;
     {
         g->computeUnitsPerPixel( inside, timePerPixel_inside, scalePerPixel_inside );
-        timePerPixel_inside *= scale; scalePerPixel_inside *= scale;
+        timePerPixel_inside *= scale;
+        scalePerPixel_inside *= scale;
 
         g->computeUnitsPerPixel( closest_i, timePerPixel_closest, scalePerPixel_closest );
-        timePerPixel_closest *= scale; scalePerPixel_closest *= scale;
+        timePerPixel_closest *= scale;
+        scalePerPixel_closest *= scale;
 
         timePerPixel.resize (clippedFrustum.size());
         scalePerPixel.resize (clippedFrustum.size());
 
+        /*vectord mint = clippedFrustum[0], maxt = mint;
+        for (const vectord& a: clippedFrustum)
+        {
+            if (a[0] < mint[0]) mint[0] = a[0];
+            if (a[1] < mint[1]) mint[1] = a[1];
+            if (a[2] < mint[2]) mint[2] = a[2];
+            if (a[0] > maxt[0]) maxt[0] = a[0];
+            if (a[1] > maxt[1]) maxt[1] = a[1];
+            if (a[2] > maxt[2]) maxt[2] = a[2];
+        }
+
+        vectord d = maxt-mint;*/
         for (unsigned i=0; i<clippedFrustum.size(); i++)
         {
             const vectord& p = clippedFrustum[i];
+            //const vectord bt = vectord(d[0]*0.00001,0,0);
+            //const vectord bs = vectord(0,0,d[2]*0.00001);
+            //vectord::T tpp = bt[0] / g->computePixelDistance (p,p+bt);
+            //vectord::T spp = bs[2] / g->computePixelDistance (p,p+bs);
             vectord::T tpp, spp;
             g->computeUnitsPerPixel( p, tpp, spp );
             timePerPixel[i] = tpp * scale;
@@ -175,9 +194,7 @@ void RenderAxes::
 
 
     // 4 render and decide upon scale
-    vectord x(1,0,0), z(0,0,1);
-
-    FreqAxis fa = display_scale;
+    const FreqAxis& fa = display_scale;
 
     // loop along all sides
     for (unsigned i=0; i<clippedFrustum.size(); i++)
@@ -216,35 +233,85 @@ void RenderAxes::
         if (!v[0] && !v[2]) // skip if |v| = 0
             continue;
 
-        // need initial f value
-        vectord p = p1; // starting point
-        vectord pp = p;
-        double f = fa.getFrequencyT( p[2] );
+        Side s{p1,p2,timePerPixel1,scalePerPixel1,timePerPixel2,scalePerPixel2};
 
-        if (((taxis && render_settings.draw_t) || (!taxis && render_settings.draw_hz)) &&
-            (render_settings.draw_axis_at0!=0?(taxis?p[2]==0:p[0]==0):true))
-        for (double u=-1; true; )
+        if (!taxis && render_settings.draw_piano && (render_settings.draw_axis_at0?p1[0]==0:true))
         {
+            drawPiano( ae, s, p1_0, inside );
+        }
+        else
+        {
+            if (taxis)
+                drawSide<true>( ae, s, timePerPixel_closest, scalePerPixel_closest, v0, inside );
+            else
+                drawSide<false>( ae, s, timePerPixel_closest, scalePerPixel_closest, v0, inside );
+        }
+    }
+}
+
+
+template<bool taxis>
+void RenderAxes::
+        drawSide( RenderAxes::AxesElements& ae, const Side& s, const vectord::T timePerPixel_closest, const vectord::T scalePerPixel_closest, const vectord v0, const vectord inside )
+{
+    const FreqAxis& fa = display_scale;
+    vectord const p1 = s.p1;
+    vectord const p2 = s.p2;
+    vectord::T const& timePerPixel1 = s.timePerPixel1;
+    vectord::T const& scalePerPixel1 = s.scalePerPixel1;
+    vectord::T const& timePerPixel2 = s.timePerPixel2;
+    vectord::T const& scalePerPixel2 = s.scalePerPixel2;
+    const vectord v = p2-p1;
+    auto& render_settings = *this->render_settings;
+    const vectord x(1,0,0), z(0,0,1);
+
+    struct TickResolution {
+        double DV;
+        int decimals;
+        int markanyways;
+        int updatedetail;
+        int multiple;
+        int submultiple;
+    };
+
+    struct Tick {
+        vectord p;
+        int iv;
+        double v;
+        TickResolution tr;
+    };
+
+    struct DrawScale {
+        double t, f, ST, SF;
+    };
+
+    auto tickResolution = [&] (const double u, const Tick& tick, DrawScale& out_drawscale ) {
             // linear interpolation, false, but good enough. The true value would
             // be really slow.
             vectord::T timePerPixel = timePerPixel1 + (u<0?0:u)*(timePerPixel2-timePerPixel1),
                        scalePerPixel = scalePerPixel1 + (u<0?0:u)*(scalePerPixel2-scalePerPixel1);
 
             double ppp=0.4;
+            if (taxis)
+            {
+                ppp = 0.4;
+            }
             timePerPixel = timePerPixel * ppp + timePerPixel_closest * (1.0-ppp);
             scalePerPixel = scalePerPixel * ppp + scalePerPixel_closest * (1.0-ppp);
 
             vectord::T ST = timePerPixel * 750; // ST = time units per 750 pixels, 750 pixels is a fairly common window size
             vectord::T SF = scalePerPixel * 750;
-            double drawScaleT = std::min(ST, 50*timePerPixel_closest*750);
-            double drawScaleF = std::min(SF, 50*scalePerPixel_closest*750);
+            out_drawscale.t = std::min(ST, 50*timePerPixel_closest*750);
+            out_drawscale.f = std::min(SF, 50*scalePerPixel_closest*750);
+            out_drawscale.ST = ST;
+            out_drawscale.SF = SF;
 
             double time_axis_density = 18;
             if (20.+2.*log10(timePerPixel) < 18.)
                 time_axis_density = std::max(1., 20.+2.*log10(timePerPixel));
 
-            double scale_axis_density = std::max(10., 22. - ceil(fabs(log10(f))));
-            if (f == 0)
+            double scale_axis_density = std::max(10., 22. - ceil(fabs(log10(tick.v))));
+            if (tick.v == 0)
                 scale_axis_density = 21;
 
             int st = floor(log10( ST / time_axis_density ));
@@ -269,6 +336,17 @@ void RenderAxes::
 
             int tupdatedetail = 1;
             DT /= tupdatedetail;
+
+            bool tmarkanyways = std::abs(5*DT*tupdatedetail) > (ST / time_axis_density);
+
+        return taxis ? TickResolution{DT,st,tmarkanyways,tupdatedetail,tmultiple,tsubmultiple} : TickResolution{DF,0,false,0,0,0};
+    };
+
+    auto alignTickForward = [&](const Tick& prevtick, TickResolution tr) {
+        if (taxis)
+        {
+            double DT = tr.DV;
+            auto p = prevtick.p;
             int t = floor(p[0]/DT + .5); // t marker index along t
             double t2 = t*DT;
             if (t2 < p[0] && v[0] > 0)
@@ -278,14 +356,25 @@ void RenderAxes::
             p[0] = t*DT;
 
             //int tmarkanyways = (bool)(fabsf(5*DT*tupdatedetail) > (ST / time_axis_density) && ((unsigned)(p[0]/DT + 0.5)%(tsubmultiple*tupdatedetail)==0) && ((unsigned)(p[0]/DT +.5)%(tmultiple*tupdatedetail)!=0));
-            int tmarkanyways = (bool)(std::abs(5*DT*tupdatedetail) > (ST / time_axis_density) && ((unsigned)(p[0]/DT + 0.5)%(tsubmultiple*tupdatedetail)==0));
-            if (tmarkanyways)
-                st--;
+            if (taxis)
+            {
+                tr.markanyways = tr.markanyways && ((unsigned)(p[0]/DT + 0.5)%(tr.submultiple*tr.updatedetail)==0);
+                if (tr.markanyways)
+                    tr.decimals--;
+            }
+
+            return Tick{p, t, p[0], tr};
+        }
+        else
+        {
+            const double DF = tr.DV;
+            const double f = prevtick.v;
+            vectord p = prevtick.p;
 
             // compute index of next marker along t and f
             double epsilon = 1./10;
-            double hz1 = fa.getFrequencyT( p[2] - DF * epsilon );
-            double hz2 = fa.getFrequencyT( p[2] + DF * epsilon );
+            double hz1 = fa.getFrequencyT( prevtick.p[2] - DF * epsilon );
+            double hz2 = fa.getFrequencyT( prevtick.p[2] + DF * epsilon );
             if (hz2-f < f-hz1)  hz1 = f;
             else                hz2 = f;
             double fc0 = (hz2 - hz1)/epsilon;
@@ -299,137 +388,134 @@ void RenderAxes::
             double nf = mif * fc;
             if (!(f - fc*0.05 < nf && nf < f + fc*0.05))
                 nf += v[2] > 0 ? fc : -fc;
-            f = nf;
-            p[2] = fa.getFrequencyScalarNotClampedT(f);
+            p[2] = fa.getFrequencyScalarNotClampedT(nf);
 
-            double np1 = fa.getFrequencyScalarNotClampedT( f + fc);
-            double np2 = fa.getFrequencyScalarNotClampedT( f - fc);
+            double np1 = fa.getFrequencyScalarNotClampedT( nf + fc);
+            double np2 = fa.getFrequencyScalarNotClampedT( nf - fc);
             int fmarkanyways = false;
-            fmarkanyways |= 0.9*std::abs(np1 - p[2]) > DF && 0.9*std::abs(np2 - p[2]) > DF && ((unsigned)(f / fc + .5)%1==0);
-            fmarkanyways |= 4.5*std::abs(np1 - p[2]) > DF && 4.5*std::abs(np2 - p[2]) > DF && ((unsigned)(f / fc + .5)%5==0);
+            fmarkanyways |= 0.9*std::abs(np1 - p[2]) > DF && 0.9*std::abs(np2 - p[2]) > DF && ((unsigned)(nf / fc + .5)%1==0);
+            fmarkanyways |= 4.5*std::abs(np1 - p[2]) > DF && 4.5*std::abs(np2 - p[2]) > DF && ((unsigned)(nf / fc + .5)%5==0);
             if (fmarkanyways)
                 sf--;
 
+            return Tick{p, mif, nf, {fc, sf, fmarkanyways, fupdatedetail, fmultiple, 0}};
+        }
+    };
 
-            if (taxis && render_settings.draw_cursor_marker)
-            {
-                float w = (render_settings.cursor[0] - pp[0])/(p[0] - pp[0]);
-
-                if (0 < w && w <= 1)
-                    if (!tmarkanyways)
-                        st--;
-
-                if (fabsf(w) < tupdatedetail*tmultiple/2)
-                    tmarkanyways = -1;
-
-                if (0 < w && w <= 1)
-                {
-                    DT /= 10;
-                    t = floor(render_settings.cursor[0]/DT + 0.5); // t marker index along t
-
-                    p = p1 + v*((render_settings.cursor[0] - p1[0])/v[0]);
-                    p[0] = render_settings.cursor[0]; // exact float value so that "cursor[0] - pp[0]" == 0
-
-                    if (!tmarkanyways)
-                        st--;
-
-                    tmarkanyways = 2;
-                }
-            }
-            else if(render_settings.draw_cursor_marker && fa.axis_scale != AxisScale_Unknown)
-            {
-                float w = (render_settings.cursor[2] - pp[2])/(p[2] - pp[2]);
-
-                if (0 < w && w <= 1)
-                    if (!fmarkanyways)
-                        sf--;
-
-                if (fabsf(w) < fupdatedetail*fmultiple/2)
-                    fmarkanyways = -1;
-
-                if (0 < w && w <= 1)
-                {
-                    f = fa.getFrequencyT( render_settings.cursor[2] );
-                    fc /= 10;
-                    mif = floor(f / fc + .5); // f marker index along f
-                    f = mif * fc;
-
-                    p = p1 + v*((render_settings.cursor[2] - p1[2])/v[2]);
-                    p[2] = render_settings.cursor[2]; // exact float value so that "cursor[2] - pp[2]" == 0
-
-                    fmarkanyways = 2;
-                }
-            }
-
-
-            // find next intersection along v
-            double nu;
-            int c1 = taxis ? 0 : 2;
-            int c2 = !taxis ? 0 : 2;
-            nu = (p[c1] - p1[c1])/v[c1];
-
-            // if valid intersection
-            if ( nu > u && nu<=1 ) { u = nu; }
-            else break;
-
-            // compute intersection
-            p[c2] = p1[c2] + v[c2]*u;
-
-
-            vectord np = p;
-            nf = f;
-            int nt = t;
-
+    auto cursorTick = [&](const Tick& tick, const Tick& prevtick) {
+            Tick r = tick;
             if (taxis)
             {
-                if (v[0] > 0) nt++;
-                if (v[0] < 0) nt--;
-                np[0] = nt*DT;
+                float w = (render_settings.cursor[0] - prevtick.p[0])/(tick.p[0] - prevtick.p[0]);
+
+                if (0 < w && w <= 1)
+                    if (!tick.tr.markanyways)
+                        r.tr.decimals--;
+
+                if (fabsf(w) < tick.tr.updatedetail*tick.tr.multiple/2)
+                    r.tr.markanyways = -1;
+
+                if (0 < w && w <= 1)
+                {
+                    r.tr.DV /= 10;
+                    r.iv = floor(render_settings.cursor[0]/r.tr.DV + 0.5); // t marker index along t
+
+                    double u = ((render_settings.cursor[0] - p1[0])/v[0]);
+                    r.p = p1 + v*u;
+                    r.p[0] = r.v = render_settings.cursor[0]; // exact float value so that "cursor[0] - pp[0]" == 0
+
+                    if (!r.tr.markanyways)
+                        r.tr.decimals--;
+
+                    r.tr.markanyways = 2;
+                }
+            }
+            else if(fa.axis_scale != AxisScale_Unknown)
+            {
+                float w = (render_settings.cursor[2] - prevtick.p[2])/(r.p[2] - prevtick.p[2]);
+
+                if (0 < w && w <= 1)
+                    if (!r.tr.markanyways)
+                        r.tr.decimals--;
+
+                if (fabsf(w) < r.tr.updatedetail*r.tr.multiple/2)
+                    r.tr.markanyways = -1;
+
+                if (0 < w && w <= 1)
+                {
+                    r.v = fa.getFrequencyT( render_settings.cursor[2] );
+                    r.tr.DV /= 10;
+                    r.iv = floor(r.v / r.tr.DV + .5); // f marker index along f
+                    r.v = r.iv * r.tr.DV;
+
+                    double u = ((render_settings.cursor[2] - p1[2])/v[2]);
+                    r.p = p1 + v*u;
+                    r.p[2] = render_settings.cursor[2]; // exact float value so that "cursor[2] - pp[2]" == 0
+
+                    r.tr.markanyways = 2;
+                }
+            }
+        return r;
+    };
+
+            int c1 = taxis ? 0 : 2;
+            int c2 = !taxis ? 0 : 2;
+
+    auto nextTick = [&v,&fa](Tick tick) {
+            if (taxis)
+            {
+                if (v[0] > 0) tick.iv++;
+                if (v[0] < 0) tick.iv--;
+                tick.p[0] = tick.v = tick.iv*tick.tr.DV;
             }
             else
             {
-                if (v[2] > 0) nf+=fc;
-                if (v[2] < 0) nf-=fc;
-                nf = floor(nf/fc + .5)*fc;
-                np[2] = fa.getFrequencyScalarNotClampedT(nf);
+                if (v[2] > 0) tick.v+=tick.tr.DV;
+                if (v[2] < 0) tick.v-=tick.tr.DV;
+                tick.iv = floor(tick.v/tick.tr.DV + .5);
+                tick.v = tick.iv*tick.tr.DV;
+                tick.p[2] = fa.getFrequencyScalarNotClampedT(tick.v);
             }
+        return tick;
+    };
 
-            // draw marker
-            if (taxis) {
-                if (0 == t%tupdatedetail || tmarkanyways==2)
+    auto drawTimeTick = [&](const Tick& tick, const DrawScale& drawscale) {
+                if (0 == tick.iv % tick.tr.updatedetail || tick.tr.markanyways==2)
                 {
-                    float size = 1+ (0 == (t%(tupdatedetail*tmultiple)));
-                    if (tmarkanyways)
+                    float size = 1+ (0 == (tick.iv%(tick.tr.updatedetail*tick.tr.multiple)));
+                    if (tick.tr.markanyways)
                         size = 2;
-                    if (-1 == tmarkanyways)
+                    if (-1 == tick.tr.markanyways)
                         size = 1;
 
-                    double sign = (v0^z)%(v0^( p - inside))>0 ? 1 : -1;
-                    vectord o { 0, 0, size*SF*.008*sign };
-                    vectord ow { ST*0.0005 * size, 0, 0 };
+                    double sign = (v0^z)%(v0^( tick.p - inside))>0 ? 1 : -1;
+                    vectord o { 0, 0, size*drawscale.SF*.008*sign };
+                    vectord ow { drawscale.ST*0.0005 * size, 0, 0 };
 
                     vectord v[] = {
-                        p - ow,
-                        p - ow - o,
-                        p + ow,
-                        p + ow - o
+                        tick.p - ow,
+                        tick.p - ow - o,
+                        tick.p + ow,
+                        tick.p + ow - o
                     };
                     addVertices(ae.vertices, tvector<4,GLfloat>(0,0,0,0.8), v, 4 );
 
                     if (size>1) {
-                        float angle = atan2(v0[2]/SF, v0[0]/ST) * (180*M_1_PI);
+                        float angle = atan2(v0[2]/drawscale.SF, v0[0]/drawscale.ST) * (180*M_1_PI);
 
                         matrixd modelview { gl_projection->modelview };
-                        modelview *= matrixd::translate (p[0], 0, p[2]);
+                        modelview *= matrixd::translate (tick.p[0], 0, tick.p[2]);
                         modelview *= matrixd::rot (90,1,0,0);
-                        modelview *= matrixd::scale (0.013*drawScaleT, 0.013*drawScaleF, 1);
+                        modelview *= matrixd::scale (0.013*drawscale.t, 0.013*drawscale.f, 1);
                         modelview *= matrixd::rot (angle,0,0,1);
 
                         char a[100];
                         char b[100];
+                        int st = tick.tr.decimals;
                         sprintf(b,"%%d:%%0%d.%df", 2+(st<-1?-st:0), st<0?-1-st:0);
-                        int minutes = (int)(t*DT/60);
-                        sprintf(a, b, minutes,t*DT-60*minutes);
+                        double v = tick.iv*tick.tr.DV;
+                        int minutes = (int)(v/60);
+                        sprintf(a, b, minutes,v-60*minutes);
 
                         if (!render_settings.left_handed_axes)
                             modelview *= matrixd::scale (-1,1,1);
@@ -439,43 +525,45 @@ void RenderAxes::
                         ae.glyphs.push_back (GlyphData{std::move(modelview), a, 0.0, -0.05, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
                     }
                 }
-            } else if (fa.axis_scale != AxisScale_Unknown) {
-                if (0 == ((unsigned)floor(f/fc + .5))%fupdatedetail || fmarkanyways==2)
+    };
+
+    auto drawFreqTick = [&] (const Tick& tick, const DrawScale& drawscale) {
+                if (0 == tick.iv % tick.tr.updatedetail || tick.tr.markanyways==2)
                 {
                     int size = 1;
-                    if (0 == ((unsigned)floor(f/fc + .5))%(fupdatedetail*fmultiple))
+                    if (0 == tick.iv % (tick.tr.updatedetail*tick.tr.multiple))
                         size = 2;
-                    if (fmarkanyways)
+                    if (tick.tr.markanyways)
                         size = 2;
-                    if (-1 == fmarkanyways)
+                    if (-1 == tick.tr.markanyways)
                         size = 1;
 
-                    double sign = (v0^x)%(v0^( p - inside))>0 ? 1 : -1;
-                    vectord o { size*ST*.008*sign, 0, 0 };
-                    vectord ow { 0, 0, SF*0.0005 * size };
+                    double sign = (v0^x)%(v0^( tick.p - inside))>0 ? 1 : -1;
+                    vectord o { size*drawscale.ST*.008*sign, 0, 0 };
+                    vectord ow { 0, 0, drawscale.SF*0.0005 * size };
 
                     vectord v[] = {
-                        p - ow,
-                        p - ow - o,
-                        p + ow,
-                        p + ow - o
+                        tick.p - ow,
+                        tick.p - ow - o,
+                        tick.p + ow,
+                        tick.p + ow - o
                     };
                     addVertices(ae.vertices, tvector<4,GLfloat>(0,0,0,0.8), v, 4 );
 
                     if (size>1)
                     {
-                        float angle = atan2(v0[2]/SF, v0[0]/ST) * (180*M_1_PI);
+                        float angle = atan2(v0[2]/drawscale.SF, v0[0]/drawscale.ST) * (180*M_1_PI);
 
                         matrixd modelview { gl_projection->modelview };
-                        modelview *= matrixd::translate (p[0],0,p[2]);
+                        modelview *= matrixd::translate (tick.p[0],0,tick.p[2]);
                         modelview *= matrixd::rot (90,1,0,0);
-                        modelview *= matrixd::scale (0.013*drawScaleT, 0.013*drawScaleF, 1);
+                        modelview *= matrixd::scale (0.013*drawscale.t, 0.013*drawscale.f, 1);
                         modelview *= matrixd::rot (angle,0,0,1);
 
                         char a[100];
                         char b[100];
-                        sprintf(b,"%%.%df", sf<0?-1-sf:0);
-                        sprintf(a, b, f);
+                        sprintf(b,"%%.%df", tick.tr.decimals<0?-1-tick.tr.decimals:0);
+                        sprintf(a, b, tick.v);
                         //sprintf(a,"%g", f);
 
                         if (!render_settings.left_handed_axes)
@@ -486,16 +574,55 @@ void RenderAxes::
                         ae.glyphs.push_back (GlyphData{std::move(modelview), a, 0.0, -0.05, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
                     }
                 }
+    };
+
+    // need initial f value
+    Tick tick { p1, 0, taxis ? p1[0] : fa.getFrequencyT( p1[2] ), TickResolution{} };
+    Tick prevTick = tick;
+    if (((taxis && render_settings.draw_t) || (!taxis && render_settings.draw_hz)) &&
+            (render_settings.draw_axis_at0!=0?(taxis?tick.p[2]==0:tick.p[0]==0):true))
+        for (double u=-1;true;)
+        {
+            DrawScale drawscale;
+            TickResolution tr = tickResolution(u, tick, drawscale);
+            tick = alignTickForward(tick, tr);
+            if (render_settings.draw_cursor_marker)
+                tick = cursorTick(tick, prevTick);
+
+            // find if next intersection along v is valid
+            double nu = (tick.p[c1] - p1[c1])/v[c1];
+            if ( nu > u && nu<=1 ) { u = nu; }
+            else break;
+
+            // compute intersection
+            tick.p[c2] = p1[c2] + v[c2]*u;
+
+            if (taxis) {
+                drawTimeTick (tick, drawscale);
+            } else if (fa.axis_scale != AxisScale_Unknown) {
+                drawFreqTick (tick, drawscale);
             }
 
-            pp = p;
-            p = np; // q.e.d.
-            f = nf;
-            t = nt;
+            prevTick = tick;
+            tick = nextTick(tick);
         }
+}
 
-        if (!taxis && render_settings.draw_piano && (render_settings.draw_axis_at0?p[0]==0:true))
-        {
+
+void RenderAxes::
+        drawPiano( RenderAxes::AxesElements& ae, const Side& s, const vectord& p1_0, const vectord& inside )
+{
+    const FreqAxis& fa = display_scale;
+    vectord const p1 = s.p1;
+    vectord const p2 = s.p2;
+    vectord::T const& timePerPixel1 = s.timePerPixel1;
+    vectord::T const& scalePerPixel1 = s.scalePerPixel1;
+    vectord::T const& timePerPixel2 = s.timePerPixel2;
+    vectord::T const& scalePerPixel2 = s.scalePerPixel2;
+    const vectord v = p2-p1;
+    auto& render_settings = *this->render_settings;
+    const vectord x(1,0,0);
+
             vectord::T timePerPixel = 0.5*(timePerPixel1 + timePerPixel2),
                        scalePerPixel = 0.5*(scalePerPixel1 + scalePerPixel2);
 
@@ -521,7 +648,7 @@ void RenderAxes::
                 F1 = 1;
             int startTone = log(F1/440.)/log(tva12) + 45;
             int endTone = ceil(log(F2/440.)/log(tva12)) + 45;
-            double sign = (v^x)%(v^( clippedFrustum[i] - inside))>0 ? 1 : -1;
+            double sign = (v^x)%(v^( p1_0 - inside))>0 ? 1 : -1;
             if (!render_settings.left_handed_axes)
                 sign *= -1;
 
@@ -659,8 +786,6 @@ void RenderAxes::
                     ae.glyphs.push_back (GlyphData{std::move(modelview), a, 0.1, -0.05, 1., 0.});
                 }
             }
-        }
-    }
 }
 
 
@@ -761,7 +886,7 @@ void RenderAxes::
             glBufferSubData (GL_ARRAY_BUFFER, 0, sizeof(Vertex)*ae.orthovertices.size (), &ae.orthovertices[0]);
         }
 
-        GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.orthovertices.size());
+        GlException_SAFE_CALL( GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.orthovertices.size()) );
     }
 
     if (!ae.vertices.empty () && program_->isLinked ())
