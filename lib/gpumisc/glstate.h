@@ -43,6 +43,7 @@ namespace GlState
      * reenabled on the next sync.
      */
     void assume_default_gl_states ();
+    void set_default_gl_states_and_sync ();
 
     /**
      * @brief assume_default_qt_quick_states sets the states that Qt Quick sets.

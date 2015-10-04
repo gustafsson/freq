@@ -193,6 +193,14 @@ void assume_default_gl_states ()
     current.reset ();
 }
 
+void set_default_gl_states_and_sync ()
+{
+    next.reset ();
+    sync();
+    if (current.arrayBufferBinding)
+        ::glBindBuffer(GL_ARRAY_BUFFER, current.arrayBufferBinding=0);
+}
+
 void assume_default_qt_quick_states ()
 {
     assume_default_gl_states();
