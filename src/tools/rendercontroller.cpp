@@ -405,7 +405,8 @@ void RenderController::
         // tfr_map
         EXCEPTION_ASSERT (useroptions);
 
-        newuseroptions = model()->transform_descs ().read ()->cloneType(typeid(*useroptions));
+        auto useroptionsp = useroptions.get();
+        newuseroptions = model()->transform_descs ().read ()->cloneType(typeid(*useroptionsp));
         EXCEPTION_ASSERT (newuseroptions);
 
         if (*newuseroptions != *useroptions)

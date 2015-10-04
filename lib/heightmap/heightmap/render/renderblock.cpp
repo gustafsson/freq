@@ -88,7 +88,7 @@ void RenderBlock::Renderer::
     // could adapt mintp dynamically depending on rendering performance, for instance let RenderBlock::Renderer time it's own lifetime and update RenderBlock
 #if defined(GL_ES_VERSION_2_0)
     // don't get too detailed vertices
-    mintp = max(mintp, 4);
+    mintp = max(mintp, 4.f);
     //    mintp = exp2(subdivs-1.f); max
 #endif
 

@@ -36,7 +36,7 @@ void printUniformInfo(int program)
     int len_uniform = 0;
     glGetProgramiv (program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &len_uniform);
     glGetProgramiv (program, GL_ACTIVE_UNIFORMS, &n_uniforms);
-    char name[len_uniform];
+    string name(len_uniform+1, '\0');
     Log("Found %d uniforms in program") % n_uniforms;
     for (int i=0; i<n_uniforms; i++) {
         GLint size;
@@ -47,8 +47,8 @@ void printUniformInfo(int program)
             0,
             &size,
             &type,
-            name);
-        Log("%d: %s, size=%d, type=%d") % i % ((char*)name) % size % type;
+            &name[0]);
+        Log("%d: %s, size=%d, type=%d") % i % name % size % type;
     }
 }
 

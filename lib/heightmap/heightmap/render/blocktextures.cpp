@@ -266,8 +266,8 @@ void BlockTexturesImpl::
     int new_textures = target_capacity - textures.size ();
     int mipmapfactor = 2;
 
-    GLuint t[new_textures];
-    glGenTextures (new_textures, t);
+    std::vector<GLuint> t(new_textures);
+    glGenTextures (new_textures, &t[0]);
     INFO Log("BlockTextures: allocating %d new textures from name %d (had %d of which %d were used). %s")
             % new_textures % t[0] % textures.size () % getUseCount()
             % DataStorageVoid::getMemorySizeText (

@@ -97,15 +97,15 @@ public:
       The Cwt will be computed in chunks who are powers of two. Given sample rate and wavelet_std_t,
       compute a good number of valid samples per chunk.
       */
-    unsigned next_good_size( unsigned current_valid_samples_per_chunk, float /*fs*/) const {
+    unsigned next_good_size( unsigned current_valid_samples_per_chunk, float /*fs*/) const override {
         return next_good_size(current_valid_samples_per_chunk);
     }
-    unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float /*fs*/) const {
+    unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float /*fs*/) const override {
         return prev_good_size(current_valid_samples_per_chunk);
     }
     unsigned next_good_size( unsigned current_valid_samples_per_chunk ) const;
     unsigned prev_good_size( unsigned current_valid_samples_per_chunk ) const;
-    virtual std::string toString() const;
+    std::string toString() const override;
 
     void      largest_scales_per_octave( float scales, float last_ok = 0 );
     bool      is_small_enough() const;

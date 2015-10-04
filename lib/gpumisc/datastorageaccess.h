@@ -56,11 +56,8 @@ public:
     {}
 
 
-    union
-    {
-        struct { T x, y; };
-        T v[2];
-    };
+    T x, y;
+    T* v() { return &x; }
 };
 
 
@@ -85,6 +82,7 @@ public:
         z( 0 )
     {}
 
+
     ACCESSCALL DataAccessPosition( DataAccessPosition<2> p )
         :
         x( p.x ),
@@ -93,11 +91,8 @@ public:
     {}
 
 
-    union
-    {
-        struct { T x, y, z; };
-        T v[3];
-    };
+    T x, y, z;
+    T* v() { return &x; }
 };
 
 

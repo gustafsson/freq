@@ -32,8 +32,8 @@ public:
     Bandpass(float f1, float f2, bool save_inside=false);
 
     // ChunkFilterDesc
-    Tfr::pChunkFilter    createChunkFilter(Signal::ComputingEngine* engine) const;
-    ChunkFilterDesc::ptr copy() const;
+    Tfr::pChunkFilter    createChunkFilter(Signal::ComputingEngine* engine) const override;
+    ChunkFilterDesc::ptr copy() const override;
 
     // Filters::Selection
     bool isInteriorSelected() const override;
