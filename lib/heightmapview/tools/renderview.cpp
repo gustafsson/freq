@@ -43,7 +43,6 @@
 #include <QEvent>
 #include <QGraphicsSceneMouseEvent>
 #include <QGLContext>
-#include <QGraphicsView>
 
 #include <boost/foreach.hpp>
 
@@ -182,6 +181,7 @@ void RenderView::
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, defaultMaterialSpecular);
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0.0f);
 #endif
+    GlState::set_default_gl_states_and_sync ();
 }
 
 

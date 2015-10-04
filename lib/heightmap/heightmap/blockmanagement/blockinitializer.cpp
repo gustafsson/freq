@@ -78,6 +78,7 @@ Signal::Intervals BlockInitializer::
 
 #include <QtWidgets> // QApplication
 #include <QtOpenGL> // QGLWidget
+#include "glstate.h"
 
 namespace Heightmap {
 namespace BlockManagement {
@@ -102,6 +103,7 @@ void BlockInitializer::
     GlException_SAFE_CALL( glGenVertexArrays(1, &VertexArrayID) );
     GlException_SAFE_CALL( glBindVertexArray(VertexArrayID) );
 #endif
+    GlState::assume_default_gl_states ();
 
     // It should initialize new blocks
     {
