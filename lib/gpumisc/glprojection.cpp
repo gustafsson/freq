@@ -105,6 +105,20 @@ vectord::T glProjecter::
 }
 
 
+tvector<2,float> glProjecter::
+        projectPartialDerivatives_xz( vectord p, tvector<2,double> d ) const
+{
+    vectord screen = project( p );
+    vectord screen_x = project( p + vectord(d[0],0,0) );
+    vectord screen_z = project( p + vectord(0,0,d[1]) );
+    screen_x -= screen;
+    screen_z -= screen;
+    return tvector<2,float>{
+        std::sqrt((float)(screen_x[0]*screen_x[0]+screen_x[1]*screen_x[1]))/d[0],
+        std::sqrt((float)(screen_z[0]*screen_z[0]+screen_z[1]*screen_z[1]))/d[1]};
+}
+
+
 const matrixd& glProjecter::
         mvp() const
 {
@@ -260,17 +274,21 @@ vectord glProjecter::
     tvector<4,double> in(obj[0],obj[1],obj[2],1.0);
     in = mvp()*in;
     if (in[3]==0.0) { if(r)*r=false; return vectord(); }
-    in[0] /= in[3];
-    in[1] /= in[3];
-    in[2] /= in[3];
-    /* Map x, y and z to range 0-1 */
-    in[0] = in[0] * 0.5 + 0.5;
-    in[1] = in[1] * 0.5 + 0.5;
-    in[2] = in[2] * 0.5 + 0.5;
+    double iz = 1/in[3];
+    in[0] = ((in[0]*iz)*0.5 + 0.5)* viewport[2] + viewport[0];
+    in[1] = ((in[1]*iz)*0.5 + 0.5)* viewport[3] + viewport[1];
+    in[2] = (in[2]*iz)*0.5 + 0.5;
+//    in[0] /= in[3];
+//    in[1] /= in[3];
+//    in[2] /= in[3];
+//    /* Map x, y and z to range 0-1 */
+//    in[0] = in[0] * 0.5 + 0.5;
+//    in[1] = in[1] * 0.5 + 0.5;
+//    in[2] = in[2] * 0.5 + 0.5;
 
-    /* Map x,y to viewport */
-    in[0] = in[0] * viewport[2] + viewport[0];
-    in[1] = in[1] * viewport[3] + viewport[1];
+//    /* Map x,y to viewport */
+//    in[0] = in[0] * viewport[2] + viewport[0];
+//    in[1] = in[1] * viewport[3] + viewport[1];
 
     if(r)*r=true;
     return vectord(in[0],in[1],in[2]);

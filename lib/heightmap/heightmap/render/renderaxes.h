@@ -50,7 +50,7 @@ private:
 
     void getElements( RenderAxes::AxesElements& ae, float T );
     template<bool taxis>
-    void drawSide( RenderAxes::AxesElements& ae, const Side& s, const vectord::T timePerPixel_closest, const vectord::T scalePerPixel_closest, const vectord v0, const vectord inside );
+    void drawSide( RenderAxes::AxesElements& ae, const glProjecter* g, const tvector<2,double>& frustum_xz, const Side& s, const vectord::T timePerPixel_closest, const vectord::T scalePerPixel_closest, const vectord v0, const vectord inside );
     void drawPiano( RenderAxes::AxesElements& ae, const Side& s, const vectord& p1_0, const vectord& inside );
 
     void drawElements( const AxesElements& );

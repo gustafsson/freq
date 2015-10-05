@@ -150,45 +150,46 @@ void RenderAxes::
 
 
     // 3.1 compute units per pixel
+    tvector<2,double> frustum_delta = [&clippedFrustum]()
+    {
+        vectord minf = clippedFrustum[0], maxf = minf;
+        for (unsigned i=1; i<clippedFrustum.size(); i++)
+        {
+            const vectord& a = clippedFrustum[i];
+            if (a[0] < minf[0]) minf[0] = a[0];
+            if (a[1] < minf[1]) minf[1] = a[1];
+            if (a[2] < minf[2]) minf[2] = a[2];
+            if (a[0] > maxf[0]) maxf[0] = a[0];
+            if (a[1] > maxf[1]) maxf[1] = a[1];
+            if (a[2] > maxf[2]) maxf[2] = a[2];
+        }
+
+        vectord d = maxf-minf;
+        return tvector<2,double>{d[0] * 1e-6, d[2] * 1e-6};
+    }();
+
     std::vector<vectord::T> timePerPixel;
     std::vector<vectord::T> scalePerPixel;
     vectord::T timePerPixel_closest, scalePerPixel_closest;
     vectord::T timePerPixel_inside, scalePerPixel_inside;
     {
-        g->computeUnitsPerPixel( inside, timePerPixel_inside, scalePerPixel_inside );
-        timePerPixel_inside *= scale;
-        scalePerPixel_inside *= scale;
+        tvector<2,float> pp;
+        pp = g->projectPartialDerivatives_xz(inside, frustum_delta);
+        timePerPixel_inside = scale/pp[0];
+        scalePerPixel_inside = scale/pp[1];
 
-        g->computeUnitsPerPixel( closest_i, timePerPixel_closest, scalePerPixel_closest );
-        timePerPixel_closest *= scale;
-        scalePerPixel_closest *= scale;
+        pp = g->projectPartialDerivatives_xz(closest_i, frustum_delta);
+        timePerPixel_closest = scale/pp[0];
+        scalePerPixel_closest = scale/pp[1];
 
         timePerPixel.resize (clippedFrustum.size());
         scalePerPixel.resize (clippedFrustum.size());
-
-        /*vectord mint = clippedFrustum[0], maxt = mint;
-        for (const vectord& a: clippedFrustum)
-        {
-            if (a[0] < mint[0]) mint[0] = a[0];
-            if (a[1] < mint[1]) mint[1] = a[1];
-            if (a[2] < mint[2]) mint[2] = a[2];
-            if (a[0] > maxt[0]) maxt[0] = a[0];
-            if (a[1] > maxt[1]) maxt[1] = a[1];
-            if (a[2] > maxt[2]) maxt[2] = a[2];
-        }
-
-        vectord d = maxt-mint;*/
         for (unsigned i=0; i<clippedFrustum.size(); i++)
         {
             const vectord& p = clippedFrustum[i];
-            //const vectord bt = vectord(d[0]*0.00001,0,0);
-            //const vectord bs = vectord(0,0,d[2]*0.00001);
-            //vectord::T tpp = bt[0] / g->computePixelDistance (p,p+bt);
-            //vectord::T spp = bs[2] / g->computePixelDistance (p,p+bs);
-            vectord::T tpp, spp;
-            g->computeUnitsPerPixel( p, tpp, spp );
-            timePerPixel[i] = tpp * scale;
-            scalePerPixel[i] = spp * scale;
+            tvector<2,float> pp = g->projectPartialDerivatives_xz(p,frustum_delta);
+            timePerPixel[i] = scale/pp[0];
+            scalePerPixel[i] = scale/pp[1];
         }
     }
 
@@ -204,14 +205,14 @@ void RenderAxes::
         vectord p2_0 = clippedFrustum[j]; // end point of side
         const vectord v0 = p2_0-p1_0;
 
-        // decide if this side is a t or f axis
-        bool taxis = std::abs(v0[0]*scalePerPixel_inside) > std::abs(v0[2]*timePerPixel_inside);
-
         // decide in which direction to traverse this edge
         vectord::T timePerPixel1 = timePerPixel[i],
                 scalePerPixel1 = scalePerPixel[i],
                 timePerPixel2 = timePerPixel[j],
                 scalePerPixel2 = scalePerPixel[j];
+
+        // decide if this side is a t or f axis
+        bool taxis = std::abs(v0[0]*std::min(scalePerPixel1,scalePerPixel2)) > std::abs(v0[2]*std::min(timePerPixel1,timePerPixel2));
 
         double dscale = 0.001;
         double hzDelta1= fabs(fa.getFrequencyT( p1_0[2] + v0[2]*dscale ) - fa.getFrequencyT( p1_0[2] ));
@@ -242,9 +243,9 @@ void RenderAxes::
         else
         {
             if (taxis)
-                drawSide<true>( ae, s, timePerPixel_closest, scalePerPixel_closest, v0, inside );
+                drawSide<true>( ae, g, frustum_delta, s, timePerPixel_closest, scalePerPixel_closest, v0, inside );
             else
-                drawSide<false>( ae, s, timePerPixel_closest, scalePerPixel_closest, v0, inside );
+                drawSide<false>( ae, g, frustum_delta, s, timePerPixel_closest, scalePerPixel_closest, v0, inside );
         }
     }
 }
@@ -252,7 +253,7 @@ void RenderAxes::
 
 template<bool taxis>
 void RenderAxes::
-        drawSide( RenderAxes::AxesElements& ae, const Side& s, const vectord::T timePerPixel_closest, const vectord::T scalePerPixel_closest, const vectord v0, const vectord inside )
+        drawSide( RenderAxes::AxesElements& ae, const glProjecter* g, const tvector<2,double>& frustum_delta, const Side& s, const vectord::T timePerPixel_closest, const vectord::T scalePerPixel_closest, const vectord v0, const vectord inside )
 {
     const FreqAxis& fa = display_scale;
     vectord const p1 = s.p1;
@@ -285,26 +286,31 @@ void RenderAxes::
         double t, f, ST, SF;
     };
 
-    auto tickResolution = [&] (const double u, const Tick& tick, DrawScale& out_drawscale ) {
+    auto tickResolution = [&] (double u, const Tick& tick) {
             // linear interpolation, false, but good enough. The true value would
             // be really slow.
-            vectord::T timePerPixel = timePerPixel1 + (u<0?0:u)*(timePerPixel2-timePerPixel1),
-                       scalePerPixel = scalePerPixel1 + (u<0?0:u)*(scalePerPixel2-scalePerPixel1);
+            if (u<0) u = 0;
+            vectord::T timePerPixel_inv = 1./(1./timePerPixel1 + u*(1./timePerPixel2-1./timePerPixel1)),
+                       scalePerPixel_inv = 1./(1./scalePerPixel1 + u*(1./scalePerPixel2-1./scalePerPixel1));
+            vectord::T timePerPixel_flat = timePerPixel1 + (u<0?0:u)*(timePerPixel2-timePerPixel1),
+                       scalePerPixel_flat = scalePerPixel1 + (u<0?0:u)*(scalePerPixel2-scalePerPixel1);
+
+            tvector<2,float> pd_xz = g->projectPartialDerivatives_xz (p1+v*u, frustum_delta);
+            vectord::T timePerPixel = render_settings.dpifactor/pd_xz[0];
+            vectord::T scalePerPixel = render_settings.dpifactor/pd_xz[1];
 
             double ppp=0.4;
             if (taxis)
             {
-                ppp = 0.4;
+                ppp = 0.0; // tiny in distance
+                ppp = 1.0; // same size everywhere?
+//                ppp = 0.4; // something in between
             }
             timePerPixel = timePerPixel * ppp + timePerPixel_closest * (1.0-ppp);
             scalePerPixel = scalePerPixel * ppp + scalePerPixel_closest * (1.0-ppp);
 
             vectord::T ST = timePerPixel * 750; // ST = time units per 750 pixels, 750 pixels is a fairly common window size
             vectord::T SF = scalePerPixel * 750;
-            out_drawscale.t = std::min(ST, 50*timePerPixel_closest*750);
-            out_drawscale.f = std::min(SF, 50*scalePerPixel_closest*750);
-            out_drawscale.ST = ST;
-            out_drawscale.SF = SF;
 
             double time_axis_density = 18;
             if (20.+2.*log10(timePerPixel) < 18.)
@@ -479,6 +485,27 @@ void RenderAxes::
         return tick;
     };
 
+    auto drawScale = [&](double u) {
+        DrawScale out_drawscale;
+        if (u < 0) u = 0;
+        tvector<2,float> pd_xz = g->projectPartialDerivatives_xz (p1+v*u, frustum_delta);
+        vectord::T timePerPixel = render_settings.dpifactor/pd_xz[0];
+        vectord::T scalePerPixel = render_settings.dpifactor/pd_xz[1];
+//        vectord::T timePerPixel = 1./(1./timePerPixel1 + u*(1./timePerPixel2-1./timePerPixel1)),
+//                   scalePerPixel = 1./(1./scalePerPixel1 + u*(1./scalePerPixel2-1./scalePerPixel1));
+//        vectord::T timePerPixel = timePerPixel1 + u*(timePerPixel2-timePerPixel1),
+//                   scalePerPixel = scalePerPixel1 + u*(scalePerPixel2-scalePerPixel1);
+        vectord::T ST = timePerPixel * 750; // ST = time units per 750 pixels, 750 pixels is a fairly common window size
+        vectord::T SF = scalePerPixel * 750;
+//            out_drawscale.t = std::min(ST, 50*timePerPixel_closest*750);
+//            out_drawscale.f = std::min(SF, 50*scalePerPixel_closest*750);
+        out_drawscale.t = ST;
+        out_drawscale.f = SF;
+        out_drawscale.ST = ST;
+        out_drawscale.SF = SF;
+        return out_drawscale;
+    };
+
     auto drawTimeTick = [&](const Tick& tick, const DrawScale& drawscale) {
                 if (0 == tick.iv % tick.tr.updatedetail || tick.tr.markanyways==2)
                 {
@@ -583,8 +610,7 @@ void RenderAxes::
             (render_settings.draw_axis_at0!=0?(taxis?tick.p[2]==0:tick.p[0]==0):true))
         for (double u=-1;true;)
         {
-            DrawScale drawscale;
-            TickResolution tr = tickResolution(u, tick, drawscale);
+            TickResolution tr = tickResolution(u, tick);
             tick = alignTickForward(tick, tr);
             if (render_settings.draw_cursor_marker)
                 tick = cursorTick(tick, prevTick);
@@ -596,6 +622,8 @@ void RenderAxes::
 
             // compute intersection
             tick.p[c2] = p1[c2] + v[c2]*u;
+
+            DrawScale drawscale = drawScale(u);
 
             if (taxis) {
                 drawTimeTick (tick, drawscale);
