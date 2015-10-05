@@ -1,14 +1,16 @@
 #ifndef CHAIN_H
 #define CHAIN_H
 
-#include <QQuickItem>
-#include <QOpenGLContext>
+#include "gl.h"
 #include "signal/processing/chain.h"
 #include "heightmap/update/updatequeue.h"
 #include "heightmap/update/updateconsumer.h"
 #include "timer.h"
 #include "logtickfrequency.h"
 #include "signal/recorder.h"
+
+#include <QQuickItem>
+#include <QOpenGLContext>
 
 class Chain : public QQuickItem
 {
