@@ -92,28 +92,28 @@ public:
     Intervals( IntervalType first, IntervalType last );
     Intervals  operator |  (const Intervals& b) const { return Intervals(*this)|=b; }
     Intervals& operator |= (const Intervals&);
-    Intervals& operator |= (const Interval&);
+    Intervals& operator |= (const Interval);
     Intervals  operator -  (const Intervals& b) const { return Intervals(*this)-=b; }
     Intervals& operator -= (const Intervals&);
-    Intervals& operator -= (const Interval&);
+    Intervals& operator -= (const Interval);
     Intervals  operator &  (const Intervals& b) const { return Intervals(*this)&=b; }
     Intervals& operator &= (const Intervals&);
-    Intervals& operator &= (const Interval&);
+    Intervals& operator &= (const Interval);
     Intervals  operator ^  (const Intervals& b) const { return Intervals(*this)^=b; }
     Intervals& operator ^= (const Intervals&);
     // These are ambiguous due to 'operator bool' below. 'operator bool' is more commonly used.
     //Intervals  operator >> (const IntervalType& b) const { return Intervals(*this)>>=b; }
     //Intervals  operator << (const IntervalType& b) const { return Intervals(*this)<<=b; }
-    Intervals& operator >>=(const IntervalType&);
-    Intervals& operator <<=(const IntervalType&);
-    Intervals& operator *= (const float& scale);
+    Intervals& operator >>=(const IntervalType);
+    Intervals& operator <<=(const IntervalType);
+    Intervals& operator *= (const float scale);
     Intervals  operator ~  () const { return inverse(); }
     operator   bool        () const { return !empty(); }
 
     // contains returns true only if the entire argument is covered by this
     bool                    contains    (const Intervals& t) const;
-    bool                    contains    (const Interval& t) const;
-    bool                    contains    (const IntervalType& t) const;
+    bool                    contains    (const Interval t) const;
+    bool                    contains    (const IntervalType t) const;
     Intervals               inverse() const;
     Interval                fetchFirstInterval() const;
     Interval                fetchInterval( UnsignedIntervalType preferred_size, IntervalType center = Interval::IntervalType_MIN ) const;
@@ -122,7 +122,6 @@ public:
     Intervals               shrink( IntervalType dt ) const;
     UnsignedIntervalType    count() const;
     size_t                  numSubIntervals() const { return base::size(); }
-    bool                    testSample( IntervalType const &p) const;
 
     std::string             toString() const;
 
