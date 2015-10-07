@@ -271,7 +271,7 @@ void TouchNavigation::
     // limit camera position along scale and limit rotation
     if (q[2] < zmin) q[2] = zmin;
     if (q[2] > zmax) q[2] = zmax;
-    if (r[0] < 0) r[0] = 0;
+    if (r[0] < 90*0.3) r[0] = 90*0.3;
     if (r[0] > 90) r[0] = 90;
 
     // read info about current view

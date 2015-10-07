@@ -46,7 +46,7 @@ RenderAxes::
 void RenderAxes::
         drawAxes( const RenderSettings* render_settings,
                   const glProjection* gl_projection,
-                  FreqAxis display_scale, float T )
+                  FreqAxis display_scale, float T, vectord axisscale )
 {
     this->render_settings = render_settings;
     this->gl_projection = gl_projection;
@@ -57,7 +57,7 @@ void RenderAxes::
     ae_.vertices.clear ();
     ae_.orthovertices.clear ();
 
-    getElements(ae_, T);
+    getElements(ae_, T, axisscale);
     GlException_SAFE_CALL( drawElements(ae_) );
 }
 
@@ -82,7 +82,7 @@ template<int N,typename T> void addVertices(
 }
 
 void RenderAxes::
-        getElements( RenderAxes::AxesElements& ae, float T )
+        getElements( RenderAxes::AxesElements& ae, float T, vectord axisscale )
 {
     TIME_RENDERER TaskTimer tt("drawAxes(length = %g)", T);
     // Draw overlay borders, on top, below, to the right or to the left
@@ -218,7 +218,8 @@ void RenderAxes::
         double hzDelta1= fabs(fa.getFrequencyT( p1_0[2] + v0[2]*dscale ) - fa.getFrequencyT( p1_0[2] ));
         double hzDelta2 = fabs(fa.getFrequencyT( p2_0[2] - v0[2]*dscale ) - fa.getFrequencyT( p2_0[2] ));
 
-        if ((taxis && timePerPixel1 > timePerPixel2) || (!taxis && hzDelta1 > hzDelta2))
+        bool flipdir = (taxis && timePerPixel1 > timePerPixel2) || (!taxis && hzDelta1 > hzDelta2);
+        if (flipdir)
         {
             std::swap(p1_0, p2_0);
             std::swap(timePerPixel1, timePerPixel2);
@@ -236,16 +237,18 @@ void RenderAxes::
 
         Side s{p1,p2,timePerPixel1,scalePerPixel1,timePerPixel2,scalePerPixel2};
 
-        if (!taxis && render_settings.draw_piano && (render_settings.draw_axis_at0?p1[0]==0:true))
+        if (taxis)
         {
-            drawPiano( ae, s, p1_0, inside );
+            if (render_settings.draw_t)
+                drawSide<true>( ae, g, frustum_delta, s, timePerPixel_closest, scalePerPixel_closest, inside, axisscale );
         }
-        else
+
+        if (!taxis)
         {
-            if (taxis)
-                drawSide<true>( ae, g, frustum_delta, s, timePerPixel_closest, scalePerPixel_closest, v0, inside );
-            else
-                drawSide<false>( ae, g, frustum_delta, s, timePerPixel_closest, scalePerPixel_closest, v0, inside );
+            if (render_settings.draw_piano && (render_settings.draw_axis_at0?p1[0]==0:true))
+                drawPiano( ae, s, p1_0, inside );
+            else if (render_settings.draw_hz)
+                drawSide<false>( ae, g, frustum_delta, s, timePerPixel_closest, scalePerPixel_closest, inside, axisscale );
         }
     }
 }
@@ -253,8 +256,9 @@ void RenderAxes::
 
 template<bool taxis>
 void RenderAxes::
-        drawSide( RenderAxes::AxesElements& ae, const glProjecter* g, const tvector<2,double>& frustum_delta, const Side& s, const vectord::T timePerPixel_closest, const vectord::T scalePerPixel_closest, const vectord v0, const vectord inside )
+        drawSide( RenderAxes::AxesElements& ae, const glProjecter* g, const tvector<2,double>& frustum_delta, const Side& s, const vectord::T timePerPixel_closest, const vectord::T scalePerPixel_closest, const vectord inside, vectord axisscale )
 {
+    // Move variable references into scope
     const FreqAxis& fa = display_scale;
     vectord const p1 = s.p1;
     vectord const p2 = s.p2;
@@ -264,7 +268,51 @@ void RenderAxes::
     vectord::T const& scalePerPixel2 = s.scalePerPixel2;
     const vectord v = p2-p1;
     auto& render_settings = *this->render_settings;
-    const vectord x(1,0,0), z(0,0,1);
+    const vectord time_axis(1,0,0), scale_axis(0,0,1), up(0,1,0);
+    const tvector<2,float> screen_y(0,1);
+
+    // Compute how to draw text labels in screen coordinates
+    tvector<2,float> const inside_screen = g->project2d (inside);
+    tvector<2,float> const p1_screen = g->project2d (s.p1);
+    tvector<2,float> const p2_screen = g->project2d (s.p2);
+    tvector<2,float> const v_screen = p2_screen - p1_screen;
+    float textangle = atan2(v_screen[1], v_screen[0]) * (180*M_1_PI);
+    if (textangle > 90) textangle -= 180;
+    if (textangle < -90) textangle += 180;
+    // Draw text on the other side of v (along y) that inside isn't.
+    double textsign = (v_screen^screen_y)*(v_screen^(inside_screen-p1_screen))<0 ? 1 : -1;
+    // If vertical (i.e can't decide side along y), draw text out from the middle
+    if (std::fabs(v_screen[0])<1)
+    {
+        textsign = 1;
+        textangle = p1_screen[0]<inside_screen[0] ? 90 : -90;
+    }
+    matrixd textrot = matrixd::rot (textangle,0,0,1);
+    const float fontsize = 10;
+
+    // Compute which direction to draw ticks i
+    // Draw ticks on the same side of v (along scale or time respectively) that inside is.
+    double ticksign = (v^scale_axis)%(v^(inside-p1))<0 ? 1 : -1;
+    if (!taxis)
+        ticksign = (v^time_axis)%(v^(inside-p1))<0 ? 1 : -1;
+
+    // Compute how to fade out and hide lables depending on tilt at that the start of the edge
+    vectord pm = p1 - g->camera ();
+    pm = pm * axisscale;
+    float maxangle = M_PI_2*0.2;
+    float fadeoutlength = M_PI_2*0.2;
+    float projectionangle = std::acos(std::sqrt((pm^up).dot() / pm.dot ()));
+    float angle_v = (projectionangle-maxangle)/fadeoutlength;
+    angle_v = std::max(0.f,std::min(1.f,angle_v));
+    angle_v = 1-(1-angle_v)*(1-angle_v);
+
+    // Only dim the far edge
+    bool is_far_edge = textsign == 1;
+    float alpha = is_far_edge ? angle_v : 1.f;
+    bool notext = alpha < .5f;
+    alpha *= 0.8;
+    if (alpha==0.f)
+        return;
 
     struct TickResolution {
         double DV;
@@ -283,34 +331,21 @@ void RenderAxes::
     };
 
     struct DrawScale {
-        double t, f, ST, SF;
+        double t, f;
     };
 
     auto tickResolution = [&] (double u, const Tick& tick) {
-            // linear interpolation, false, but good enough. The true value would
-            // be really slow.
             if (u<0) u = 0;
-            vectord::T timePerPixel_inv = 1./(1./timePerPixel1 + u*(1./timePerPixel2-1./timePerPixel1)),
-                       scalePerPixel_inv = 1./(1./scalePerPixel1 + u*(1./scalePerPixel2-1./scalePerPixel1));
-            vectord::T timePerPixel_flat = timePerPixel1 + (u<0?0:u)*(timePerPixel2-timePerPixel1),
-                       scalePerPixel_flat = scalePerPixel1 + (u<0?0:u)*(scalePerPixel2-scalePerPixel1);
+            vectord::T timePerPixel = timePerPixel1 + (u<0?0:u)*(timePerPixel2-timePerPixel1),
+                       scalePerPixel = scalePerPixel1 + (u<0?0:u)*(scalePerPixel2-scalePerPixel1);
+            // or recompute
+//            tvector<2,float> pd_xz = g->projectPartialDerivatives_xz (p1+v*u, frustum_delta);
+//            vectord::T timePerPixel = render_settings.dpifactor/pd_xz[0];
+//            vectord::T scalePerPixel = render_settings.dpifactor/pd_xz[1];
 
-            tvector<2,float> pd_xz = g->projectPartialDerivatives_xz (p1+v*u, frustum_delta);
-            vectord::T timePerPixel = render_settings.dpifactor/pd_xz[0];
-            vectord::T scalePerPixel = render_settings.dpifactor/pd_xz[1];
-
-            double ppp=0.4;
-            if (taxis)
-            {
-                ppp = 0.0; // tiny in distance
-                ppp = 1.0; // same size everywhere?
-//                ppp = 0.4; // something in between
-            }
-            timePerPixel = timePerPixel * ppp + timePerPixel_closest * (1.0-ppp);
-            scalePerPixel = scalePerPixel * ppp + scalePerPixel_closest * (1.0-ppp);
-
-            vectord::T ST = timePerPixel * 750; // ST = time units per 750 pixels, 750 pixels is a fairly common window size
-            vectord::T SF = scalePerPixel * 750;
+            vectord::T tickdensity = 82; // larger value -> less dense axis
+            vectord::T ST = timePerPixel * tickdensity * fontsize;
+            vectord::T SF = scalePerPixel * tickdensity * fontsize;
 
             double time_axis_density = 18;
             if (20.+2.*log10(timePerPixel) < 18.)
@@ -464,9 +499,6 @@ void RenderAxes::
         return r;
     };
 
-            int c1 = taxis ? 0 : 2;
-            int c2 = !taxis ? 0 : 2;
-
     auto nextTick = [&v,&fa](Tick tick) {
             if (taxis)
             {
@@ -488,23 +520,13 @@ void RenderAxes::
     auto drawScale = [&](double u) {
         DrawScale out_drawscale;
         if (u < 0) u = 0;
-        tvector<2,float> pd_xz = g->projectPartialDerivatives_xz (p1+v*u, frustum_delta);
-        vectord::T timePerPixel = render_settings.dpifactor/pd_xz[0];
-        vectord::T scalePerPixel = render_settings.dpifactor/pd_xz[1];
-//        vectord::T timePerPixel = 1./(1./timePerPixel1 + u*(1./timePerPixel2-1./timePerPixel1)),
-//                   scalePerPixel = 1./(1./scalePerPixel1 + u*(1./scalePerPixel2-1./scalePerPixel1));
-//        vectord::T timePerPixel = timePerPixel1 + u*(timePerPixel2-timePerPixel1),
-//                   scalePerPixel = scalePerPixel1 + u*(scalePerPixel2-scalePerPixel1);
-        vectord::T ST = timePerPixel * 750; // ST = time units per 750 pixels, 750 pixels is a fairly common window size
-        vectord::T SF = scalePerPixel * 750;
-//            out_drawscale.t = std::min(ST, 50*timePerPixel_closest*750);
-//            out_drawscale.f = std::min(SF, 50*scalePerPixel_closest*750);
-        out_drawscale.t = ST;
-        out_drawscale.f = SF;
-        out_drawscale.ST = ST;
-        out_drawscale.SF = SF;
+        out_drawscale.t = timePerPixel1 + u*(timePerPixel2-timePerPixel1),
+        out_drawscale.f = scalePerPixel1 + u*(scalePerPixel2-scalePerPixel1);
         return out_drawscale;
     };
+
+    int c1 = taxis ? 0 : 2;
+    int c2 = !taxis ? 0 : 2;
 
     auto drawTimeTick = [&](const Tick& tick, const DrawScale& drawscale) {
                 if (0 == tick.iv % tick.tr.updatedetail || tick.tr.markanyways==2)
@@ -515,9 +537,8 @@ void RenderAxes::
                     if (-1 == tick.tr.markanyways)
                         size = 1;
 
-                    double sign = (v0^z)%(v0^( tick.p - inside))>0 ? 1 : -1;
-                    vectord o { 0, 0, size*drawscale.SF*.008*sign };
-                    vectord ow { drawscale.ST*0.0005 * size, 0, 0 };
+                    vectord o { 0, 0, size*drawscale.f*.008*ticksign };
+                    vectord ow { drawscale.t*0.0005 * size, 0, 0 };
 
                     vectord v[] = {
                         tick.p - ow,
@@ -525,16 +546,14 @@ void RenderAxes::
                         tick.p + ow,
                         tick.p + ow - o
                     };
-                    addVertices(ae.vertices, tvector<4,GLfloat>(0,0,0,0.8), v, 4 );
+                    addVertices(ae.vertices, tvector<4,GLfloat>(0,0,0,alpha), v, 4 );
 
-                    if (size>1) {
-                        float angle = atan2(v0[2]/drawscale.SF, v0[0]/drawscale.ST) * (180*M_1_PI);
-
-                        matrixd modelview { gl_projection->modelview };
-                        modelview *= matrixd::translate (tick.p[0], 0, tick.p[2]);
-                        modelview *= matrixd::rot (90,1,0,0);
-                        modelview *= matrixd::scale (0.013*drawscale.t, 0.013*drawscale.f, 1);
-                        modelview *= matrixd::rot (angle,0,0,1);
+                    if (!notext) if (size>1) {
+                        matrixd modelview = matrixd::identity ();
+                        auto p = g->project (tick.p);
+                        modelview *= matrixd::translate (p[0], p[1], p[2]);
+                        modelview *= matrixd::scale (fontsize*render_settings.dpifactor, fontsize*render_settings.dpifactor, 1);
+                        modelview *= textrot;
 
                         char a[100];
                         char b[100];
@@ -544,12 +563,7 @@ void RenderAxes::
                         int minutes = (int)(v/60);
                         sprintf(a, b, minutes,v-60*minutes);
 
-                        if (!render_settings.left_handed_axes)
-                            modelview *= matrixd::scale (-1,1,1);
-                        if (sign<0)
-                            modelview *= matrixd::rot (180,0,0,1);
-
-                        ae.glyphs.push_back (GlyphData{std::move(modelview), a, 0.0, -0.05, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
+                        ae.glyphs.push_back (GlyphData{std::move(modelview), a, 0.0, -0.05, 0.5, 0.5 - .7*(textsign < 0 ? -1 : 1)});
                     }
                 }
     };
@@ -565,9 +579,8 @@ void RenderAxes::
                     if (-1 == tick.tr.markanyways)
                         size = 1;
 
-                    double sign = (v0^x)%(v0^( tick.p - inside))>0 ? 1 : -1;
-                    vectord o { size*drawscale.ST*.008*sign, 0, 0 };
-                    vectord ow { 0, 0, drawscale.SF*0.0005 * size };
+                    vectord o { size*drawscale.t*.008*ticksign, 0, 0 };
+                    vectord ow { 0, 0, drawscale.f*0.0005 * size };
 
                     vectord v[] = {
                         tick.p - ow,
@@ -575,17 +588,15 @@ void RenderAxes::
                         tick.p + ow,
                         tick.p + ow - o
                     };
-                    addVertices(ae.vertices, tvector<4,GLfloat>(0,0,0,0.8), v, 4 );
+                    addVertices(ae.vertices, tvector<4,GLfloat>(0,0,0,alpha), v, 4 );
 
-                    if (size>1)
+                    if (!notext) if (size>1)
                     {
-                        float angle = atan2(v0[2]/drawscale.SF, v0[0]/drawscale.ST) * (180*M_1_PI);
-
-                        matrixd modelview { gl_projection->modelview };
-                        modelview *= matrixd::translate (tick.p[0],0,tick.p[2]);
-                        modelview *= matrixd::rot (90,1,0,0);
-                        modelview *= matrixd::scale (0.013*drawscale.t, 0.013*drawscale.f, 1);
-                        modelview *= matrixd::rot (angle,0,0,1);
+                        matrixd modelview = matrixd::identity ();
+                        auto p = g->project (tick.p);
+                        modelview *= matrixd::translate (p[0], p[1], p[2]);
+                        modelview *= matrixd::scale (fontsize*render_settings.dpifactor, fontsize*render_settings.dpifactor, 1);
+                        modelview *= textrot;
 
                         char a[100];
                         char b[100];
@@ -593,12 +604,7 @@ void RenderAxes::
                         sprintf(a, b, tick.v);
                         //sprintf(a,"%g", f);
 
-                        if (!render_settings.left_handed_axes)
-                            modelview *= matrixd::scale (-1,1,1);
-                        if (sign<0)
-                            modelview *= matrixd::rot (180,0,0,1);
-
-                        ae.glyphs.push_back (GlyphData{std::move(modelview), a, 0.0, -0.05, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
+                        ae.glyphs.push_back (GlyphData{std::move(modelview), a, 0.0, -0.05, 0.5, 0.5 - .7*(textsign < 0 ? -1 : 1)});
                     }
                 }
     };
@@ -949,7 +955,12 @@ void RenderAxes::
     GlState::glDisableVertexAttribArray (1);
     GlState::glDisableVertexAttribArray (0);
 
-    GlException_SAFE_CALL( glyphs_->drawGlyphs (*gl_projection, ae.glyphs) );
+    glProjection p;
+    p.modelview = matrixd::identity ();
+    p.viewport = gl_projection->viewport;
+    glhOrtho(p.projection.v (), p.viewport[0], p.viewport[0]+p.viewport[2], p.viewport[1], p.viewport[1]+p.viewport[3], -1, 1);
+
+    GlException_SAFE_CALL( glyphs_->drawGlyphs (p, ae.glyphs) );
 
     GlState::glDisable (GL_BLEND);
     GlState::glEnable (GL_DEPTH_TEST);

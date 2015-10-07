@@ -124,14 +124,6 @@ public:
 		for(int i=N; i--;) r=r+v[i]*b[i];
 		return r;
 	}
-	// 3d-vectors have the ^ operator defined as cross product
-        tvector operator^(const tvector &b) const {
-            tvector<3, type> r;
-            r[0] = v[1]*b[2] - v[2]*b[1];
-            r[1] = v[2]*b[0] - v[0]*b[2];
-            r[2] = v[0]*b[1] - v[1]*b[0];
-            return r; // compile time error if N != 3
-        }
 
         tvector& Normalized()
         {
@@ -161,3 +153,16 @@ template<>
 inline tvector<3, float>::tvector( const float& x, const float& y, const float& z ) { v[0] = x, v[1] = y, v[2] = z; }
 template<>
 inline tvector<4, float>::tvector( const float& x, const float& y, const float& z, const float& w ) { v[0] = x, v[1] = y, v[2] = z; v[3] = w; }
+// 3d-vectors have the ^ operator defined as cross product
+template<typename T>
+inline tvector<3, T> operator^(const tvector<3, T> &v, const tvector<3, T> &b) {
+    tvector<3, T> r;
+    r[0] = v[1]*b[2] - v[2]*b[1];
+    r[1] = v[2]*b[0] - v[0]*b[2];
+    r[2] = v[0]*b[1] - v[1]*b[0];
+    return r;
+}
+template<typename T>
+inline T operator^(const tvector<2, T> &v, const tvector<2, T> &b) {
+    return v[0]*b[1] - v[1]*b[0];
+}

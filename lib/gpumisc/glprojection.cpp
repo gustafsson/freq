@@ -251,6 +251,7 @@ void glProjecter::
         mult(const matrixd& m, const matrixd& m_inverse)
 {
     // glProjecter assumes that m[3],m[7],m[11]==0 and m[15]=1 in both mv_ and mv_inverse_.
+#ifdef _DEBUG
     if (m[0][3] != 0 || m[1][3] != 0 || m[2][3] != 0 || m[3][3] != 1)
     {
         PRINTMATRIX(m);
@@ -261,10 +262,21 @@ void glProjecter::
         PRINTMATRIX(m_inverse);
         EXCEPTION_ASSERT(false);
     }
+#endif
 
     mv_ *= m;
     mv_inverse_ = m_inverse * mv_inverse_;
     valid_mvp_inverse_ = valid_mvp_ = false;
+}
+
+
+vectord glProjecter::
+        camera() const
+{
+    // get camera position
+    // https://www.opengl.org/discussion_boards/showthread.php/178484-Extracting-camera-position-from-a-ModelView-Matrix
+    const auto& pos = mv_inverse_[3];
+    return vectord{pos[0],pos[1],pos[2]};
 }
 
 
@@ -292,6 +304,14 @@ vectord glProjecter::
 
     if(r)*r=true;
     return vectord(in[0],in[1],in[2]);
+}
+
+
+tvector<2,float> glProjecter::
+        project2d(vectord obj) const
+{
+    vectord p = project(obj);
+    return tvector<2,float>(p[0],p[1]);
 }
 
 

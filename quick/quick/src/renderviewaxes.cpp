@@ -68,7 +68,7 @@ void RenderViewAxes::
 {
     render_model.resetCameraSettings ();
     auto c = render_model.camera.write ();
-    c->r[0] = 20;
+    c->r[0] = 90*0.3;
     c->r[1] = 99;
     c->orthoview = 0;
 }

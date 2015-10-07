@@ -36,7 +36,7 @@ public:
 
     void drawAxes( const RenderSettings* render_settings,
                    const glProjection* gl_projection,
-                   FreqAxis display_scale, float T );
+                   FreqAxis display_scale, float T, vectord axisscale );
 
 private:
     struct Side {
@@ -48,9 +48,8 @@ private:
         vectord::T const scalePerPixel2;
     };
 
-    void getElements( RenderAxes::AxesElements& ae, float T );
-    template<bool taxis>
-    void drawSide( RenderAxes::AxesElements& ae, const glProjecter* g, const tvector<2,double>& frustum_xz, const Side& s, const vectord::T timePerPixel_closest, const vectord::T scalePerPixel_closest, const vectord v0, const vectord inside );
+    void getElements( RenderAxes::AxesElements& ae, float T, vectord axisscale );
+    template<bool taxis> void drawSide( RenderAxes::AxesElements& ae, const glProjecter* g, const tvector<2,double>& frustum_xz, const Side& s, const vectord::T timePerPixel_closest, const vectord::T scalePerPixel_closest, const vectord inside, vectord axisscale );
     void drawPiano( RenderAxes::AxesElements& ae, const Side& s, const vectord& p1_0, const vectord& inside );
 
     void drawElements( const AxesElements& );
