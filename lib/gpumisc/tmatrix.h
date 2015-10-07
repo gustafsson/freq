@@ -152,13 +152,6 @@ public:
 			rot(tvector<3,t>(1,0,0), DEG_TO_RAD(r[0])) *
 			rot(tvector<3,t>(0,0,1), DEG_TO_RAD(r[2]));
 	}
-    static tmatrix<4,t,4> rotFpsHeadAnti( tvector<3, t> r )
-    {
-        return
-            rot(tvector<3,t>(0,1,0), -DEG_TO_RAD(r[1])) *
-            rot(tvector<3,t>(1,0,0), -DEG_TO_RAD(r[0])) *
-            rot(tvector<3,t>(0,0,1), -DEG_TO_RAD(r[2]));
-    }
     static tmatrix<4,t,4> rot( tvector<3, t> axis, t rad )
 	{
 		t

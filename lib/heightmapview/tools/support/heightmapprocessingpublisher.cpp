@@ -247,6 +247,7 @@ bool HeightmapProcessingPublisher::
 #include "signal/processing/bedroom.h"
 #include "signal/processing/task.h"
 #include "signal/processing/bedroomnotifier.h"
+#include "glstate.h"
 #include <QtWidgets> // QApplication
 #include <QtOpenGL> // QGLWidget
 
@@ -273,6 +274,7 @@ void HeightmapProcessingPublisher::
     GlException_SAFE_CALL( glGenVertexArrays(1, &VertexArrayID) );
     GlException_SAFE_CALL( glBindVertexArray(VertexArrayID) );
 #endif
+    GlState::assume_default_gl_states ();
 
     // It should update a processing target depending on which things that are
     // missing in a heightmap block cache

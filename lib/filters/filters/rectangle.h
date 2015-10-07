@@ -33,9 +33,9 @@ public:
     Rectangle(float s1, float f1, float s2, float f2, bool save_inside=false);
 
     // ChunkFilterDesc
-    Tfr::pChunkFilter               createChunkFilter(Signal::ComputingEngine* engine) const;
-    Signal::OperationDesc::Extent   extent() const;
-    ChunkFilterDesc::ptr            copy() const;
+    Tfr::pChunkFilter               createChunkFilter(Signal::ComputingEngine* engine) const override;
+    Signal::OperationDesc::Extent   extent() const override;
+    ChunkFilterDesc::ptr            copy() const override;
 
     // Filters::Selection
     bool isInteriorSelected() const override;

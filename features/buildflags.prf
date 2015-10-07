@@ -24,10 +24,12 @@ macx* {
         CONFIG -= warn_on
     }
 
+    QMAKE_CXXFLAGS += -Wpedantic
     QMAKE_CXXFLAGS += -Wno-c++1y-extensions
     QMAKE_CXXFLAGS += -Wno-unused-parameter
     QMAKE_CXXFLAGS -= -Wunknown-pragmas
     QMAKE_CXXFLAGS += -Wno-unknown-pragmas
+    QMAKE_CXXFLAGS += -Wno-unused-local-typedef
 }
 
 macx {

@@ -75,7 +75,7 @@ void OptimalTimeFrequencyResolution::
     if (zmin==zmax) zfocus=0.5;
 
     auto tm = render_model.tfr_mapping ().read ();
-    float ds = 0.1;
+    float ds = 0.01 / c.zscale;
     float fs = tm->targetSampleRate();
     float hz = tm->display_scale().getFrequency(float(zfocus)),
           hz2 = tm->display_scale().getFrequency(float(zfocus < 0.5 ? zfocus + ds : zfocus - ds));

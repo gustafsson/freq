@@ -14,6 +14,10 @@ uniform lowp vec4 fixedColor;
 uniform lowp vec4 clearColor;
 uniform mediump vec2 texSize;
 
+#ifdef USE_MIPMAP
+varying mediump float vbias;
+uniform highp sampler2D tex_ota;
+#endif
 
 mediump float heightValue(mediump float v) {
 //    v *= 0.01; // map from small range of float16 to float32 (TfrBlockUpdater)
@@ -27,7 +31,10 @@ mediump float heightValue(mediump float v) {
 
 #ifdef USE_MIPMAP
 // https://www.opengl.org/discussion_boards/showthread.php/177520-Mipmap-level-calculation-using-dFdx-dFdy
-mediump float mip_map_level(mediump vec2 texture_coordinate)
+// returns the mipmap level to use
+// returns<0 when magnifying
+// returns>0 when minifying
+mediump float mipmap_level(mediump vec2 texture_coordinate)
 {
     // The OpenGL Graphics System: A Specification 4.2
     //  - chapter 3.9.11, equation 3.21
@@ -54,30 +61,24 @@ void main()
     //float v = max(max(v4.x, v4.y), max(v4.z, v4.w));
     //float v = (v4.x + v4.y + v4.z + v4.w) / 4.0;
 
-    mediump float v = texture2D(tex, texCoord, 0.0).x;
+    mediump float v = texture2D(tex, texCoord).x;
 #ifdef USE_MIPMAP
     if (yNormalize>0.0)
     {
-        mediump float f = 1.2;
-        mediump float base = f*v;
-        // wan't median value in mipmap6, 1<<6 -> 64x64 texels
-        // know mean value in 1<<(1-5), assuming sharp peaks are way more common than sharp valleys the mean is
-        // an approximation. However, the mean next to a peak is high so use a smaller local mean.
-        // 0>l when magnifying
-        // 0<l when minifying
-        // If magnifying, bias the mipmap look-up to fetch the actual mipmaps '3.0-l' actually gives third mipmap
-        // If minifying, bias the mipmap to not pick the same mipmap as 'v' was taken from 'max(1.0,...)
-        mediump float l = mip_map_level(texCoord*texSize);
-        base = min(base, texture2D(tex, texCoord, max(1.0,1.0-l)).x);
-        base = min(base, texture2D(tex, texCoord, max(1.0,2.0-l)).x);
-        base = min(base, texture2D(tex, texCoord, max(1.0,3.0-l)).x);
-        base = min(base, texture2D(tex, texCoord, max(1.0,4.0-l)).x);
-        base = min(base, texture2D(tex, texCoord, max(1.0,5.0-l)).x);
-        base *= 0.7; // 1/f^2, f=1.2
-        // know base <= v, base==v if all mipmaps are > v/f, in which case this is a deep local minima
+        // 1. normalize to the background level.
+        // 2. let background level be defined by a rolling median
+        // 2. use approximate OTA as an approximation of median
+        // 3. given that sharp peaks are way more common than sharp valleys the OTA
+        //    is high near a peak. Thus a small value in a lower mipmap level is more
+        //    likely to represent the background level.
+        mediump float median = texture2DLod(tex_ota, texCoord, 4.0+vbias).x;
+//                min(texture2DLod(tex_ota, texCoord, 4.0+vbias).x,
+//                    texture2DLod(tex_ota, texCoord, 2.0+vbias).x);
 
-        // normalize
-        v = mix(v, (v - base)/base, yNormalize);
+#define scalefactor 0.2
+        v = mix(v, scalefactor*(1.0 + (v-median)/median), yNormalize);
+        if (median==0.0)
+            v = 0.0;
     }
 #endif
 

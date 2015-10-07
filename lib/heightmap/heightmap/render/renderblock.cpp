@@ -62,7 +62,7 @@ RenderBlock::Renderer::~Renderer()
 
 
 void RenderBlock::Renderer::
-        renderBlock( pBlock block, LevelOfDetail lod )
+        renderBlock( pBlock block, CornerResolution cr )
 {
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 
@@ -77,14 +77,32 @@ void RenderBlock::Renderer::
     glUniformMatrix4fv (render_block->uniModelview, 1, false, GLmatrixf(blockProj.modelview ()).v ());
     glUniformMatrix4fv (render_block->uniNormalMatrix, 1, false, GLmatrixf(blockProj.modelview_inverse ()).transpose ().v ());
 
-    int subdivx = (int)max (0., subdivs - 1 - log2 (max (1., lod.t ()))); // t or s might be 0
-    int subdivy = (int)max (0., subdivs - 1 - log2 (max (1., lod.s ())));
-    subdivx = subdivy = 0;
+    // This would still coorect, mintp should not be above or equal to 2 though, as that wouldn't have triggered use of that block
+    //float mintp =  min(min(min(cr.x00, cr.x01), min(cr.x10, cr.x11)),
+    //                   min(min(cr.y00, cr.y01), min(cr.y10, cr.y11)));
 
-    LOG_DIVS Log("%s / %g x %g -> %d x %d") % block->getVisibleRegion ()
-            % lod.t () % lod.s() % subdivx % subdivy;
+    // This is a good approximate
+    float mintp =  (cr.x00 + cr.x01 + cr.x10 + cr.x11 +
+                    cr.y00 + cr.y01 + cr.y10 + cr.y11)/16.0;
 
-    const auto& pVbo = *render_block->_mesh_index_buffer[subdivy*subdivs+subdivx];
+    // could adapt mintp dynamically depending on rendering performance, for instance let RenderBlock::Renderer time it's own lifetime and update RenderBlock
+#if defined(GL_ES_VERSION_2_0)
+    // don't get too detailed vertices
+    mintp = max(mintp, 4.f);
+    //    mintp = exp2(subdivs-1.f); max
+#endif
+
+    glUniform4f (render_block->uniVertexTextureBiasX, std::max(mintp, cr.x00), std::max(mintp, cr.x01), std::max(mintp, cr.x10), std::max(mintp, cr.x11));
+    glUniform4f (render_block->uniVertexTextureBiasY, std::max(mintp, cr.y00), std::max(mintp, cr.y01), std::max(mintp, cr.y10), std::max(mintp, cr.y11));
+    int subdiv = max(0, min(subdivs-1, (int)log2(mintp)));
+
+    LOG_DIVS Log("%s x(%g, %g, %g, %g) y(%g, %g, %g, %g) -> %d")
+            % block->getVisibleRegion ()
+            % cr.x00 % cr.x01 % cr.x10 % cr.x11
+            % cr.y00 % cr.y01 % cr.y10 % cr.y11
+            % subdiv;
+
+    const auto& pVbo = *render_block->_mesh_index_buffer[subdiv];
     unsigned vbo = pVbo;
     GLsizei n = pVbo.size () / sizeof(BLOCKindexType);
     if (prev_vbo != vbo)
@@ -93,6 +111,9 @@ void RenderBlock::Renderer::
         prev_vbo = vbo;
     }
     glBindTexture (GL_TEXTURE_2D, block->texture ()->getOpenGlTextureId ());
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture (GL_TEXTURE_2D, block->texture_ota ());
+    glActiveTexture(GL_TEXTURE0);
     draw(n);
 
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
@@ -105,7 +126,7 @@ void RenderBlock::Renderer::
     GlException_CHECK_ERROR();
 
     if (DRAW_POINTS) {
-        GlState::glDrawArrays(GL_POINTS, 0, n);
+        GlState::glDrawElements(GL_POINTS, n, BLOCK_INDEX_TYPE, 0);
     } else if (DRAW_WIREFRAME) {
 #ifdef GL_ES_VERSION_2_0
         GlState::glDrawElements(GL_LINE_STRIP, n, BLOCK_INDEX_TYPE, 0);
@@ -351,7 +372,10 @@ void RenderBlock::ShaderData::prepShader(BlockLayout block_size, RenderSettings*
     if (uniVertText0>=0) if (u_tex != 0) glUniform1i(uniVertText0, u_tex=0); // GL_TEXTURE0 + i
 
     if (uniVertText2<-1) uniVertText2 = glGetUniformLocation(_shader_prog, "tex_color");
-    if (u_tex_color != 1) glUniform1i(uniVertText2, u_tex_color=1);
+    if (uniVertText2>=0) if (u_tex_color != 1) glUniform1i(uniVertText2, u_tex_color=1);
+
+    if (uniVertTextOta<-1) uniVertTextOta = glGetUniformLocation(_shader_prog, "tex_ota");
+    if (uniVertTextOta>=0) if (u_tex_ota != 2) glUniform1i(uniVertTextOta, u_tex_ota=2); // GL_TEXTURE0 + i
 
     if (uniFixedColor<-1) uniFixedColor = glGetUniformLocation(_shader_prog, "fixedColor");
     tvector<4, float> fixed_color;
@@ -463,6 +487,9 @@ void RenderBlock::ShaderData::prepShader(BlockLayout block_size, RenderSettings*
     if (u_texSize1 != w || u_texSize2 != h)
         if (uniTexSize>=0) glUniform2f(uniTexSize, u_texSize1=w, u_texSize2=h);
 
+    if (uniVertexTextureBiasX<-1) uniVertexTextureBiasX = glGetUniformLocation (_shader_prog, "vertexTextureBiasX");
+    if (uniVertexTextureBiasY<-1) uniVertexTextureBiasY = glGetUniformLocation (_shader_prog, "vertexTextureBiasY");
+
     if (attribVertex<-1) attribVertex = glGetAttribLocation (_shader_prog, "qt_Vertex");
 }
 
@@ -481,7 +508,7 @@ void RenderBlock::
 
 
     ShaderSettings shadersettings;
-    shadersettings.use_mipmap = render_settings->y_normalize > 0 && Render::BlockTextures::mipmaps > 0;
+    shadersettings.use_mipmap = render_settings->y_normalize > 0 && Render::BlockTextures::max_level > 0;
     shadersettings.draw3d = !render_settings->draw_flat;
     shadersettings.drawIsarithm = render_settings->draw_contour_plot;
     ShaderData* d=getShader(shadersettings);
@@ -491,6 +518,8 @@ void RenderBlock::
     uniModelview=d->uniModelview;
     uniNormalMatrix=d->uniNormalMatrix;
     attribVertex=d->attribVertex;
+    uniVertexTextureBiasX=d->uniVertexTextureBiasX;
+    uniVertexTextureBiasY=d->uniVertexTextureBiasY;
 
     GlState::glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
     GlState::glEnableVertexAttribArray (attribVertex);
@@ -528,6 +557,8 @@ void RenderBlock::
 {
     GlException_CHECK_ERROR();
 
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, 0);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, 0);
     glActiveTexture(GL_TEXTURE0);
@@ -553,14 +584,13 @@ void RenderBlock::
     // edge dropout to eliminate visible glitches
     if (w > 2 && h > 2)
     {
-        for (int y=0;y<subdivs;y++)
-            for (int x=0;x<subdivs;x++)
-                createMeshIndexBuffer(w, h, _mesh_index_buffer[y*subdivs+x], 1<<x, 1<<y);
+        for (int i=0;i<subdivs;i++)
+            createMeshIndexBuffer(w, h, _mesh_index_buffer[i], 1<<i, 1<<i);
     }
     else
     {
         createMeshIndexBuffer(w, h, _mesh_index_buffer[0], 1, 1);
-        for (int i=1;i<subdivs*subdivs;i++)
+        for (int i=1;i<subdivs;i++)
             _mesh_index_buffer[i] = _mesh_index_buffer[0];
     }
 
@@ -581,29 +611,59 @@ void RenderBlock::
 {
     GlException_CHECK_ERROR();
 
-    if (h>2) h+=2;
-    if (w>2) w+=2;
-    int n_vertices = (int_div_ceil (w+stepx-1, stepx)*2 + 4)*
-                      int_div_ceil (h-1, stepy);
+
+    int n_vertices;
+    if (h>2 || w>2)
+    {
+        h+=2;
+        w+=2;
+
+        n_vertices = (int_div_ceil (w-2, stepx)*2 + 8)*
+                     (int_div_ceil (h-2, stepy)+1);
+    }
+    else
+    {
+        EXCEPTION_ASSERT_EQUALS(h,2);
+        EXCEPTION_ASSERT_EQUALS(w,2);
+        n_vertices = 4;
+    }
 
     vector<BLOCKindexType> indicesdata(n_vertices);
     BLOCKindexType *indices = &indicesdata[0];
 
-    for(int y=0; y<h-1; y+=stepy) {
-        int y2 = min(y + stepy,h-1);
+    if (h==2 && w==2) {
+        *indices++ = 0;
+        *indices++ = 1;
+        *indices++ = 2;
+        *indices++ = 3;
+    }
+    else
+    {
+        int y, y2;
+        for(int iy=1-stepy; iy<h-1; iy+=stepy) {
+            if (iy<1) {
+                y = 0;
+                y2 = 1;
+            } else {
+                y = max(0,iy);
+                y2 = min(y + stepy,h-1);
+            }
 
-        *indices++ = y*w;
+            *indices++ = y*w;
+            *indices++ = y*w;
+            *indices++ = y2*w;
 
-        for(int x=0; x<w+stepx-1; x+=stepx) {
-            if (x>=w) x=w-1;
-            *indices++ = y*w+x;
-            *indices++ = y2*w+x;
+            for(int x=1; x<w+stepx-1; x+=stepx) {
+                if (x>=w) x=w-1;
+                *indices++ = y*w+x;
+                *indices++ = y2*w+x;
+            }
+
+            // start new strip with degenerate triangle
+            *indices++ = y2*w+(w-1);
+            *indices++ = y2*w;
+            *indices++ = y2*w;
         }
-
-        // start new strip with degenerate triangle
-        *indices++ = y2*w+(w-1);
-        *indices++ = y2*w;
-        *indices++ = y2*w;
     }
 
     EXCEPTION_ASSERT_EQUALS(indices-&indicesdata[0], n_vertices);

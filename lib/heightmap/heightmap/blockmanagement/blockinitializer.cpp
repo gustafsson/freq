@@ -7,6 +7,7 @@
 #include "glframebuffer.h"
 #include "gl.h"
 #include "GlException.h"
+#include "log.h"
 
 //#define TIME_GETBLOCK
 #define TIME_GETBLOCK if(0)
@@ -23,13 +24,24 @@ BlockInitializer::
     :
       block_layout_(bl),
       visualization_params_(vp),
-      cache_(c)
+      cache_(c),
+      fbo_(0)
 {
-    bool disable_merge = true;
 #ifdef DO_MERGE
-    disable_merge = false;
+    merger_.reset( new Merge::MergerTexture(cache_, bl) );
 #endif
-    merger_.reset( new Merge::MergerTexture(cache_, bl, disable_merge) );
+}
+
+
+BlockInitializer::~BlockInitializer()
+{
+    if (fbo_ &&  !QOpenGLContext::currentContext ()) {
+        Log ("%s: destruction without gl context leaks fbo %d and vbo %d") % __FILE__ % fbo_;
+        return;
+    }
+
+    if (fbo_) glDeleteFramebuffers(1, &fbo_);
+    fbo_ = 0;
 }
 
 
@@ -39,7 +51,24 @@ Signal::Intervals BlockInitializer::
     TIME_GETBLOCK TaskTimer tt(format("BlockInitializer: initBlock %s") % blocks.size ());
     //TIME_GETBLOCK TaskTimer tt(format("BlockInitializer: initBlock %s") % ReferenceInfo(block->reference (), block_layout_, visualization_params_));
 
+#ifdef DO_MERGE
     return merger_->fillBlocksFromOthers (blocks);
+#else
+    if (!fbo_)
+        glGenFramebuffers(1, &fbo_);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_);
+    glViewport(0, 0, block_layout_.texels_per_row (), block_layout_.texels_per_column () );
+    glClearColor (0,0,0,1);
+    Signal::Intervals I;
+    for (const pBlock& b : blocks) {
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                               GL_TEXTURE_2D, b->texture ()->getOpenGlTextureId (), 0);
+        glClear( GL_COLOR_BUFFER_BIT );
+        I |= b->getInterval ();
+    }
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, QOpenGLContext::currentContext ()->defaultFramebufferObject ());
+    return I;
+#endif
 }
 
 } // namespace BlockManagement
@@ -49,6 +78,7 @@ Signal::Intervals BlockInitializer::
 
 #include <QtWidgets> // QApplication
 #include <QtOpenGL> // QGLWidget
+#include "glstate.h"
 
 namespace Heightmap {
 namespace BlockManagement {
@@ -73,6 +103,7 @@ void BlockInitializer::
     GlException_SAFE_CALL( glGenVertexArrays(1, &VertexArrayID) );
     GlException_SAFE_CALL( glBindVertexArray(VertexArrayID) );
 #endif
+    GlState::assume_default_gl_states ();
 
     // It should initialize new blocks
     {

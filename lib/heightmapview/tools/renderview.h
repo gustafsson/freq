@@ -128,7 +128,6 @@ namespace Tools
 
     private:
         void setupCamera();
-        matrixd setRotationForAxes();
 
         boost::scoped_ptr<TaskTimer> _render_timer;
         boost::scoped_ptr<GlFrameBuffer> _renderview_fbo;

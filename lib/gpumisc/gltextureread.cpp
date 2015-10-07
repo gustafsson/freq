@@ -83,7 +83,7 @@ DataStorage<float>::ptr GlTextureRead::
     memcpy(data->getCpuMemory(), src, data->numberOfBytes ());
     glUnmapBuffer(GL_PIXEL_PACK_BUFFER_ARB);
     GlState::glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
-    glDeleteBuffers (1, &pbo);
+    GlState::glDeleteBuffers (1, &pbo);
 
 
     // restore
@@ -138,7 +138,7 @@ DataStorage<unsigned char>::ptr GlTextureRead::
     memcpy(data->getCpuMemory(), src, data->numberOfBytes ());
     glUnmapBuffer(GL_PIXEL_PACK_BUFFER_ARB);
     GlState::glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
-    glDeleteBuffers (1, &pbo);
+    GlState::glDeleteBuffers (1, &pbo);
 
 
     // restore
@@ -239,12 +239,15 @@ DataStorage<float>::ptr GlTextureRead::
 
     DataStorage<float>::ptr data(new DataStorage<float>(width*number_of_components, height));
 
-    // Read through FBO instead
-    GlFrameBuffer fb(texture, width, height);
+#if defined(GL_ES_VERSION_2_0)
+    GlFrameBuffer fb(texture, width, height, level);
 
     fb.bindFrameBuffer ();
     glReadPixels (0, 0, width, height, format, GL_FLOAT, data->getCpuMemory());
     fb.unbindFrameBuffer ();
+#else
+    glGetTexImage(GL_TEXTURE_2D, level, format, GL_FLOAT, data->getCpuMemory());
+#endif
 
     // restore
     GlException_SAFE_CALL( glPixelStorei (GL_PACK_ALIGNMENT, pack_alignment) );
@@ -277,18 +280,15 @@ DataStorage<unsigned char>::ptr GlTextureRead::
 
     DataStorage<unsigned char>::ptr data(new DataStorage<unsigned char>(width*number_of_components, height));
 
-
-    // Straightforward, but unstable
-    //GlException_SAFE_CALL( glGetTexImage(GL_TEXTURE_2D, level, format, GL_UNSIGNED_BYTE, data->getCpuMemory()) );
-
-
-    // Read through FBO instead
+#if defined(GL_ES_VERSION_2_0)
     GlFrameBuffer fb(texture, width, height);
 
     fb.bindFrameBuffer ();
     glReadPixels (0, 0, width, height, format, GL_UNSIGNED_BYTE, data->getCpuMemory());
     fb.unbindFrameBuffer ();
-
+#else
+    glGetTexImage(GL_TEXTURE_2D, level, format, GL_UNSIGNED_BYTE, data->getCpuMemory());
+#endif
 
     // restore
     GlException_SAFE_CALL( glPixelStorei (GL_PACK_ALIGNMENT, pack_alignment) );

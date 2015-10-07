@@ -101,21 +101,14 @@ qint64 GotData::
 }
 
 
-void GotData::
-       writeData(const float* in, quint64 len)
+template<unsigned C>
+unsigned transpose(const float* in, const Signal::Buffer* buffer)
 {
-    LOG_DATA Log("qtmicrophone: got %d samples") % len;
-
-    // Prepare buffer
-    DataAccessPosition_t number_of_samples = DataAccessPosition_t(len / data.raw()->num_channels);
-    if (!buffer || buffer->number_of_samples () != number_of_samples)
-        buffer.reset (new Signal::Buffer(0, number_of_samples, data.raw()->sample_rate, data.raw()->num_channels));
-
-    // get pointers to intermediate buffers
-    unsigned k = 0;
-    unsigned C = buffer->number_of_channels ();
-    float* P[C], v[C];
+    float *P[C], v[C];
     bool prev_nonzero = true;
+
+    DataAccessPosition_t number_of_samples = buffer->number_of_samples ();
+    unsigned k = 0;
 
     for (unsigned i=0; i<C; ++i)
     {
@@ -149,6 +142,91 @@ void GotData::
         }
 
         prev_nonzero = nonzero;
+    }
+
+    return k;
+}
+
+
+unsigned transposeC(const float* in, const Signal::Buffer* buffer, unsigned C)
+{
+    std::vector<float*> Pv(C);
+    std::vector<float> vv(C);
+    float **P = &Pv[0], *v = &vv[0];
+
+    DataAccessPosition_t number_of_samples = buffer->number_of_samples ();
+    bool prev_nonzero = true;
+    unsigned k = 0;
+
+    for (unsigned i=0; i<C; ++i)
+    {
+        Signal::pMonoBuffer b = buffer->getChannel (i);
+        P[i] = CpuMemoryStorage::WriteAll<1>(b->waveform_data()).ptr ();
+    }
+
+    // transpose and skip zeros
+    for (DataAccessPosition_t j=0; j<number_of_samples; ++j)
+    {
+#ifdef SKIP_ZEROS
+        bool nonzero = false;
+#else
+        bool nonzero = true;
+#endif
+        for (unsigned i=0; i<C; ++i)
+        {
+            v[i] = in[j*C + i];
+            if (fabs(v[i]) > 1.f/1024.f)
+                nonzero = true;
+        }
+
+        if (k==1 && !nonzero)
+            k = 0;
+
+        if (nonzero || prev_nonzero)
+        {
+            for (unsigned i=0; i<C; ++i)
+                P[i][k] = v[i];
+            k++;
+        }
+
+        prev_nonzero = nonzero;
+    }
+
+    return k;
+}
+
+
+void GotData::
+       writeData(const float* in, quint64 len)
+{
+    LOG_DATA Log("qtmicrophone: got %d samples") % len;
+
+    // Prepare buffer
+    DataAccessPosition_t number_of_samples = DataAccessPosition_t(len / data.raw()->num_channels);
+    if (!buffer || buffer->number_of_samples () != number_of_samples)
+        buffer.reset (new Signal::Buffer(0, number_of_samples, data.raw()->sample_rate, data.raw()->num_channels));
+
+    // get pointers to intermediate buffers
+    unsigned k;
+    unsigned C = buffer->number_of_channels ();
+
+    switch(C)
+    {
+    case 1:
+        k = transpose<1>(in, buffer.get ());
+        break;
+    case 2:
+        k = transpose<2>(in, buffer.get ());
+        break;
+    case 3:
+        k = transpose<3>(in, buffer.get ());
+        break;
+    case 4:
+        k = transpose<4>(in, buffer.get ());
+        break;
+    default:
+        k = transposeC(in, buffer.get (), C);
+        break;
     }
 
     if (k<=10)

@@ -146,7 +146,7 @@ void Vbo::
             _registered = false;
         }
 #endif
-        glDeleteBuffers(1, &_vbo);
+        GlState::glDeleteBuffers(1, &_vbo);
         _vbo = 0;
         _sz = 0;
     }

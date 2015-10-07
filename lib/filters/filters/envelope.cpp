@@ -127,7 +127,7 @@ void EnvelopeDesc::
         }
 
         // q is rounded to 5 decimals
-        EXCEPTION_ASSERT_LESS(s, 0.5e-5);
+        EXCEPTION_ASSERT_LESS(s, 0.6e-5);
     }
 
     // It should only accept StftDesc as TransformDesc.

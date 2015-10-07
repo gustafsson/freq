@@ -21,13 +21,13 @@ public:
 
     ~WidgetOverlayController();
 
-    void enterEvent ( QEvent * );
-    void leaveEvent ( QEvent * );
-    void keyPressEvent ( QKeyEvent * );
-    void keyReleaseEvent ( QKeyEvent * );
-    void mouseMoveEvent ( QMouseEvent * event );
-    void mousePressEvent ( QMouseEvent * event );
-    void mouseReleaseEvent ( QMouseEvent * event );
+    void enterEvent ( QEvent * ) override;
+    void leaveEvent ( QEvent * ) override;
+    void keyPressEvent ( QKeyEvent * ) override;
+    void keyReleaseEvent ( QKeyEvent * ) override;
+    void mouseMoveEvent ( QMouseEvent * event ) override;
+    void mousePressEvent ( QMouseEvent * event ) override;
+    void mouseReleaseEvent ( QMouseEvent * event ) override;
 
 protected:
     void updatePosition() override;

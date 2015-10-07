@@ -17,8 +17,6 @@
 #include "glgroupmarker.h"
 #include "glstate.h"
 
-#include <QGLContext>
-
 //#ifdef GL_ES_VERSION_2_0
 #define DRAW_STRAIGHT_ONTO_BLOCK
 //#endif
@@ -38,7 +36,7 @@ void printUniformInfo(int program)
     int len_uniform = 0;
     glGetProgramiv (program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &len_uniform);
     glGetProgramiv (program, GL_ACTIVE_UNIFORMS, &n_uniforms);
-    char name[len_uniform];
+    string name(len_uniform+1, '\0');
     Log("Found %d uniforms in program") % n_uniforms;
     for (int i=0; i<n_uniforms; i++) {
         GLint size;
@@ -49,8 +47,8 @@ void printUniformInfo(int program)
             0,
             &size,
             &type,
-            name);
-        Log("%d: %s, size=%d, type=%d") % i % ((char*)name) % size % type;
+            &name[0]);
+        Log("%d: %s, size=%d, type=%d") % i % name % size % type;
     }
 }
 
@@ -58,43 +56,58 @@ namespace Heightmap {
 namespace BlockManagement {
 namespace Merge {
 
-typedef pair<Region,pBlock> RegionBlock;
+typedef pair<Region,Block const*> RegionBlock;
 typedef vector<RegionBlock> RegionBlockVector;
 
-RegionBlockVector& operator-=(RegionBlockVector& R, Region t)
+RegionBlockVector operator-(RegionBlockVector const& R, Region t)
 {
     RegionBlockVector C;
-    C.reserve (R.size ());
+    C.reserve (R.size ()+8);
 
-    for (auto v : R) {
-        Region r = v.first;
+    for (const auto& v : R) {
+        Region const& r = v.first;
+
         if (r.a.time >= t.b.time || r.b.time <= t.a.time || r.a.scale >= t.b.scale || r.b.scale <= t.a.scale) {
             // keep whole
             C.push_back (v);
             continue;
         }
 
+        // There is an interception
         if (r.a.scale < t.a.scale) {
-            // keep bottom
+            // keep bottom, possibly including left and right
             C.push_back (RegionBlock(Region(Position(r.a.time, r.a.scale),Position(r.b.time,t.a.scale)),v.second));
         }
         if (r.b.scale > t.b.scale) {
-            // keep top
+            // keep top, possibly including left and right
             C.push_back (RegionBlock(Region(Position(r.a.time, t.b.scale),Position(r.b.time,r.b.scale)),v.second));
         }
         if (r.a.time < t.a.time) {
-            // keep left
+            // keep left, strictly left of, but not above or below
             C.push_back (RegionBlock(Region(Position(r.a.time, max(r.a.scale,t.a.scale)),Position(t.a.time,min(r.b.scale,t.b.scale))),v.second));
         }
         if (r.b.time > t.b.time) {
-            // keep right
+            // keep right, strictly right of, but not above or below
             C.push_back (RegionBlock(Region(Position(t.b.time, max(r.a.scale,t.a.scale)),Position(r.b.time,min(r.b.scale,t.b.scale))),v.second));
         }
     }
 
-    return R = C;
+    return C;
 }
 
+RegionBlockVector& operator-=(RegionBlockVector& R, Region t)
+{
+    (R-t).swap(R);
+    return R;
+}
+
+Region operator&(const Region& x, const Region& y) {
+    Region r { Position(std::max(x.a.time, y.a.time), std::max(x.a.scale, y.a.scale)),
+               Position(std::min(x.b.time, y.b.time), std::min(x.b.scale, y.b.scale)) };
+    r.b.time = std::max(r.a.time, r.b.time);
+    r.b.scale = std::max(r.a.scale, r.b.scale);
+    return r;
+}
 
 void testRegionBlockOperator() {
     // RegionBlockVector& operator-=(RegionBlockVector& R, Region t) should work
@@ -108,7 +121,7 @@ void testRegionBlockOperator() {
         BlockLayout bl(128,128,100);
         RegionFactory rf(bl);
         auto f = [&rf](Reference r) { return rf.getVisible (r); };
-        RegionBlockVector V = {RegionBlock(f(ref),pBlock())};
+        RegionBlockVector V = {RegionBlock(f(ref),nullptr)};
 
         V -= f(ref.left ());
         EXCEPTION_ASSERT_EQUALS( V.size(), 1u );
@@ -117,13 +130,13 @@ void testRegionBlockOperator() {
         EXCEPTION_ASSERT_EQUALS( V.size(), 1u );
         EXCEPTION_ASSERT_EQUALS( V[0].first, f(ref.right ().bottom ()) );
 
-        V = {RegionBlock(f(ref),pBlock())};
+        V = {RegionBlock(f(ref),nullptr)};
         V -= f(ref.right ().top ());
         EXCEPTION_ASSERT_EQUALS( V.size(), 2u );
         EXCEPTION_ASSERT_EQUALS( V[0].first, f(ref.bottom ()) );
         EXCEPTION_ASSERT_EQUALS( V[1].first, f(ref.top ().left ()) );
 
-        V = {RegionBlock(f(ref),pBlock())};
+        V = {RegionBlock(f(ref),nullptr)};
         V -= f(ref.sibblingLeft ());
         EXCEPTION_ASSERT_EQUALS( V.size(), 1u );
         EXCEPTION_ASSERT_EQUALS( V[0].first, f(ref) );
@@ -141,7 +154,7 @@ void testRegionBlockOperator() {
         V -= f(ref.parentHorizontal ());
         EXCEPTION_ASSERT_EQUALS( V.size(), 0u );
 
-        V = {RegionBlock(f(ref),pBlock())};
+        V = {RegionBlock(f(ref),nullptr)};
         V -= f(ref.parentHorizontal ().top ());
         EXCEPTION_ASSERT_EQUALS( V.size(), 1u );
         EXCEPTION_ASSERT_EQUALS( V[0].first, f(ref.parentHorizontal ().bottom ().right ()) );
@@ -153,16 +166,18 @@ void testRegionBlockOperator() {
 
 
 MergerTexture::
-        MergerTexture(BlockCache::const_ptr cache, BlockLayout block_layout, bool disable_merge)
+        MergerTexture(BlockCache::const_ptr cache, BlockLayout block_layout, int quality)
     :
       cache_(cache),
       fbo_(0),
       vbo_(0),
       tex_(0),
       block_layout_(block_layout),
-      disable_merge_(disable_merge)
+      quality_(quality)
 {
     EXCEPTION_ASSERT(cache_);
+    EXCEPTION_ASSERT_LESS_OR_EQUAL(0, quality);
+    EXCEPTION_ASSERT_LESS_OR_EQUAL(quality,2);
 }
 
 
@@ -174,7 +189,7 @@ MergerTexture::
         return;
     }
 
-    if (vbo_) glDeleteBuffers (1, &vbo_);
+    if (vbo_) GlState::glDeleteBuffers (1, &vbo_);
     vbo_ = 0;
 
     if (fbo_) glDeleteFramebuffers(1, &fbo_);
@@ -188,7 +203,7 @@ void MergerTexture::
     if (vbo_)
         return;
 
-    EXCEPTION_ASSERT(QGLContext::currentContext ());
+    EXCEPTION_ASSERT(QOpenGLContext::currentContext ());
 
     glGenFramebuffers(1, &fbo_);
 
@@ -213,9 +228,21 @@ void MergerTexture::
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
     GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    //    program_ = ShaderResource::loadGLSLProgram("", ":/shaders/mergertexture.frag");
-//    program_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture0.frag");
-    GlException_SAFE_CALL( programp_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture.frag") );
+    switch(quality_)
+    {
+    case 0:
+        GlException_SAFE_CALL( programp_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture0.frag") );
+        break;
+    case 1:
+        GlException_SAFE_CALL( programp_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture1.frag") );
+        break;
+    case 2:
+        GlException_SAFE_CALL( programp_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture.frag") );
+        break;
+    default:
+        EXCEPTION_ASSERTX(false, boost::format("Unknown quality: %d") % quality_);
+    }
+
     program_ = programp_->programId();
 
     qt_Vertex = glGetAttribLocation (program_, "qt_Vertex");
@@ -258,7 +285,7 @@ Signal::Intervals MergerTexture::
     glVertexAttribPointer (qt_MultiTexCoord0, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), (float*)0 + 2);
 
     GlState::glUseProgram (program_);
-    if (invtexsize) glUniform2f(invtexsize, 1.0/block_layout_.texels_per_row (), 1.0/block_layout_.texels_per_column ());
+    glUniform2f(invtexsize, 1.0/block_layout_.texels_per_row (), 1.0/block_layout_.texels_per_column ());
     glUniform1i(qt_Texture0, 0); // GL_TEXTURE0 + i
 
     cache_clone = cache_->clone();
@@ -268,12 +295,15 @@ Signal::Intervals MergerTexture::
     {
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_);
 
-        for (pBlock b : blocks)
-            I |= fillBlockFromOthersInternal (b);
+        for (const pBlock& b : blocks)
+            I |= fillBlockFromOthersInternal (b.get ());
 
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, QOpenGLContext::currentContext ()->defaultFramebufferObject ());
     }
 
+    bool has_ota = false;
+    if (!cache_clone.empty ())
+        has_ota = cache_clone.begin ()->second->texture_ota();
     cache_clone.clear ();
 
     GlState::glDisableVertexAttribArray (qt_MultiTexCoord0);
@@ -283,10 +313,10 @@ Signal::Intervals MergerTexture::
     GlState::glEnable (GL_DEPTH_TEST);
     GlState::glEnable (GL_CULL_FACE);
 
-    for (pBlock b : blocks)
+    for (const pBlock& b : blocks)
     {
-        // mark texture as updated
-        b->setTexture (b->texture ());
+        b->enableOta (has_ota);
+        b->generateMipmap ();
     }
 
     GlException_CHECK_ERROR();
@@ -298,63 +328,93 @@ Signal::Intervals MergerTexture::
 
 
 Signal::Intervals MergerTexture::
-        fillBlockFromOthersInternal( pBlock block )
+        fillBlockFromOthersInternal( const Block* out_block )
 {
     Signal::Intervals missing_details;
 
-    VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Stubbing new block %s") % block->getVisibleRegion ());
+    VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Stubbing new block %s") % out_block->getVisibleRegion ());
 
-    Region r = block->getOverlappingRegion ();
+    Region out_r = out_block->getOverlappingRegion ();
 
     matrixd projection;
-    glhOrtho (projection.v (), r.a.time, r.b.time, r.a.scale, r.b.scale, -10, 10);
+    glhOrtho (projection.v (), out_r.a.time, out_r.b.time, out_r.a.scale, out_r.b.scale, -10, 10);
 
     glUniformMatrix4fv (uniProjection, 1, false, GLmatrixf(projection).v ());
 
 #ifdef DRAW_STRAIGHT_ONTO_BLOCK
-    glBindTexture (GL_TEXTURE_2D, block->texture ()->getOpenGlTextureId ());
+    glBindTexture (GL_TEXTURE_2D, out_block->texture ()->getOpenGlTextureId ());
     glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                           GL_TEXTURE_2D, block->texture ()->getOpenGlTextureId (), 0);
+                           GL_TEXTURE_2D, out_block->texture ()->getOpenGlTextureId (), 0);
 #endif
 
     glClear( GL_COLOR_BUFFER_BIT );
 //    clearBlock (r);
 
-    if (!disable_merge_)
+    bool disable_merge = false;
+    if (!disable_merge)
     {
         // Largest first
         RegionBlockVector largeblocks;
         RegionBlockVector smallblocks;
+        smallblocks.reserve (cache_clone.size ());
 
-        for (const auto& c : cache_clone)
+        for (auto const& c : cache_clone)
         {
-            const pBlock& bl = c.second;
-            const Region& r2 = bl->getOverlappingRegion ();
+            Block* const& bl = c.second.get ();
+            Region const& in_r = bl->getVisibleRegion ();
+            Region r = in_r & out_r;
 
             // If r2 doesn't overlap r at all
-            if (r2.a.scale >= r.b.scale || r2.b.scale <= r.a.scale )
-                continue;
-            if (r2.a.time >= r.b.time || r2.b.time <= r.a.time )
+            if (r.scale () * r.time () == 0)
                 continue;
 
-            bool is_small_s = r2.scale () <= r.scale ();
-            bool is_small_t = r2.time () <= r.time ();
+            bool is_small_s = in_r.scale () <= out_r.scale ();
+            bool is_small_t = in_r.time () <= out_r.time ();
             if (is_small_s && is_small_t)
-                smallblocks.push_back (RegionBlock(r2,bl));
+                smallblocks.push_back (RegionBlock(r,bl));
             else
-                largeblocks.push_back (RegionBlock(r2,bl));
+                largeblocks.push_back (RegionBlock(r,bl));
         }
 
-        RegionBlockVector missing_details_region{RegionBlock(r,block)};
-        for (auto r : smallblocks) {
-            largeblocks -= r.first;
-            missing_details_region -= r.first;
+        // sort smallblocks by covered area, descendingly. I.e blocks that are least useful area last
+        std::sort(smallblocks.begin (), smallblocks.end (),
+                  [out_r](const RegionBlockVector::value_type& a,const RegionBlockVector::value_type& b)
+        {
+            return a.first.time ()*a.first.scale () > b.first.time ()*b.first.scale ();
+        });
+
+        // remove redundant smallblocks, walk backwards, most likely to have redudant blocks by the end
+        for (auto i = smallblocks.end (); i!=smallblocks.begin ();)
+        {
+            i--;
+
+            RegionBlockVector V{RegionBlock(i->first,nullptr)};
+            // is r already covered?
+
+            for (auto j = smallblocks.begin (); j!=smallblocks.end (); j++)
+            {
+                if (i==j)
+                    continue;
+                V -= j->first;
+            }
+
+            if (V.empty ())
+                i = smallblocks.erase (i);
+            if (V.size ()==1)
+                i->first = V[0].first;
+        }
+
+        // figure out which regions are not covered by any smallblock
+        RegionBlockVector missing_details_region{RegionBlock(out_r,out_block)};
+        for (const auto& v : smallblocks) {
+            largeblocks -= v.first;
+            missing_details_region -= v.first;
         }
 
         double fs = block_layout_.sample_rate ();
-        for (auto v: missing_details_region)
+        for (const auto& v: missing_details_region)
         {
-            Region r2 = v.first;
+            const Region& r2 = v.first;
             if (r2.b.time <= 0 || r2.b.scale <= 0 || r2.a.scale >= 1)
                 continue;
 
@@ -362,15 +422,17 @@ Signal::Intervals MergerTexture::
             missing_details |= Signal::Interval((r2.a.time-d)*fs, (r2.b.time+d)*fs+1);
         }
 
-        for (auto v : largeblocks)
+        // remove duplicate consecutive blocks in largeblocks left by operator-=
+        std::unique(largeblocks.begin (), largeblocks.end (), [](const RegionBlockVector::value_type& a,const RegionBlockVector::value_type& b){return a.second == b.second;});
+        for (const auto& v : largeblocks)
         {
-            auto bl = v.second;
+            const auto& bl = v.second;
             mergeBlock( bl->getOverlappingRegion (), bl->texture ()->getOpenGlTextureId () );
         }
 
-        for (auto v : smallblocks)
+        for (const auto& v : smallblocks)
         {
-            auto bl = v.second;
+            const auto& bl = v.second;
             mergeBlock( bl->getOverlappingRegion (), bl->texture ()->getOpenGlTextureId () );
         }
 
@@ -378,7 +440,7 @@ Signal::Intervals MergerTexture::
         // set "missing_details = block->getInterval ()" to recompute the results
     }
     else
-        missing_details = block->getInterval ();
+        missing_details = out_block->getInterval ();
 
 #ifdef DRAW_STRAIGHT_ONTO_BLOCK
     // The texture image will not be detached if the texture is deleted but it
@@ -418,6 +480,8 @@ void MergerTexture::
 void MergerTexture::
         mergeBlock( const Region& ri, int texture )
 {
+    EXCEPTION_ASSERT_NOTEQUALS(texture,0);
+
     VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Filling with %d from %s") % texture % ri);
 
     matrixd modelview = matrixd::identity ();
@@ -438,6 +502,7 @@ void MergerTexture::
 #include "log.h"
 #include "cpumemorystorage.h"
 #include "heightmap/render/blocktextures.h"
+#include "heightmap/blockmanagement/mipmapbuilder.h"
 #include <QtWidgets> // QApplication
 #include <QtOpenGL> // QGLWidget
 
@@ -471,6 +536,7 @@ void MergerTexture::
     GlException_SAFE_CALL( glGenVertexArrays(1, &VertexArrayID) );
     GlException_SAFE_CALL( glBindVertexArray(VertexArrayID) );
 #endif
+    GlState::assume_default_gl_states ();
 
     testRegionBlockOperator();
 
@@ -484,22 +550,23 @@ void MergerTexture::
         VisualizationParams::ptr vp(new VisualizationParams);
 
         // VisualizationParams has only things that have nothing to do with MergerTexture.
-        pBlock block(new Block(ref,bl,vp,0));
-        GlTexture::ptr tex = block->texture ();
+        pBlock target_block(new Block(ref,bl,vp,0));
+        GlTexture::ptr target_tex = target_block->texture ();
 
-        Log("Source overlapping %s, visible %s") % block->getOverlappingRegion () % block->getVisibleRegion ();
-        MergerTexture(cache, bl).fillBlockFromOthers(block);
+        //Log("Source overlapping %s, visible %s") % target_block->getOverlappingRegion () % target_block->getVisibleRegion ();
+        MergerTexture(cache, bl).fillBlockFromOthers(target_block);
 
         DataStorage<float>::ptr data;
 
-        float expected1[]={ 0, 0, 0, 0,
-                            0, 0, 0, 0,
-                            0, 0, 0, 0,
-                            0, 0, 0, 0};
+        {
+            float expected[]={  0, 0, 0, 0,
+                                0, 0, 0, 0,
+                                0, 0, 0, 0,
+                                0, 0, 0, 0};
 
-        data = GlTextureRead(*tex).readFloat (0, GL_RED);
-        //data = block->block_data ()->cpu_copy;
-        COMPARE_DATASTORAGE(expected1, sizeof(expected1), data);
+            data = GlTextureRead(*target_tex).readFloat (0, GL_RED);
+            COMPARE_DATASTORAGE(expected, sizeof(expected), data);
+        }
 
         {
             float srcdata[]={ 1, 0, 0, 0,
@@ -515,20 +582,21 @@ void MergerTexture::
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             cache->insert(block);
-        }
+            MergerTexture(cache, bl, 2).fillBlockFromOthers(target_block);
+            clearCache(cache);
 
-        MergerTexture(cache, bl).fillBlockFromOthers(block);
-        clearCache(cache);
-        float expected2[]={   1,  .5,   0,   0,
-                              0,   1,   2,   1,
-                              0,   0,   0,   0,
-                             .5, .25,   0,   0};
-        data = GlTextureRead(*tex).readFloat (0, GL_RED);
-        //data = block->block_data ()->cpu_copy;
-        //DataStorage<float>::ptr expected2ptr = CpuMemoryStorage::BorrowPtr(DataStorageSize(4,4), expected2);
-        //PRINT_DATASTORAGE(expected2ptr, "");
-        //PRINT_DATASTORAGE(data, "");
-        COMPARE_DATASTORAGE(expected2, sizeof(expected2), data);
+            float expected[]={    1,  .5,   0,   0,
+                                  0,   1,   2,   1,
+                                  0,   0,   0,   0,
+                                  .5, .25,   0,   0};
+            data = GlTextureRead(*target_tex).readFloat (0, GL_RED);
+
+            //DataStorage<float>::ptr expectedptr = CpuMemoryStorage::BorrowPtr(DataStorageSize(4,4), expected);
+            //PRINT_DATASTORAGE(expectedptr, "");
+            //PRINT_DATASTORAGE(data, "");
+
+            COMPARE_DATASTORAGE(expected, sizeof(expected), data);
+        }
 
         {
             float srcdata[]={ 1, 2, 3, 4,
@@ -540,27 +608,144 @@ void MergerTexture::
             GlTexture::ptr tex = block->texture ();
             tex->bindTexture ();
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+            tex->setMinFilter (GL_NEAREST_MIPMAP_NEAREST);
+            MipmapBuilder().generateMipmap (*tex, MipmapBuilder::MipmapOperator_Max);
 
             cache->insert(block);
+            MergerTexture(cache, bl, 2).fillBlockFromOthers(target_block);
+            clearCache(cache);
+
+            float expected[]={    0, 0,    3,  4,
+                                  0, 0,    7,  8,
+                                  0, 0,   11,  12,
+                                  0, 0,   15,  15};
+
+            data = GlTextureRead(*target_tex).readFloat (0, GL_RED);
+
+            //DataStorage<float>::ptr expectedptr = CpuMemoryStorage::BorrowPtr(DataStorageSize(4,4), expected3);
+            //PRINT_DATASTORAGE(expectedptr, "");
+            //PRINT_DATASTORAGE(data, "");
+
+            COMPARE_DATASTORAGE(expected, sizeof(expected), data);
         }
 
-        MergerTexture(cache, bl).fillBlockFromOthers(block);
-        float expected3[]={   0, 0,    3,  4,
-                              0, 0,    7,  8,
-                              0, 0,   11,  12,
-                              0, 0,   15,  15};
+        {
+            float srcdata[]={ 11, 13, 12, 10,
+                              9, 8, 7, 6,
+                              1, 2, 3, 4,
+                              15, 14, 13, 16};
 
-        data = GlTextureRead(*tex).readFloat (0, GL_RED);
-        //data = block->block_data ()->cpu_copy;
+            pBlock block(new Block(ref.right (),bl,vp,0));
+            GlTexture::ptr tex = block->texture ();
+            tex->bindTexture ();
+            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
-        //DataStorage<float>::ptr expected3ptr = CpuMemoryStorage::BorrowPtr(DataStorageSize(4,4), expected3);
-        //PRINT_DATASTORAGE(expected3ptr, "");
-        //PRINT_DATASTORAGE(data, "");
+            cache->insert(block);
+            MergerTexture(cache, bl, 2).fillBlockFromOthers(target_block);
+            clearCache(cache);
 
-        COMPARE_DATASTORAGE(expected3, sizeof(expected3), data);
-        clearCache(cache);
+            float expected[]={    0, 0,   13,  12,
+                                  0, 0,    9,  7,
+                                  0, 0,    3,  4,
+                                  0, 0,   15,  16};
 
-        tex.reset ();
+            data = GlTextureRead(*target_tex).readFloat (0, GL_RED);
+
+            //DataStorage<float>::ptr expectedptr = CpuMemoryStorage::BorrowPtr(DataStorageSize(4,4), expected4);
+            //PRINT_DATASTORAGE(expectedptr, "");
+            //PRINT_DATASTORAGE(data, "");
+
+            COMPARE_DATASTORAGE(expected, sizeof(expected), data);
+        }
+
+        {
+            float srcdata[]={ 11, 13, 12, 10,
+                              9, 8, 7, 6,
+                              1, 2, 3, 4,
+                              15, 14, 13, 16};
+
+            pBlock block(new Block(ref.left (),bl,vp,0));
+            GlTexture::ptr tex = block->texture ();
+            tex->bindTexture ();
+            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+
+            cache->insert(block);
+            MergerTexture(cache, bl, 2).fillBlockFromOthers(target_block);
+            clearCache(cache);
+
+            float expected[]={    13, 13,  0,  0,
+                                  9,  8,   0,  0,
+                                  2,  4,   0,  0,
+                                  15, 16,  0,  0};
+
+            data = GlTextureRead(*target_tex).readFloat (0, GL_RED);
+
+            //DataStorage<float>::ptr expectedptr = CpuMemoryStorage::BorrowPtr(DataStorageSize(4,4), expected);
+            //PRINT_DATASTORAGE(expectedptr, "");
+            //PRINT_DATASTORAGE(data, "");
+
+            COMPARE_DATASTORAGE(expected, sizeof(expected), data);
+        }
+
+        {
+            float srcdata[]={ 11, 13, 12, 10,
+                              9, 8, 7, 6,
+                              1, 2, 3, 4,
+                              15, 14, 13, 16};
+
+            pBlock block(new Block(ref.bottom (),bl,vp,0));
+            GlTexture::ptr tex = block->texture ();
+            tex->bindTexture ();
+            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+
+            cache->insert(block);
+            MergerTexture(cache, bl, 2).fillBlockFromOthers(target_block);
+            clearCache(cache);
+
+            float expected[]={    11, 13,  12, 10,
+                                  15, 14,  13, 16,
+                                  0,  0,   0,  0,
+                                  0,  0,   0,  0};
+
+            data = GlTextureRead(*target_tex).readFloat (0, GL_RED);
+
+            //DataStorage<float>::ptr expectedptr = CpuMemoryStorage::BorrowPtr(DataStorageSize(4,4), expected);
+            //PRINT_DATASTORAGE(expectedptr, "");
+            //PRINT_DATASTORAGE(data, "");
+
+            COMPARE_DATASTORAGE(expected, sizeof(expected), data);
+        }
+
+        {
+            float srcdata[]={ 11, 13, 12, 10,
+                              9, 8, 7, 6,
+                              1, 2, 3, 4,
+                              15, 14, 13, 16};
+
+            pBlock block(new Block(ref.top (),bl,vp,0));
+            GlTexture::ptr tex = block->texture ();
+            tex->bindTexture ();
+            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+
+            cache->insert(block);
+            MergerTexture(cache, bl, 2).fillBlockFromOthers(target_block);
+            clearCache(cache);
+
+            float expected[]={   0,   0,   0,   0,
+                                 0,   0,   0,   0,
+                                 11,  13,  12,  10,
+                                 15,  14,  13,  16};
+
+            data = GlTextureRead(*target_tex).readFloat (0, GL_RED);
+
+            //DataStorage<float>::ptr expectedptr = CpuMemoryStorage::BorrowPtr(DataStorageSize(4,4), expected);
+            //PRINT_DATASTORAGE(expectedptr, "");
+            //PRINT_DATASTORAGE(data, "");
+
+            COMPARE_DATASTORAGE(expected, sizeof(expected), data);
+        }
+
+        target_tex.reset ();
     }
 }
 

@@ -92,39 +92,22 @@ inline void printl(const char* str, tvector<4,double> n, const std::vector<vecto
     fflush(stdout);
 }
 
-vector<vectord> FrustumClip::
-        clipFrustum( vector<vectord> l, vectord* closest_i ) const
+
+void FrustumClip::
+        clipFrustum( vector<vectord>& l, vectord* closest_i ) const
 {
     DEBUGLOG printl("Start", tvector<4,double>(), l);
-    l = clipPlane(l, right);
+    clipPlane(l, right);
     DEBUGLOG PRINTL(right, l);
-    l = clipPlane(l, left);
+    clipPlane(l, left);
     DEBUGLOG PRINTL(left, l);
-    l = clipPlane(l, top);
+    clipPlane(l, top);
     DEBUGLOG PRINTL(top,l);
-    l = clipPlane(l, bottom);
+    clipPlane(l, bottom);
     DEBUGLOG PRINTL(bottom,l);
 
     if (closest_i)
         *closest_i = closestPointOnPoly(l, camera);
-
-    return l;
-}
-
-vector<vectord> FrustumClip::
-        clipFrustum( vectord corner[4], vectord* closest_i ) const
-{
-    vector<vectord> l;
-    l.reserve(4);
-    for (unsigned i=0; i<4; i++)
-    {
-        if (!l.empty() && l.back() == corner[i])
-            continue;
-
-        l.push_back( corner[i] );
-    }
-
-    return clipFrustum(l, closest_i );
 }
 
 
@@ -155,7 +138,7 @@ std::vector<vectord> FrustumClip::
     float nf = rightMost(near, far);
     float T = std::min(std::min(lr, nf), tb);
 
-    vectord corner[4]=
+    std::vector<vectord> corner=
     {
         vectord( 0, 0, 0),
         vectord( 0, 0, 1),
@@ -163,7 +146,8 @@ std::vector<vectord> FrustumClip::
         vectord( T, 0, 0),
     };
 
-    return clipFrustum (corner);
+    clipFrustum (corner);
+    return corner;
 }
 
 

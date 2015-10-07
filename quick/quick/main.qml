@@ -66,97 +66,10 @@ Item {
         anchors.fill: parent
         spacing: 0
 
-        Heightmap {
-            id: heightmap1
-            objectName: "heightmap1"
-            chain: chain
-            selection: selection
-            timepos: sharedCamera.timepos
-            timezoom: sharedCamera.timezoom
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            height: 5
-
-            onTouchNavigation: {
-                sharedCamera.timepos = timepos;
-                sharedCamera.timezoom = timezoom;
-            }
-
-
-            ColumnLayout {
-                anchors.fill: heightmap1
-                anchors.margins: 20
-
-                spacing: 15
-
-                Text {
-                    Layout.fillWidth: true
-                    id: text
-                    clip: false
-
-                    opacity: 0
-                    color: "black"
-                    wrapMode: Text.WordWrap
-                    text: "Scroll by dragging, rotate with two fingers together, zoom with two fingers in different directions. http://freq.consulting"
-
-                    Rectangle {
-                        id: textRect
-                        color: Qt.rgba(0.975, 0.975, 0.975, 0.8)
-                        anchors.margins: -8
-                        anchors.fill: parent
-                        z: -1
-
-                        SequentialAnimation on radius {
-                            running: false // super annoying
-                            NumberAnimation { to: 20; duration: 1000; easing.type: Easing.InQuad }
-                            NumberAnimation { to: 10; duration: 1000; easing.type: Easing.OutQuad }
-                            loops: Animation.Infinite
-                        }
-                    }
-
-                    SequentialAnimation on opacity {
-                        id: textAnimation
-                        ScriptAction { script: text.visible=true; }
-                        NumberAnimation { to: 1; duration: 200; easing.type: Easing.InQuart }
-                        PauseAnimation { duration: 15000 }
-                        NumberAnimation { to: 0; duration: 5000; easing.type: Easing.InQuart }
-                        ScriptAction { script: text.visible=false; }
-                    }
-                }
-
-                Item {
-                    Layout.fillHeight : true
-                }
-
-                Rectangle {
-                    color: Qt.rgba(0.975, 0.975, 0.975, 0.8)
-                    anchors.margins: -8
-                    anchors.fill: transformsettings
-                    z: -1
-                    Layout.maximumHeight: 0
-                    opacity: transformsettings.opacity
-                    visible: transformsettings.visible
-                }
-
-                TransformSettings {
-                    Layout.fillWidth: true
-                    id: transformsettings
-                    heightmap: heightmap1
-                }
-
-                /*MyComponent {
-                    Layout.fillWidth: true
-                }*/
-            }
-        }
-
-
-        LayoutSplitter {}
-
 
         Heightmap {
-            id: heightmap2
-            objectName: "heightmap2"
+            id: waveform
+            objectName: "waveform"
             chain: chain
             scalepos: 0.5
             xangle: 90.0
@@ -167,6 +80,7 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             height: 1
+            visibleTimeAxis: 0
 
             onTouchNavigation: {
                 // force orthogonal view of waveform
@@ -178,10 +92,67 @@ Item {
                 sharedCamera.timezoom = timezoom;
             }
         }
+
+
+        LayoutSplitter {
+            prevSibbling: waveform
+            nextSibbling: heightmap
+        }
+
+
+        Heightmap {
+            id: heightmap
+            objectName: "heightmap"
+            chain: chain
+            selection: selection
+            timepos: sharedCamera.timepos
+            timezoom: sharedCamera.timezoom
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            height: 6
+
+            onTouchNavigation: {
+                sharedCamera.timepos = timepos;
+                sharedCamera.timezoom = timezoom;
+            }
+        }
+    }
+
+
+    ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: 20
+
+        spacing: 15
+
+        Item {
+            Layout.fillHeight : true
+        }
+
+        Rectangle {
+            color: Qt.rgba(0.975, 0.975, 0.975, 0.8)
+            anchors.margins: -8
+            anchors.fill: transformsettings
+            z: -1
+            Layout.maximumHeight: 0
+            opacity: transformsettings.opacity
+            visible: transformsettings.visible
+        }
+
+        TransformSettings {
+            Layout.fillWidth: true
+            id: transformsettings
+            heightmap: heightmap
+        }
+
+        /*MyComponent {
+            Layout.fillWidth: true
+        }*/
     }
 
 
     Text {
+        visible: !heightmap.isIOS
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
 
@@ -189,7 +160,7 @@ Item {
         text: "  " + chain.title + "  "
 
         Component.onCompleted: {
-            heightmap1.touchNavigation.connect(touchNavigation)
+            heightmap.touchNavigation.connect(touchNavigation)
         }
 
         signal touchNavigation()
@@ -213,13 +184,13 @@ Item {
 
     Selection {
         id: selection
-        filteredHeightmap: heightmap2
-        renderOnHeightmap: heightmap1
+        filteredHeightmap: waveform.isIOS ? null : waveform
+        renderOnHeightmap: heightmap
     }
 
     OptimalTimeFrequencyResolution {
         id: optimalres
-        squircle: heightmap1
+        squircle: heightmap
         paused: false
 
         focus: true
@@ -230,6 +201,10 @@ Item {
             }
         }
 
-        onUpdateSharedCamera: heightmap1.touchNavigation()
+        onUpdateSharedCamera: heightmap.touchNavigation()
+    }
+
+    Greeting {
+        anchors.fill: parent
     }
 }

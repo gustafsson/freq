@@ -31,7 +31,7 @@ RenderModel::
         transform_descs_(new Support::TransformDescs),
         stft_block_filter_params_(new Heightmap::TfrMappings::StftBlockFilterParams)
 {
-    Heightmap::BlockLayout bl(1<<8,1<<8,1,Heightmap::Render::BlockTextures::mipmaps);
+    Heightmap::BlockLayout bl(1<<8,1<<8,1,Heightmap::Render::BlockTextures::max_level);
     tfr_map_.reset (new Heightmap::TfrMapping(bl, 0));
 
     resetCameraSettings();

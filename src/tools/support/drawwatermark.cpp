@@ -1,8 +1,7 @@
 #include "drawwatermark.h"
 
-#include "gl.h"
-
 // Gpumisc
+#include "glstate.h"
 #include "GlTexture.h"
 #include "glPushContext.h"
 #include "GlException.h"
@@ -104,7 +103,7 @@ void DrawWatermark::
     glColor4f(1,1,1,1);
 
     {
-        GlTexture::ScopeBinding bindTexture = img->getScopeBinding();
+        img->bindTexture();
 
         GlState::glBindBuffer(GL_ARRAY_BUFFER, *postexvbo);
         glEnableClientState(GL_VERTEX_ARRAY);

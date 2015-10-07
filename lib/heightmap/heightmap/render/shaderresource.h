@@ -2,11 +2,20 @@
 #define HEIGHTMAP_SHADERRESOURCE_H
 
 #include <QString>
+#include <QOpenGLShaderProgram>
 
-class QOpenGLShaderProgram;
 namespace Heightmap {
 
-typedef std::unique_ptr<QOpenGLShaderProgram> ShaderPtr;
+class OpenGLShaderProgramGlState : public QOpenGLShaderProgram
+{
+public:
+    ~OpenGLShaderProgramGlState();
+};
+
+
+typedef std::unique_ptr<OpenGLShaderProgramGlState> ShaderPtr;
+
+
 class ShaderResource
 {
 public:

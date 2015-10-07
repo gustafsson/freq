@@ -46,7 +46,7 @@ Source2Pbo::~Source2Pbo()
     }
 
     if (chunk_pbo_)
-        glDeleteBuffers (1, &chunk_pbo_);
+        GlState::glDeleteBuffers (1, &chunk_pbo_);
 }
 
 

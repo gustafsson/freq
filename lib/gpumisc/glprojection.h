@@ -39,10 +39,14 @@ public:
     void rotate(vectord axis, double rad);
     void mult(const matrixd& m, const matrixd& m_inverse);
 
+    vectord camera() const;
     vectord project(vectord obj, bool *r=0) const;
+    tvector<2,float> project2d(vectord obj) const;
     vectord unProject(vectord win, bool *r=0) const;
     void computeUnitsPerPixel( vectord p, vectord::T& timePerPixel, vectord::T& scalePerPixel ) const;
     vectord::T computePixelDistance( vectord p1, vectord p2 ) const;
+    tvector<2,float> projectPartialDerivatives_xz( vectord p, tvector<2,double> d ) const;
+
 private:
     bool mutable valid_mvp_=false;
     bool mutable valid_mvp_inverse_=false;

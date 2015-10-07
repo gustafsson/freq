@@ -14,8 +14,7 @@ public:
 
     const vectord& getCamera() const { return camera; }
 
-    std::vector<vectord> clipFrustum( vectord corner[4], vectord* closest_i=0 ) const;
-    std::vector<vectord> clipFrustum( std::vector<vectord> l, vectord* closest_i=0 ) const;
+    void clipFrustum( std::vector<vectord>& l, vectord* closest_i=0 ) const;
     std::vector<vectord> visibleXZ();
 
 private:

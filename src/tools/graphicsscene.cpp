@@ -3,6 +3,7 @@
 #include "GlException.h"
 #include "tools/support/toolselector.h"
 #include "tools/support/renderviewinfo.h"
+#include "glstate.h"
 
 #include <QTimer>
 #include <QGraphicsSceneMouseEvent>
@@ -52,7 +53,6 @@ void GraphicsScene::
 
     try { {
         GlException_CHECK_ERROR();
-        renderview_->initializeGL();
 
         float dpr = painter->device ()->devicePixelRatio();
         renderview_->model->render_settings.dpifactor = dpr;
@@ -61,13 +61,6 @@ void GraphicsScene::
         w *= dpr;
         h *= dpr;
 
-        renderview_->setStates();
-
-        {
-            TIME_PAINTGL_DETAILS TaskTimer tt("glClear");
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        }
-
         QRect rect = QRectF(rectf.topLeft(), QSizeF(rectf.width ()-1, rectf.height ()-1)).toRect ();
         // QRect rect = tool_selector->parentTool()->geometry();
         rect.setWidth (rect.width ()*dpr);
@@ -75,7 +68,15 @@ void GraphicsScene::
         rect.setLeft (rect.left ()*dpr);
         rect.setTop (rect.top ()*dpr);
 
+        GlState::assume_default_gl_states ();
         renderview_->resizeGL( rect, QSize(w,h) );
+        renderview_->initializeGL();
+        renderview_->setStates();
+
+        {
+            TIME_PAINTGL_DETAILS TaskTimer tt("glClear");
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        }
 
         // This changes state. Shouldn't be a part of rendering.
         renderview_->model->recompute_extent ();

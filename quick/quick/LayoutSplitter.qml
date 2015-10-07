@@ -3,6 +3,10 @@ import QtQuick.Layouts 1.1
 
 Rectangle {
     id: divider
+
+    property Item prevSibbling
+    property Item nextSibbling
+
     Layout.fillWidth: true
     height: 0
     opacity: 0.0
@@ -10,9 +14,9 @@ Rectangle {
     z: 1
 
     onYChanged: {
-        heightmap1.height = y
-        heightmap2.y = y
-        heightmap2.height = parent.height-y
+        prevSibbling.height = y
+        nextSibbling.y = y
+        nextSibbling.height = parent.height-y
     }
 
     Rectangle {
@@ -26,7 +30,7 @@ Rectangle {
 
     Rectangle {
         anchors.fill: parent
-        anchors.topMargin: heightmap1.isIOS ? -50 : -5
+        anchors.topMargin: prevSibbling.isIOS ? -50 : -5
         anchors.bottomMargin: anchors.topMargin
         opacity: 0.0
 

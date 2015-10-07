@@ -22,6 +22,7 @@ public:
     BlockInitializer(BlockLayout bl, VisualizationParams::const_ptr vp, BlockCache::const_ptr cache);
     BlockInitializer(BlockInitializer const&) = delete;
     BlockInitializer& operator=(BlockInitializer const&) = delete;
+    ~BlockInitializer();
 
     /**
      * @brief fillBlockFromOthers fills a block with data from other blocks.
@@ -35,6 +36,7 @@ private:
     BlockLayout block_layout_;
     VisualizationParams::const_ptr visualization_params_;
     BlockCache::const_ptr cache_;
+    unsigned fbo_;
 
     std::shared_ptr<Merge::MergerTexture> merger_;
 public:

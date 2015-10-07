@@ -19,7 +19,7 @@ SelectionRenderer::~SelectionRenderer()
     }
 
     if (vertexbuffer)
-        glDeleteBuffers (1, &vertexbuffer);
+        GlState::glDeleteBuffers (1, &vertexbuffer);
 }
 
 

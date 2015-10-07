@@ -107,6 +107,9 @@ Intervals::
 Intervals& Intervals::
         operator |= (const Intervals& b)
 {
+    if (this == &b)
+        return *this;
+
     for (const Interval& r: b)
         operator |= ( r );
     return *this;
@@ -114,7 +117,7 @@ Intervals& Intervals::
 
 
 Intervals& Intervals::
-        operator |= (const Interval& r)
+        operator |= (const Interval r)
 {
     if (0==r.count())
         return *this;
@@ -160,6 +163,12 @@ Intervals& Intervals::
 Intervals& Intervals::
         operator -= (const Intervals& b)
 {
+    if (this == &b)
+    {
+        this->clear ();
+        return *this;
+    }
+
     for (const Interval& r: b)
         operator-=( r );
     return *this;
@@ -167,7 +176,7 @@ Intervals& Intervals::
 
 
 Intervals& Intervals::
-        operator -= (const Interval& r)
+        operator -= (const Interval r)
 {
     if (0==r.count())
         return *this;
@@ -216,7 +225,7 @@ Intervals& Intervals::
 
 
 Intervals& Intervals::
-        operator >>= (const IntervalType& b)
+        operator >>= (const IntervalType b)
 {
     if (b < 0)
         return *this <<= -b;
@@ -240,7 +249,7 @@ Intervals& Intervals::
 
 
 Intervals& Intervals::
-        operator <<= (const IntervalType& b)
+        operator <<= (const IntervalType b)
 {
     if (b < 0)
         return *this >>= -b;
@@ -266,6 +275,9 @@ Intervals& Intervals::
 Intervals& Intervals::
         operator &= (const Intervals& b)
 {
+    if (this == &b)
+        return *this;
+
     // TODO optimize
     Intervals rebuild;
 
@@ -279,7 +291,7 @@ Intervals& Intervals::
 
 
 Intervals& Intervals::
-        operator &= (const Interval& r)
+        operator &= (const Interval r)
 {
     if (0==r.count())
     {
@@ -332,13 +344,18 @@ Intervals& Intervals::
 Intervals& Intervals::
         operator ^= (const Intervals& b)
 {
+    if (this == &b) {
+        this->clear ();;
+        return *this;
+    }
+
     *this = (*this - b) | (b - *this);
     return *this;
 }
 
 
 Intervals& Intervals::
-        operator*=(const float& scale)
+        operator*=(const float scale)
 {
     base::iterator itr;
     for (itr = base::begin(); itr!=base::end(); itr++) {
@@ -353,19 +370,22 @@ Intervals& Intervals::
 bool Intervals::
         contains    (const Intervals& t) const
 {
+    if (this == &t)
+        return true;
+
     return (*this & t) == t;
 }
 
 
 bool Intervals::
-        contains    (const Interval& t) const
+        contains    (const Interval t) const
 {
     return (*this & t) == t;
 }
 
 
 bool Intervals::
-        contains    (const IntervalType& t) const
+        contains    (const IntervalType t) const
 {
     if (t >= Interval::IntervalType_MAX)
         return false;
@@ -524,13 +544,6 @@ UnsignedIntervalType Intervals::
     }
 
     return c;
-}
-
-
-bool Intervals::
-        testSample( IntervalType const& p ) const
-{
-    return *this & Interval( p, p+1 );
 }
 
 

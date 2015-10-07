@@ -14,7 +14,7 @@ class Block;
 
 namespace BlockManagement {
 class Fbo2Block;
-
+class MipmapBuilder;
 
 /**
  * @brief The BlockUpdater class is safe to use from multiple threads.
@@ -43,11 +43,15 @@ public:
     void queueUpdate(pBlock b, DrawFunc && f);
     void clearQueue();
 
+    MipmapBuilder* mipmapbuilder();
+
 private:
     shared_state<std::list<std::pair<pBlock, DrawFunc>>> queue_;
     // keep DrawFunc in q_success_ until next processUpdates to not release resources before glFlush between frames
     std::list<std::pair<pBlock, DrawFunc>> q_success_;
     std::unique_ptr<Heightmap::BlockManagement::Fbo2Block> fbo2block_;
+
+    std::unique_ptr<MipmapBuilder> mipmapbuilder_;
 };
 
 

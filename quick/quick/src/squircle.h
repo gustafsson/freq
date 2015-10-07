@@ -23,6 +23,7 @@ class Squircle : public QQuickItem
     Q_PROPERTY(QString displayedHeight READ displayedHeight WRITE setDisplayedHeight NOTIFY displayedHeightChanged)
     Q_PROPERTY(QString freqAxis READ freqAxis WRITE setFreqAxis NOTIFY freqAxisChanged)
     Q_PROPERTY(float equalizeColors READ equalizeColors WRITE setEqualizeColors NOTIFY equalizeColorsChanged)
+    Q_PROPERTY(float visibleTimeAxis READ visibleTimeAxis WRITE setVisibleTimeAxis NOTIFY visibleTimeAxisChanged)
     Q_PROPERTY(bool isIOS READ isIOS CONSTANT)
 
 public:
@@ -63,6 +64,9 @@ public:
     float equalizeColors();
     void setEqualizeColors(float);
 
+    float visibleTimeAxis();
+    void setVisibleTimeAxis(float);
+
     bool isIOS() const;
 
     Tools::RenderModel* renderModel() { return &render_model; }
@@ -80,6 +84,7 @@ signals:
     void displayedHeightChanged();
     void freqAxisChanged();
     void equalizeColorsChanged();
+    void visibleTimeAxisChanged();
 
     void refresh();
 

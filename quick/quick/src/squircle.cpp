@@ -212,6 +212,26 @@ void Squircle::
 }
 
 
+float Squircle::
+        visibleTimeAxis()
+{
+    return render_model.render_settings.draw_t;
+}
+
+
+void Squircle::
+        setVisibleTimeAxis(float v)
+{
+    bool bv = v;
+    if (bv != render_model.render_settings.draw_t)
+    {
+        render_model.render_settings.draw_t = bv;
+        render_model.render_settings.draw_hz = bv;
+        emit visibleTimeAxisChanged ();
+    }
+}
+
+
 QString Squircle::
         displayedTransformDetails() const
 {

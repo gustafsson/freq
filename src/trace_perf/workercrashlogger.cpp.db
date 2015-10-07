@@ -2,7 +2,7 @@ Init
 0.001
 
 Catch info from a crashed worker as it happens
-0.002
+0.004
 
 Support not consuming workers
 0.001

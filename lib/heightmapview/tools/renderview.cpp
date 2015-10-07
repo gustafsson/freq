@@ -43,7 +43,6 @@
 #include <QEvent>
 #include <QGraphicsSceneMouseEvent>
 #include <QGLContext>
-#include <QGraphicsView>
 
 #include <boost/foreach.hpp>
 
@@ -182,6 +181,7 @@ void RenderView::
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, defaultMaterialSpecular);
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0.0f);
 #endif
+    GlState::set_default_gl_states_and_sync ();
 }
 
 
@@ -327,25 +327,12 @@ void RenderView::
             double length = model->tfr_mapping ()->length();
             TIME_PAINTGL_DETAILS TaskTimer tt("Draw axes (%g)", length);
 
-            // setRotationForAxes messes with render_settings, this should be covered by RenderAxes
-            bool draw_piano = model->render_settings.draw_piano;
-            bool draw_hz = model->render_settings.draw_hz;
-            bool draw_t = model->render_settings.draw_t;
-
-            // apply rotation again, and make drawAxes use it
-            glProjection drawAxes_rotation = gl_projection;
-            drawAxes_rotation.modelview *= setRotationForAxes();
-
             Heightmap::FreqAxis display_scale = model->tfr_mapping ().read()->display_scale();
             GlException_SAFE_CALL( _renderaxes->drawAxes(
                                &model->render_settings,
-                               &drawAxes_rotation,
-                               display_scale, length ) );
+                               &gl_projection,
+                               display_scale, length, vectord{c.xscale, 1, c.zscale} ) );
             model->render_settings.last_axes_length = length;
-
-            model->render_settings.draw_piano = draw_piano;
-            model->render_settings.draw_hz = draw_hz;
-            model->render_settings.draw_t = draw_t;
         }
     }
 
@@ -455,49 +442,5 @@ void RenderView::
     if (model->render_settings.log_scale.TimeStep (0.05f))
         redraw ();
 }
-
-
-matrixd RenderView::
-        setRotationForAxes()
-{
-    const auto c = *model->camera.read ();
-    matrixd M = matrixd::identity ();
-    double a = c.effective_ry();
-    double dyx2 = fabsf(fabsf(fmodf(a + 180, 360)) - 180);
-    double dyx = fabsf(fabsf(fmodf(a + 0, 360)) - 180);
-    double dyz2 = fabsf(fabsf(fmodf(a - 90, 360)) - 180);
-    double dyz = fabsf(fabsf(fmodf(a + 90, 360)) - 180);
-
-    double limit = 5, middle=45;
-    model->render_settings.draw_axis_at0 = 0;
-    if (c.r[0] < limit)
-    {
-        double f = 1 - c.r[0] / limit;
-
-        if (dyx<middle)
-            M *= matrixd::rot (f*-90, 1-dyx/middle,0,0);
-        if (dyx2<middle)
-            M *= matrixd::rot (f*90, 1-dyx2/middle,0,0);
-
-        if (dyz<middle)
-            M *= matrixd::rot (f*-90,0,0,1-dyz/middle);
-        if (dyz2<middle)
-            M *= matrixd::rot (f*90,0,0,1-dyz2/middle);
-
-        if (dyx<middle || dyx2<middle)
-        {
-            model->render_settings.draw_hz = false;
-            model->render_settings.draw_piano = false;
-            model->render_settings.draw_axis_at0 = dyx<middle?1:-1;
-        }
-        if (dyz<middle || dyz2<middle)
-        {
-            model->render_settings.draw_t = false;
-            model->render_settings.draw_axis_at0 = dyz2<middle?1:-1;
-        }
-    }
-    return M;
-}
-
 
 } // namespace Tools

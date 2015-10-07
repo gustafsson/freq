@@ -23,7 +23,10 @@ Wave2Fbo::
     :
       //N(128*1024) // 1 MB
       //N_(8*1024) // 64 KB
-      N_(518) // 2*BlockTextures::getWidth + 4 + 2
+
+      //2*BlockTextures::getWidth + 4 + 2
+      N_(2*256 + 4 + 2)
+      //N_(2*512 + 4 + 2)
 {
 }
 
@@ -173,6 +176,8 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
         prepTriangleStrip(Heightmap::pBlock block, Signal::pMonoBuffer b)
 {
     GlGroupMarker gpm("Wave2Fbo");
+
+    EXCEPTION_ASSERT_EQUALS(2*block->block_layout().texels_per_row()+4+2, N_);
 
     if (!program_) {
         program_ = ShaderResource::loadGLSLProgramSource (

@@ -630,14 +630,15 @@ void StftDesc::
 
         d.enable_inverse (false);
         d.setWindow (WindowType_Rectangular, 0.0);
-        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(1,2), 0 ), Interval(-c,c) );
-        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-1,1), 0 ), Interval(-c,c) );
-        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-1,0), 0 ), Interval(-c,c) );
-        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(0,1), 0 ), Interval(-c,c) );
-        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(0,c), 0 ), Interval(-c,c+c) );
-        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-c,0), 0 ), Interval(-c-c,c) );
-        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-2,-1), 0 ), Interval(-c,c) );
-        EXCEPTION_ASSERT_EQUALS( d.affectedInterval (Interval(1,2) ), Interval(-c/2,c/2+c) );
+        int i = c/2;
+        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(1,2), 0 ), Interval(-i,c+i) );
+        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-1,1), 0 ), Interval(-c-i,c+i) );
+        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-1,0), 0 ), Interval(-c-i,i) );
+        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(0,1), 0 ), Interval(-i,c+i) );
+        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(0,c), 0 ), Interval(-i,c+i) );
+        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-c,0), 0 ), Interval(-c-i,i) );
+        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-2,-1), 0 ), Interval(-c-i,i) );
+        EXCEPTION_ASSERT_EQUALS( d.affectedInterval (Interval(1,2) ), Interval(-c,c) );
 
         for (float overlap : std::vector<float>{0.5, 0.75, 1-1/8.0, 0.98}) {
             d.setWindow (WindowType_Rectangular, overlap);

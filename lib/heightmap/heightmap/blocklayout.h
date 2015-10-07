@@ -22,7 +22,7 @@ public:
      * @param block_width The width of the block texture in texels.
      * @param block_height The height of the block texture in texels.
      * @param fs The sample rate of the raw data. For mapping to Signal::Interval.
-     * @param mipmaps How many mipmap levels that are used for increasing
+     * @param mipmaps The highest mipmap level that is used for increasing
      * contrast. Higher mipmap levels causes the overlapping margin to
      * increase. If no mipmap levels are used (mipmaps=0) the margin is 0.5
      * texels on each side so that adjacent blocks are rendered seamless.

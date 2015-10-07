@@ -6,6 +6,7 @@
 
 #include "glPushContext.h"
 #include "GlException.h"
+#include "glstate.h"
 
 #include <QColor>
 

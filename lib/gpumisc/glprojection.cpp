@@ -100,7 +100,22 @@ vectord::T glProjecter::
 {
     vectord screen1 = project( p1 );
     vectord screen2 = project( p2 );
-    return (screen2-screen1).length();
+    screen1 -= screen2;
+    return std::sqrt(screen1[0]*screen1[0]+screen1[1]*screen1[1]);
+}
+
+
+tvector<2,float> glProjecter::
+        projectPartialDerivatives_xz( vectord p, tvector<2,double> d ) const
+{
+    vectord screen = project( p );
+    vectord screen_x = project( p + vectord(d[0],0,0) );
+    vectord screen_z = project( p + vectord(0,0,d[1]) );
+    screen_x -= screen;
+    screen_z -= screen;
+    return tvector<2,float>{
+        std::sqrt((float)(screen_x[0]*screen_x[0]+screen_x[1]*screen_x[1]))/d[0],
+        std::sqrt((float)(screen_z[0]*screen_z[0]+screen_z[1]*screen_z[1]))/d[1]};
 }
 
 
@@ -236,6 +251,7 @@ void glProjecter::
         mult(const matrixd& m, const matrixd& m_inverse)
 {
     // glProjecter assumes that m[3],m[7],m[11]==0 and m[15]=1 in both mv_ and mv_inverse_.
+#ifdef _DEBUG
     if (m[0][3] != 0 || m[1][3] != 0 || m[2][3] != 0 || m[3][3] != 1)
     {
         PRINTMATRIX(m);
@@ -246,10 +262,21 @@ void glProjecter::
         PRINTMATRIX(m_inverse);
         EXCEPTION_ASSERT(false);
     }
+#endif
 
     mv_ *= m;
     mv_inverse_ = m_inverse * mv_inverse_;
     valid_mvp_inverse_ = valid_mvp_ = false;
+}
+
+
+vectord glProjecter::
+        camera() const
+{
+    // get camera position
+    // https://www.opengl.org/discussion_boards/showthread.php/178484-Extracting-camera-position-from-a-ModelView-Matrix
+    const auto& pos = mv_inverse_[3];
+    return vectord{pos[0],pos[1],pos[2]};
 }
 
 
@@ -259,20 +286,32 @@ vectord glProjecter::
     tvector<4,double> in(obj[0],obj[1],obj[2],1.0);
     in = mvp()*in;
     if (in[3]==0.0) { if(r)*r=false; return vectord(); }
-    in[0] /= in[3];
-    in[1] /= in[3];
-    in[2] /= in[3];
-    /* Map x, y and z to range 0-1 */
-    in[0] = in[0] * 0.5 + 0.5;
-    in[1] = in[1] * 0.5 + 0.5;
-    in[2] = in[2] * 0.5 + 0.5;
+    double iz = 1/in[3];
+    in[0] = ((in[0]*iz)*0.5 + 0.5)* viewport[2] + viewport[0];
+    in[1] = ((in[1]*iz)*0.5 + 0.5)* viewport[3] + viewport[1];
+    in[2] = (in[2]*iz)*0.5 + 0.5;
+//    in[0] /= in[3];
+//    in[1] /= in[3];
+//    in[2] /= in[3];
+//    /* Map x, y and z to range 0-1 */
+//    in[0] = in[0] * 0.5 + 0.5;
+//    in[1] = in[1] * 0.5 + 0.5;
+//    in[2] = in[2] * 0.5 + 0.5;
 
-    /* Map x,y to viewport */
-    in[0] = in[0] * viewport[2] + viewport[0];
-    in[1] = in[1] * viewport[3] + viewport[1];
+//    /* Map x,y to viewport */
+//    in[0] = in[0] * viewport[2] + viewport[0];
+//    in[1] = in[1] * viewport[3] + viewport[1];
 
     if(r)*r=true;
     return vectord(in[0],in[1],in[2]);
+}
+
+
+tvector<2,float> glProjecter::
+        project2d(vectord obj) const
+{
+    vectord p = project(obj);
+    return tvector<2,float>(p[0],p[1]);
 }
 
 

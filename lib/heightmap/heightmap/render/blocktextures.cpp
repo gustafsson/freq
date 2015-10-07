@@ -19,6 +19,18 @@
 namespace Heightmap {
 namespace Render {
 
+/**
+ * @brief mipmaps should match how the number of mipmap levels being used
+ * in heightmap.frag.
+ */
+#if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
+// slow GPU
+const int BlockTextures::max_level=0;
+#else
+const int BlockTextures::max_level=5;
+#endif
+
+
 class BlockTexturesImpl
 {
 public:
@@ -41,7 +53,7 @@ public:
     unsigned getHeight() const { return height_; }
 
     static void setupTexture(unsigned name, unsigned width, unsigned height);
-    static void setupTexture(unsigned name, unsigned width, unsigned height, bool mipmaps);
+    static void setupTexture(unsigned name, unsigned width, unsigned height, int max_level);
     static unsigned allocated_bytes_per_element();
 
 private:
@@ -181,9 +193,9 @@ void BlockTextures::
 
 
 void BlockTextures::
-        setupTexture(unsigned name, unsigned width, unsigned height, bool mipmaps)
+        setupTexture(unsigned name, unsigned width, unsigned height, int max_level)
 {
-    BlockTexturesImpl::setupTexture (name,width,height,mipmaps);
+    BlockTexturesImpl::setupTexture (name,width,height,max_level);
 }
 
 
@@ -254,8 +266,8 @@ void BlockTexturesImpl::
     int new_textures = target_capacity - textures.size ();
     int mipmapfactor = 2;
 
-    GLuint t[new_textures];
-    glGenTextures (new_textures, t);
+    std::vector<GLuint> t(new_textures);
+    glGenTextures (new_textures, &t[0]);
     INFO Log("BlockTextures: allocating %d new textures from name %d (had %d of which %d were used). %s")
             % new_textures % t[0] % textures.size () % getUseCount()
             % DataStorageVoid::getMemorySizeText (
@@ -314,33 +326,46 @@ int BlockTexturesImpl::
 void BlockTexturesImpl::
         setupTexture(unsigned name, unsigned w, unsigned h)
 {
-    setupTexture(name, w, h, BlockTextures::mipmaps > 0);
+    setupTexture(name, w, h, BlockTextures::max_level);
 }
 
 
 void BlockTexturesImpl::
-        setupTexture(unsigned name, unsigned w, unsigned h, bool mipmaps)
+        setupTexture(unsigned name, unsigned w, unsigned h, int max_level)
 {
     glBindTexture(GL_TEXTURE_2D, name);
     // Compatible with GlFrameBuffer
+
+    EXCEPTION_ASSERT_LESS(0u,w);
+    EXCEPTION_ASSERT_LESS(0u,h);
+
+    max_level = std::min(max_level,(int)log2(std::max(w,h)));
+
 #if defined(GL_ES_VERSION_2_0)
     // https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_storage.txt
-    int mipmaplevels = std::max(1,std::min(1+BlockTextures::mipmaps,(int)log2(std::max(w,h))-1));
-    if (!mipmaps)
-        mipmaplevels = 1;
-
     #ifdef GL_ES_VERSION_3_0
-        GlException_SAFE_CALL( glTexStorage2D ( GL_TEXTURE_2D, mipmaplevels, GL_R16F, w, h));
+        GlException_SAFE_CALL( glTexStorage2D ( GL_TEXTURE_2D, max_level+1, GL_R16F, w, h));
     #else
-        GlException_SAFE_CALL( glTexStorage2DEXT ( GL_TEXTURE_2D, mipmaplevels, GL_R16F_EXT, w, h));
+        GlException_SAFE_CALL( glTexStorage2DEXT ( GL_TEXTURE_2D, max_level+1, GL_R16F_EXT, w, h));
     #endif
 #else
 //    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // GL 1.4
-    GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, w, h, 0, GL_RED, GL_FLOAT, 0) );
-//    GlException_SAFE_CALL( glTexStorage2D (GL_TEXTURE_2D, mipmaplevels, GL_R16F, w, h) ); // GL 4.0
+    // must create all mipmap levels for mipmapping to be complete
+    for (int i=0; i<=max_level; i++)
+    {
+        int wi = std::max(1u, w>>i);
+        int hi = std::max(1u, h>>i);
+        GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, i, GL_R16F, wi, hi, 0, GL_RED, GL_FLOAT, 0) );
+        if (wi==1 || hi==1)
+            break;
+    }
+
+//    GlException_SAFE_CALL( glTexStorage2D (GL_TEXTURE_2D, mipmaplevels, GL_R16F, w, h) ); // GL 4.2
 
 #endif
+    //    glGenerateMipmap (GL_TEXTURE_2D); // another way to make sure all mipmaps are allocated, but this allocates more than necessary
 
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, max_level );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );

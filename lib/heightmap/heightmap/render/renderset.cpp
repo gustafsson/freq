@@ -22,9 +22,9 @@ RenderSet::references_t& operator|=(RenderSet::references_t& A, const RenderSet:
 
 
 RenderSet::references_t RenderSet::
-        makeSet(Reference r, LevelOfDetail lod)
+        makeSet(Reference r)
 {
-    return RenderSet::references_t{RenderSet::references_t::value_type(r,lod)};
+    return RenderSet::references_t{RenderSet::references_t::value_type(r,CornerResolution{0,0,0,0,0,0,0,0})};
 }
 
 
@@ -100,13 +100,13 @@ RenderSet::references_t RenderSet::
     if (lod.need_s ())
     {
         LOG_TRAVERSAL TaskInfo ti(boost::format("renderset %s need_s, s=%g, t=%g")
-                    % render_info->visible_region (ref) % lod.s () % lod.t ());
+                    % render_info->visible_region (ref) % lod.s % lod.t);
 
         R |= computeChildrenRenderSet( ref.bottom() );
         R |= computeChildrenRenderSet( ref.top() );
     } else if (lod.need_t ()) {
-        LOG_TRAVERSAL TaskInfo ti(boost::format("renderset %s need_t, s=%s, t=%g")
-                    % render_info->visible_region (ref) % lod.s () % lod.t ());
+        LOG_TRAVERSAL TaskInfo ti(boost::format("renderset %s need_t, s=%g, t=%g")
+                    % render_info->visible_region (ref) % lod.s % lod.t);
 
         R |= computeChildrenRenderSet( ref.left() );
         // The starting reference spans the entire dataset. Could skip
@@ -114,10 +114,10 @@ RenderSet::references_t RenderSet::
         //if ( render_info->overlapping_region(ref.right (),false).a.time < L)
             R |= computeChildrenRenderSet( ref.right() );
     } else if (lod.ok ()) {
-        R |= references_t::value_type(ref,lod);
+        R |= references_t::value_type(ref,render_info->cornerResolution(ref));
     } else {
-        LOG_TRAVERSAL TaskInfo ti(boost::format("renderset %s invalid, s=%s, t=%g")
-                    % render_info->visible_region (ref) % lod.s () % lod.t ());
+        LOG_TRAVERSAL TaskInfo ti(boost::format("renderset %s invalid, s=%g, t=%g")
+                    % render_info->visible_region (ref) % lod.s % lod.t);
         // ref is not within the current view frustum
     }
 

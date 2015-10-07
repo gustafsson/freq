@@ -5,5 +5,6 @@
         <file>app.qml</file>
         <file>LayoutSplitter.qml</file>
         <file>TransformSettings.qml</file>
+        <file>Greeting.qml</file>
     </qresource>
 </RCC>

@@ -24,8 +24,8 @@ public:
     @throws GlException If OpenGL encountered an error.
     */
     GlFrameBuffer(int width, int height);
-    GlFrameBuffer(unsigned textureid, int width, int height);
-    GlFrameBuffer(const GlTexture& texture);
+    GlFrameBuffer(unsigned textureid, int width, int height, int level=0);
+    GlFrameBuffer(const GlTexture& texture, int level=0);
 
     /**
     Releases the frame buffer object.
@@ -87,26 +87,26 @@ private:
     /**
     OpenGL frame buffer object id for the frame buffer.
     */
-    unsigned int fboId_;
+    unsigned int fboId_ = 0;
 
     /**
     OpenGL render buffer to bind to the depth buffer in the frame buffer.
     */
-    unsigned int depth_stencil_buffer_;
+    unsigned int depth_stencil_buffer_ = 0;
 
     /**
     Used by (un)bindFrameBuffer to restore the state after binding.
      */
-    int prev_fbo_;
+    int prev_fbo_ = 0;
 
     /**
       Texture to access the frame buffer.
       */
-    GlTexture* own_texture_;
-    unsigned textureid_;
-    bool enable_depth_component_;
+    GlTexture* own_texture_ = 0;
+    unsigned textureid_ = 0;
+    bool enable_depth_component_ = false;
 
-    int texture_width_, texture_height_;
+    int texture_width_ = 0, texture_height_ = 0, level_ = 0;
 
     void init();
 

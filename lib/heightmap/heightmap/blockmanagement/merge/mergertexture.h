@@ -15,11 +15,15 @@ namespace Merge {
  * stub the contents of a new block.
  *
  * It should use OpenGL textures to do the merge.
+ *
+ * If quality: 0 MergerTexture will simply rely on mipmaps to have done proper filtering in advance.
+ * If quality: 1 MergerTexture will rely on mipmaps "one level down", i.e take the max out of four neightbours.
+ * If quality: 2 MergerTexture will examine all individual texels underlying a target texel.
  */
 class MergerTexture
 {
 public:
-    MergerTexture(BlockCache::const_ptr cache, BlockLayout block_layout, bool disable_merge=false);
+    MergerTexture(BlockCache::const_ptr cache, BlockLayout block_layout, int quality=1);
     ~MergerTexture();
 
     /**
@@ -36,21 +40,21 @@ private:
     unsigned vbo_;
     GlTexture::ptr tex_;
     const BlockLayout block_layout_;
-    const bool disable_merge_;
+    const int quality_;
     BlockCache::cache_t cache_clone;
     ShaderPtr programp_;
     unsigned program_;
 
     // glsl uniforms
-    int qt_Vertex = 0,
-        qt_MultiTexCoord0 = 0,
-        qt_Texture0 = 0,
-        invtexsize = 0,
-        uniProjection = 0,
-        uniModelView = 0;
+    int qt_Vertex = -2,
+        qt_MultiTexCoord0 = -2,
+        qt_Texture0 = -2,
+        invtexsize = -2,
+        uniProjection = -2,
+        uniModelView = -2;
 
     void init();
-    Signal::Intervals fillBlockFromOthersInternal( pBlock block );
+    Signal::Intervals fillBlockFromOthersInternal( Block const* block );
 
     /**
       Add block information from another block

@@ -2,6 +2,7 @@
 #include "tools/renderview.h"
 #include "gl.h"
 #include "glPushContext.h"
+#include "glstate.h"
 
 namespace Tools {
 namespace Widgets {

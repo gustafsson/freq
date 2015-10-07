@@ -1,5 +1,6 @@
 #include "toolglbrush.h"
 #include "exceptionassert.h"
+#include "glstate.h"
 
 namespace Tools {
 namespace Support {

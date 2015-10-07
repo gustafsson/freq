@@ -279,6 +279,7 @@ ToolFactory::
 
     delete _timeline_view;
 
+    _render_view->glwidget->makeCurrent ();
     delete _render_view;
 }
 

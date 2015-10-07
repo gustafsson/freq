@@ -1,11 +1,11 @@
 #include "block.h"
 #include "GlTexture.h"
-#include "heightmap/render/blocktextures.h"
-#include "heightmap/blockmanagement/blockupdater.h"
-
 #include "tasktimer.h"
 #include "log.h"
 
+#include "heightmap/render/blocktextures.h"
+#include "heightmap/blockmanagement/blockupdater.h"
+#include "heightmap/blockmanagement/mipmapbuilder.h"
 
 //#define BLOCK_INFO
 #define BLOCK_INFO if(0)
@@ -31,11 +31,12 @@ Block::
     texture_(Render::BlockTextures::get1()),
     updater_(updater)
 {
-    if (texture_)
-    {
-        EXCEPTION_ASSERT_EQUALS(texture_->getWidth (), block_layout.texels_per_row ());
-        EXCEPTION_ASSERT_EQUALS(texture_->getHeight (), block_layout.texels_per_column ());
-    }
+    EXCEPTION_ASSERT_EQUALS(texture_->getWidth (), block_layout.texels_per_row ());
+    EXCEPTION_ASSERT_EQUALS(texture_->getHeight (), block_layout.texels_per_column ());
+
+#if GL_EXT_debug_label
+    glLabelObjectEXT(GL_TEXTURE, texture_->getOpenGlTextureId (), 0, (boost::format("%s") % getVisibleRegion ()).str().c_str());
+#endif
 }
 
 
@@ -46,60 +47,49 @@ Block::pGlTexture Block::
 }
 
 
-Block::pGlTexture Block::
-        sourceTexture() const
+int Block::
+        texture_ota() const
 {
-    Block::pGlTexture t = new_texture_;
-    return t ? t: texture_;
+    return texture_ota_ ? texture_ota_ ->getOpenGlTextureId () : 0;
 }
 
 
 void Block::
-        setTexture(Block::pGlTexture t)
+        generateMipmap()
 {
-    // Keep texture_ until it has been flushed
-    new_texture_ = t;
-#if GL_EXT_debug_label
-    if (texture_ != t)
-        glLabelObjectEXT(GL_TEXTURE, new_texture_->getOpenGlTextureId (), 0, (boost::format("%s") % getVisibleRegion ()).str().c_str());
-#endif
-}
-
-
-void Block::
-        showNewTexture(bool use_mipmap)
-{
-    // release previously replaced texture, see below
-    texture_hold_.reset ();
-
-    Block::pGlTexture t;
-    t.swap (new_texture_);
-    if (t) {
-        // hold on to the old texture until the next frame to prevent the other thread from
-        // replacing its contents right away
-        texture_hold_ = texture_;
-
-        // use the new_texture_
-        texture_ = t;
-    }
-
-    // check if mipmap settings have changed, or if mipmap is needed for a new texture
-    bool has_mipmap = texture_->getMinFilter () == GL_LINEAR_MIPMAP_LINEAR;
-    if (has_mipmap != use_mipmap || (use_mipmap && t))
+    // don't generate any mipmap if the min filter doesn't use mipmaps
+    switch(texture_->getMinFilter ())
     {
-        texture_->bindTexture ();
-        if (use_mipmap)
-        {
-            // recalculate mipmap if reenabled or got new texture
-            texture_->setMinFilter (GL_LINEAR_MIPMAP_LINEAR);
-            glGenerateMipmap (GL_TEXTURE_2D);
-        }
-        else
-        {
-            // disable mipmap
-            texture_->setMinFilter (GL_LINEAR);
-        }
+    case GL_NEAREST:
+    case GL_LINEAR:
+        return;
     }
+
+    this->updater ()->mipmapbuilder ()->generateMipmap (*texture_, BlockManagement::MipmapBuilder::MipmapOperator_Max, Render::BlockTextures::max_level);
+
+    if (texture_ota_)
+        this->updater ()->mipmapbuilder ()->generateMipmap (*texture_ota_, *texture_, BlockManagement::MipmapBuilder::MipmapOperator_OTA);
+}
+
+
+void Block::
+        enableOta(bool v)
+{
+    if (v && !texture_ota_)
+    {
+        // could use a separate Render::BlockTextures for this to conserve memory
+        // besides, as only the highest mipmaps are actually used there could be a single texture only used in building
+        GLuint tex;
+        int w = Render::BlockTextures::getWidth ()/2;
+        int h = Render::BlockTextures::getHeight ()/2;
+        glGenTextures (1, &tex); // GlTexture becomes responsible for glDeleteTextures
+        texture_ota_.reset (new GlTexture(tex, w, h, true));
+        Render::BlockTextures::setupTexture(tex, w, h, 1000);
+        texture_ota_->setMinFilter(GL_LINEAR_MIPMAP_LINEAR);
+    }
+
+    if (!v && texture_ota_)
+        texture_ota_.reset ();
 }
 
 

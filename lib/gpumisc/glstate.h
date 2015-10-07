@@ -15,7 +15,9 @@ namespace GlState
     void glDisable (GLenum cap, bool now=false);
 
     void glBindBuffer(GLenum target, GLuint buffer);
+    void glDeleteBuffers(GLsizei n, const GLuint *buffers);
     void glUseProgram(GLuint program);
+    void notifyDeletedProgram(GLuint program);
 
     void glEnableVertexAttribArray (GLuint index);
     void glDisableVertexAttribArray (GLuint index);
@@ -41,6 +43,15 @@ namespace GlState
      * reenabled on the next sync.
      */
     void assume_default_gl_states ();
+    void set_default_gl_states_and_sync ();
+
+    /**
+     * @brief assume_default_qt_quick_states sets the states that Qt Quick sets.
+     * It is close to default_gl_states but not exactly the same.
+     *
+     * Note that QGLWidget uses the default gl states.
+     */
+    void assume_default_qt_quick_states ();
 }
 
 #endif // GLSTATE_H

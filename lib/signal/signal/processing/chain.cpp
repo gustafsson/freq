@@ -34,7 +34,7 @@ Chain::ptr Chain::
     IScheduleAlgorithm::ptr algorithm(new FirstMissAlgorithm());
     ISchedule::ptr targetSchedule(new TargetSchedule(dag, std::move(algorithm), targets));
     Workers::ptr workers(new Workers(IWorkerFactory::ptr(new CvWorker::CvWorkerFactory(targetSchedule, bedroom))));
-//    Workers::ptr workers(new Workers(IWorkerFactory::ptr(new QtEventWorker::QtEventWorkers(targetSchedule, bedroom))));
+//    Workers::ptr workers(new Workers(IWorkerFactory::ptr(new QtEventWorker::QtEventWorkerFactory(targetSchedule, bedroom))));
 
     // Add worker threads to occupy all kernels
     int reserved_threads = 0;
