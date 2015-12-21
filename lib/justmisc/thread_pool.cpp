@@ -37,7 +37,9 @@ thread_pool::
 #ifdef __clang__
                         pthread_setname_np(ss.str ().c_str ());
 #else
+#ifndef __MINGW32__
                         pthread_setname_np(pthread_self(), ss.str ().c_str ());
+#endif
 #endif
                     }
 #endif
