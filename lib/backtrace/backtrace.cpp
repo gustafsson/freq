@@ -10,7 +10,7 @@
 #include <stdio.h>
 #endif
 
-#ifndef _MSC_VER
+#ifndef _WIN32
 #include <execinfo.h>
 #else
 #include <boost/thread/mutex.hpp>
