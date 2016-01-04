@@ -167,6 +167,7 @@ protected:
       c.ContextFlags = contextFlags; \
   } while(0);
 #else
+#ifdef _MSC_VER
 // The following should be enough for walking the callstack...
 #define GET_CURRENT_CONTEXT(c, contextFlags) \
   do { \
@@ -178,6 +179,20 @@ protected:
     __asm    mov c.Ebp, ebp \
     __asm    mov c.Esp, esp \
   } while(0);
+#else
+// The following should be enough for walking the callstack...
+#define GET_CURRENT_CONTEXT(c, contextFlags) \
+  do { \
+    memset(&c, 0, sizeof(CONTEXT)); \
+    c.ContextFlags = contextFlags; \
+    __asm__(".intel_syntax;"
+        "call x;" \
+        "x: pop eax;" \
+        "mov c.Eip, eax;" \
+        "mov c.Ebp, ebp;" \
+        "mov c.Esp, esp;" ); \
+  } while(0);
+#endif
 #endif
 
 #else
