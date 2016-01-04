@@ -57,7 +57,7 @@ double Timer::elapsedAndRestart()
         PCfreq = double(li.QuadPart);
     }
     QueryPerformanceCounter(&li);
-    __int64 now = li.QuadPart;
+    int64_t now = li.QuadPart;
     double diff = double(now-start_)/PCfreq;
     start_ = now;
     return diff;
