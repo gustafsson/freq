@@ -13,7 +13,7 @@
 	clr:pure).
 */
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #define Cva_start(name, argument) Cva_list name; va_start((va_list)name,argument);
 #else
 #define Cva_start(name, argument) Cva_list name; va_start(name,argument);
@@ -22,7 +22,7 @@
 class Cva_list
 {
 public:
-#ifdef _WIN32
+#ifdef _MSC_VER
         Cva_list(va_list cheatlist):list(cheatlist) {}
 #else
         Cva_list(va_list cheatlist) { va_copy(list, cheatlist);}
