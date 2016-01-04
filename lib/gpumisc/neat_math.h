@@ -8,7 +8,7 @@
 #include <limits>
 
 // stdint
-#ifdef _WIN32
+#ifdef _MSC_VER
 typedef unsigned __int64 uint64_t;
 typedef unsigned __int32 uint32_t;
 typedef __int64 __int64_t;

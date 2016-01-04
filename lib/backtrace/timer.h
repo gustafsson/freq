@@ -20,7 +20,7 @@ public:
     double elapsedAndRestart();
 
 private:
-#ifdef _WIN32
+#ifdef _MSC_VER
     __int64 start_;
 #else
     std::chrono::high_resolution_clock::time_point start_;
