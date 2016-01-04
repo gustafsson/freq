@@ -14,7 +14,7 @@
 #include <execinfo.h>
 #else
 #include <boost/thread/mutex.hpp>
-#include "StackWalker.h"
+#include "windows/StackWalker.h"
 #include "TlHelp32.h"
 #endif
 
