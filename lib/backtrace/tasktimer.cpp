@@ -11,11 +11,11 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-#ifndef _MSC_VER
+#ifndef _WIN32
 #define MICROSEC_TIMESTAMPS
 #endif
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #include <Windows.h>
 #endif
 

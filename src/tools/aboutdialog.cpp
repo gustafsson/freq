@@ -24,7 +24,7 @@ AboutDialog::AboutDialog(Sawe::Project* project) :
 
     ui->setupUi(this);
 
-#ifdef _MSC_VER
+#ifdef _WIN32
     ui->textEdit->setHtml( ui->textEdit->toHtml().replace("file:///usr/share/sonicawe/license/license.txt", "file:///license.txt"));
 #endif
 

@@ -320,7 +320,7 @@ void Backtrace::
     // except for windows where it should takes 30 ms but
     // include a backtrace from all threads.
     {
-#ifdef _MSC_VER
+#ifdef _WIN32
         {
             // Warmpup, load modules
             Backtrace::info backtrace = Backtrace::make ();
@@ -330,7 +330,7 @@ void Backtrace::
         Timer t;
         Backtrace::info backtrace = Backtrace::make ();
         double T = t.elapsed ();
-#ifdef _MSC_VER
+#ifdef _WIN32
         EXCEPTION_ASSERT_LESS( T, 0.030f );
 #else
         EXCEPTION_ASSERT_LESS( T, 0.001f );
@@ -354,7 +354,7 @@ void Backtrace::
             string s = diagnostic_information(x);
 
             try {
-#ifdef _MSC_VER
+#ifdef _WIN32
                 EXCEPTION_ASSERTX( s.find ("throwfunction") != string::npos, s );
                 EXCEPTION_ASSERTX( s.find ("backtrace.cpp(312)") != string::npos, s );
                 EXCEPTION_ASSERTX( s.find ("Backtrace::test") != string::npos, s );

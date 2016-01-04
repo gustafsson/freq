@@ -3,7 +3,7 @@
 
 #if defined __cplusplus && !defined __OBJC__
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #include <stdlib.h> //  error C2381: 'exit' : redefinition; __declspec(noreturn) differs
 #endif
 

@@ -1,7 +1,7 @@
 #ifndef SIGNALDLL_H
 #define SIGNALDLL_H
 
-#if defined(SIGNAL_NODLL) || !defined(_MSC_VER)
+#if defined(SIGNAL_NODLL) || !defined(_WIN32)
  #define SignalDll
 #else
  #if defined(SIGNAL_EXPORTDLL)

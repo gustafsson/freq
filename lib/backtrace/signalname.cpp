@@ -7,38 +7,38 @@ const char* SignalName::
 {
     switch(signal)
     {
-#ifndef _MSC_VER
+#ifndef _WIN32
     case SIGHUP:    return "SIGHUP";    // 1, hangup
 #endif
     case SIGINT:	return "SIGINT";	// 2, interrupt
-#ifndef _MSC_VER
+#ifndef _WIN32
     case SIGQUIT:	return "SIGQUIT";	// 3, quit
 #endif
     case SIGILL:	return "SIGILL";	// 4, illegal instruction (not reset when caught)
-#ifndef _MSC_VER
+#ifndef _WIN32
     case SIGTRAP:	return "SIGTRAP";	// 5, trace trap (not reset when caught)
 #endif
     case SIGABRT:	return "SIGABRT";	// 6, abort()
     #if  (defined(_POSIX_C_SOURCE) && !defined(_DARWIN_C_SOURCE))
     case SIGPOLL:	return "SIGPOLL";	// 7, pollable event ([XSR] generated, not supported)
     #else	//  (!_POSIX_C_SOURCE || _DARWIN_C_SOURCE)
-#ifndef _MSC_VER
+#ifndef _WIN32
     case SIGEMT:	return "SIGEMT";	// 7, EMT instruction
 #endif
     #endif	//  (!_POSIX_C_SOURCE || _DARWIN_C_SOURCE)
     case SIGFPE:	return "SIGFPE";	// 8, floating point exception
-#ifndef _MSC_VER
+#ifndef _WIN32
     case SIGKILL:	return "SIGKILL";	// 9, kill (cannot be caught or ignored)
     case SIGBUS:	return "SIGBUS";	// 10, bus error
 #endif
     case SIGSEGV:	return "SIGSEGV";	// 11, segmentation violation
-#ifndef _MSC_VER
+#ifndef _WIN32
     case SIGSYS:	return "SIGSYS";	// 12, bad argument to system call
     case SIGPIPE:	return "SIGPIPE";	// 13, write on a pipe with no one to read it
     case SIGALRM:	return "SIGALRM";	// 14, alarm clock
 #endif
     case SIGTERM:	return "SIGTERM";	// 15, software termination signal from kill
-#ifndef _MSC_VER
+#ifndef _WIN32
     case SIGURG:	return "SIGURG";	// 16, urgent condition on IO channel
     case SIGSTOP:	return "SIGSTOP";	// 17, sendable stop signal not from tty
     case SIGTSTP:	return "SIGTSTP";	// 18, stop signal from tty
@@ -70,38 +70,38 @@ const char* SignalName::
 {
     switch(signal)
     {
-#ifndef _MSC_VER
+#ifndef _WIN32
     case SIGHUP:	return "hangup";	// 1
 #endif
     case SIGINT:	return "interrupt";	// 2
-#ifndef _MSC_VER
+#ifndef _WIN32
     case SIGQUIT:	return "quit";	// 3
 #endif
     case SIGILL:	return "illegal instruction (not reset when caught)";	// 4
-#ifndef _MSC_VER
+#ifndef _WIN32
     case SIGTRAP:	return "trace trap (not reset when caught)";	// 5
 #endif
     case SIGABRT:	return "abort()";	// 6
     #if  (defined(_POSIX_C_SOURCE) && !defined(_DARWIN_C_SOURCE))
     case SIGPOLL:	return "pollable event ([XSR] generated, not supported)";	// 7
     #else	/* (!_POSIX_C_SOURCE || _DARWIN_C_SOURCE) */
-#ifndef _MSC_VER
+#ifndef _WIN32
     case SIGEMT:	return "EMT instruction";	// 7
 #endif
     #endif	/* (!_POSIX_C_SOURCE || _DARWIN_C_SOURCE) */
     case SIGFPE:	return "floating point exception";	// 8
-#ifndef _MSC_VER
+#ifndef _WIN32
     case SIGKILL:	return "kill (cannot be caught or ignored)";	// 9
     case SIGBUS:	return "bus error";	// 10
 #endif
     case SIGSEGV:	return "segmentation violation";	// 11
-#ifndef _MSC_VER
+#ifndef _WIN32
     case SIGSYS:	return "bad argument to system call";	// 12
     case SIGPIPE:	return "write on a pipe with no one to read it";	// 13
     case SIGALRM:	return "alarm clock";	// 14
 #endif
     case SIGTERM:	return "software termination signal from kill";	// 15
-#ifndef _MSC_VER
+#ifndef _WIN32
     case SIGURG:	return "urgent condition on IO channel";	// 16
     case SIGSTOP:	return "sendable stop signal not from tty";	// 17
     case SIGTSTP:	return "stop signal from tty";	// 18

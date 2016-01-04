@@ -11,7 +11,7 @@
 
 #include <sys/stat.h>
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h> // gethostname
 #else
@@ -248,7 +248,7 @@ vector<string> performance_traces::
 
 #if defined(__APPLE__)
     config.push_back ("-apple");
-#elif defined(_MSC_VER)
+#elif defined(_WIN32)
     config.push_back ("-windows");
 #endif
 

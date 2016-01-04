@@ -1,6 +1,6 @@
 #ifndef USE_CUDA
 
-#if defined(_MSC_VER) && defined(FREQAXIS_CALL)
+#if defined(_WIN32) && defined(FREQAXIS_CALL)
 // defined in precompiled header
 #undef FREQAXIS_CALL
 #endif

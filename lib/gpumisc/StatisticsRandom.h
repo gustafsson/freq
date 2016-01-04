@@ -124,9 +124,9 @@ public:
 		this->voidData = voidData;
 
 		undecoratedName = typeid(data_t).name();
-#ifdef _MSC_VER
+#ifdef _WIN32
                 decoratedName = typeid(data_t).raw_name();
-#endif // _MSC_VER
+#endif // _WIN32
                 sizeOfType = sizeof(data_t);
 
 		diffSum = computeDiffSum( &data, 1 );
@@ -145,7 +145,7 @@ public:
 
 	template<typename data_t>
 	bool isType() {
-            #ifdef _MSC_VER
+            #ifdef _WIN32
                 return 0==strcmp(typeid(data_t).raw_name(), decoratedName);
             #else
                 return 0==strcmp(typeid(data_t).name(), undecoratedName);
@@ -167,7 +167,7 @@ public:
 	}
 
 	const char* getName() { return undecoratedName; }
-#ifdef _MSC_VER
+#ifdef _WIN32
 	const char* getRawName() { return decoratedName; }
 #endif
 	size_t getSizeOf() { return sizeOfType; }
@@ -182,9 +182,9 @@ public:
 protected:
 	GpuCpuVoidData* voidData;
         const char* undecoratedName;
-        #ifdef _MSC_VER
+        #ifdef _WIN32
                 const char* decoratedName;
-        #endif // _MSC_VER
+        #endif // _WIN32
 	size_t sizeOfType;
 
 	long double max;

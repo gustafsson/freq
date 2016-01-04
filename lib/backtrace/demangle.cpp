@@ -18,7 +18,7 @@ string demangle(const char* d) {
     return string(d);
 }
 
-#elif defined(_MSC_VER)
+#elif defined(_WIN32)
 
 extern "C"
 char * __unDName(

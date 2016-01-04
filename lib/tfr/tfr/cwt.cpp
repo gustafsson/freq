@@ -28,7 +28,7 @@
 #include <boost/lambda/lambda.hpp>
 #include <boost/foreach.hpp>
 
-#ifdef _MSC_VER
+#ifdef _WIN32
     #include "msc_stdc.h"
 
     #define _USE_MATH_DEFINES

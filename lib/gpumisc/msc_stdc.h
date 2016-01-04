@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #ifndef __CUDACC__
 
 template<typename T>
@@ -34,5 +34,5 @@ T inline fmin(const T& a, const T& b) {
 #define isnan _isnan
 
 #endif // !__CUDACC__
-#endif // _MSC_VER
+#endif // _WIN32
 

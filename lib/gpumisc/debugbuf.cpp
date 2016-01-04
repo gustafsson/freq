@@ -1,6 +1,6 @@
 #include "debugbuf.h"
 
-#if defined(_MSC_VER)
+#if defined(_WIN32)
 	#include <Windows.h>  
 	
 	template<>
@@ -15,7 +15,7 @@
 	    ::OutputDebugStringW(text);
 	}
 
-#else  // not _MSC_VER, just write to stderr
+#else  // not _WIN32, just write to stderr
 
 	#include <stdio.h>
 

@@ -22,7 +22,7 @@ But can be inlined the header with the inline keyword.
 
 #ifdef __GNUC__
 #define DEPRECATED(func) func __attribute__ ((deprecated))
-#elif defined(_MSC_VER)
+#elif defined(_WIN32)
 #define DEPRECATED(func) __declspec(deprecated) func
 #else
 #pragma message("WARNING: You need to implement DEPRECATED for this compiler")

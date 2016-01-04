@@ -9,7 +9,7 @@
 #include <signal.h>
 #include <iostream>
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #include <Windows.h>
 #endif
 
@@ -22,7 +22,7 @@ int last_caught_signal = 0;
 void handler(int sig);
 void printSignalInfo(int sig, bool);
 
-#ifndef _MSC_VER
+#ifndef _WIN32
 void seghandle_userspace() {
   // note: because we set up a proper stackframe,
   // unwinding is safe from here.
@@ -139,7 +139,7 @@ void printSignalInfo(int sig, bool noaction)
 
     switch(sig)
     {
-#ifndef _MSC_VER
+#ifndef _WIN32
     case SIGCHLD:
         return;
 
@@ -185,7 +185,7 @@ void printSignalInfo(int sig, bool noaction)
 }
 
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 
 const char* ExceptionCodeName(DWORD code)
 {
@@ -325,7 +325,7 @@ LONG WINAPI MyUnhandledExceptionFilter(
     // carry on with default exception handling
     return EXCEPTION_CONTINUE_SEARCH;
 }
-#endif // _MSC_VER
+#endif // _WIN32
 
 void my_terminate() {
     std::cerr << ("\n\n"
@@ -336,7 +336,7 @@ void my_terminate() {
 void PrettifySegfault::
         setup ()
 {
-#ifndef _MSC_VER
+#ifndef _WIN32
     #ifndef DARWIN_NO_CARBON // not ios
     // subscribe to everything SIGSEGV and friends
     for (int i=1; i<=SIGUSR2; ++i)
@@ -498,7 +498,7 @@ void PrettifySegfault::
     // always be called (does not apply in windows)
     {
         EXCEPTION_ASSERT(breaks_RAII_assumptions::constructor_was_called);
-#ifndef _MSC_VER
+#ifndef _WIN32
         EXCEPTION_ASSERT(!breaks_RAII_assumptions::destructor_was_called);
         breaks_RAII_assumptions(); // This calls the destructor
 #endif

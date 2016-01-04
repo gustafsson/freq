@@ -21,7 +21,7 @@ RotateWidget::RotateWidget(RenderView* view, Tools::Commands::CommandInvoker* co
 
 #ifdef __APPLE__
     setToolTip("Click to flip between 2D and 3D. Drag to rotate in 3D [hold cmd]");
-#elif defined(_MSC_VER)
+#elif defined(_WIN32)
     setToolTip("Click to flip between 2D and 3D. Drag to rotate in 3D [hold alt]");
 #else
     setToolTip("Click to flip between 2D and 3D. Drag to rotate in 3D [hold ctrl+alt]"); // or shift+alt, or win+alt

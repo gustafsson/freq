@@ -1,7 +1,7 @@
 #include "timer.h"
 #include "trace_perf.h"
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #endif
@@ -17,7 +17,7 @@ Timer::Timer(bool start)
 
 void Timer::restart()
 {
-#ifdef _MSC_VER
+#ifdef _WIN32
     LARGE_INTEGER li;
     QueryPerformanceCounter(&li);
     start_ = li.QuadPart;
@@ -29,7 +29,7 @@ void Timer::restart()
 
 double Timer::elapsed() const
 {
-#ifdef _MSC_VER
+#ifdef _WIN32
     LARGE_INTEGER li;
     static double PCfreq = 1;
     for(static bool doOnce=true;doOnce;doOnce=false)
@@ -48,7 +48,7 @@ double Timer::elapsed() const
 
 double Timer::elapsedAndRestart()
 {
-#ifdef _MSC_VER
+#ifdef _WIN32
     LARGE_INTEGER li;
     static double PCfreq = 1;
     for(static bool doOnce=true;doOnce;doOnce=false)
