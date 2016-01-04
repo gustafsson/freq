@@ -49,7 +49,7 @@ void Backtrace::
 {
     fflush(stdout);
 
-#ifndef _MSC_VER
+#ifndef _WIN32
     static void *bt_array[256];
     static int array_size;
 
