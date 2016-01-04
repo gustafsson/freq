@@ -360,11 +360,14 @@ void Backtrace::
                 EXCEPTION_ASSERTX( s.find ("Backtrace::test") != string::npos, s );
                 EXCEPTION_ASSERTX( s.find ("main") != string::npos, s );
                 EXCEPTION_ASSERTX( s.find ("backtrace.cpp (312): throwfunction") != string::npos, s );
-                if(4==sizeof(void*) && !debug) // WoW64 w/ optimization behaves differently
-                    EXCEPTION_ASSERTX( s.find ("backtrace.cpp (352): Backtrace::test") != string::npos, s );
-                else
+                if(4==sizeof(void*))
+                {
+#ifdef _DEBUG // WoW64 w/ optimization behaves differently
                     EXCEPTION_ASSERTX( s.find ("backtrace.cpp (350): Backtrace::test") != string::npos, s );
 #else
+                    EXCEPTION_ASSERTX( s.find ("backtrace.cpp (352): Backtrace::test") != string::npos, s );
+#endif
+                }
                 EXCEPTION_ASSERTX( s.find ("throwfunction()") != string::npos, s );
                 EXCEPTION_ASSERTX( s.find ("Backtrace::test()") != string::npos, s );
                 EXCEPTION_ASSERTX( s.find ("start") != string::npos, s );
