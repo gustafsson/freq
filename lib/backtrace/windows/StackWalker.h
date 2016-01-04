@@ -167,7 +167,8 @@ protected:
       c.ContextFlags = contextFlags; \
   } while(0);
 #else
-#ifdef _MSC_VER
+//#ifdef _MSC_VER
+#if 1
 // The following should be enough for walking the callstack...
 #define GET_CURRENT_CONTEXT(c, contextFlags) \
   do { \
