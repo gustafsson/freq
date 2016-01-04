@@ -188,8 +188,8 @@ void performance_traces::
 
 #ifdef _WIN32
     // ignore errors
-    CreateDirectory("trace_perf", NULL);
-    CreateDirectory("trace_perf/dump", NULL);
+    CreateDirectory(L"trace_perf", NULL);
+    CreateDirectory(L"trace_perf/dump", NULL);
 #else
     // require posix
     mkdir("trace_perf", S_IRWXU|S_IRGRP|S_IXGRP);
