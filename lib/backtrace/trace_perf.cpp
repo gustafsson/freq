@@ -184,9 +184,15 @@ void performance_traces::
     //boost::filesystem::create_directory("trace_perf");
     //boost::filesystem::create_directory("trace_perf/dump");
 
+#ifdef _WIN32
+    // ignore errors
+    CreateDirectory("trace_perf", NULL);
+    CreateDirectory("trace_perf/dump", NULL);
+#else
     // require posix
     mkdir("trace_perf", S_IRWXU|S_IRGRP|S_IXGRP);
     mkdir("trace_perf/dump", S_IRWXU|S_IRGRP|S_IXGRP);
+#endif
 
     int i=0;
     string filename;
