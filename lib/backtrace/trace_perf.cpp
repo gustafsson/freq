@@ -13,7 +13,9 @@
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
-#include <Windows.h> // gethostname
+#include <Windows.h> // CreateDirectory
+#include <Winsock2.h> // gethostname
+#pragma comment(lib, "Ws2_32.lib")
 #else
 #include <unistd.h> // gethostname
 #endif
