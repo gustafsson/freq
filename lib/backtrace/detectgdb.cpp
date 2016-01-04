@@ -1,6 +1,6 @@
 #include "detectgdb.h"
 
-#ifndef _MSC_VER
+#ifndef _WIN32
     #include <sys/types.h>
     #ifndef DARWIN_NO_CARBON // skip for ios
         #include <sys/ptrace.h>
@@ -44,7 +44,7 @@ bool DetectGdb::
     #endif
 }
 
-#elif !defined(_MSC_VER)
+#elif !defined(_WIN32)
 
 // http://stackoverflow.com/a/10973747/1513411
 // gdb apparently opens FD(s) 3,4,5 (whereas a typical program uses only stdin=0, stdout=1, stderr=2)
