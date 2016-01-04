@@ -10,9 +10,13 @@
 #include <stdio.h>
 #endif
 
+#if defined(_WIN32) && !defined(_MSC_VER)
+#define WIN_MINGW
+#endif
+
 #ifndef _WIN32
 #include <execinfo.h>
-#else
+#elif !defined(WIN_MINGW)
 #include <boost/thread/mutex.hpp>
 #include "windows/StackWalker.h"
 #include "TlHelp32.h"
@@ -71,7 +75,23 @@ void Backtrace::
     fflush(stderr);
 }
 
-#if defined(_WIN32)
+#if defined(WIN_MINGW)
+
+Backtrace::info Backtrace::
+        make(int skipFrames)
+{
+    Backtrace b;
+    b.pretty_print_ = "";
+    return Backtrace::info(b);
+}
+
+string Backtrace::
+        to_string() const
+{
+    return pretty_print_;
+}
+
+#elif defined(_WIN32)
 
 class StackWalkerStringHelper: private StackWalker
 {
@@ -316,6 +336,10 @@ static void throwfunction()
 void Backtrace::
         test()
 {
+#ifdef WIN_MINGW
+    return;
+#endif
+
     // It should store a backtrace of the call stack in 1 ms,
     // except for windows where it should takes 30 ms but
     // include a backtrace from all threads.

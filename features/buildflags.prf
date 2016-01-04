@@ -120,11 +120,6 @@ win32-msvc* {
     #    /NODEFAULTLIB:LIBCMT \ # some other lib links LIBCMT too, but LINK.EXE ignores it even without explicit NODEFAULTLIB
     #
 }
-win32 {
-    !win32-msvc* {
-        QMAKE_CXXFLAGS += -masm=intel
-    }
-}
 
 unix {
     !macx* {
