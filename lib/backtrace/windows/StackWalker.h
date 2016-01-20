@@ -178,8 +178,6 @@ protected:
     __asm    mov c.Ebp, ebp \
     __asm    mov c.Esp, esp \
   } while(0);
-#else 
-#define GET_CURRENT_CONTEXT(c, contextFlags) ;
 #endif
 
 #else
