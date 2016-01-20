@@ -154,4 +154,4 @@ profiling {
 
 ios: INCLUDEPATH += $$_PRO_FILE_PWD_/../../3rdparty/ios/include
 win32: INCLUDEPATH += $$_PRO_FILE_PWD_/../../3rdparty/windows
-
+win32: INCLUDEPATH += $$_PRO_FILE_PWD_/../../3rdparty/windows/glew/include
