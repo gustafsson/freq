@@ -1,10 +1,14 @@
 install:
-  - set QTDIR=C:\Qt\5.5\msvc2013_64
-#  - set QTDIR=C:\Qt\5.5\mingw492_32
+#  - set QTDIR=C:\Qt\5.5\msvc2013_64
+  - set QTDIR=C:\Qt\5.5\mingw492_32
   - set PATH=%PATH%;%QTDIR%\bin
+  - set PATH=%PATH%;C:\Qt\Tools\mingw492_32\bin
 #  - set PATH=%PATH%;C:\MinGW\bin
-#  - set PATH=%PATH%;C:\Qt\Tools\mingw492_32
+  - set QMAKEFEATURES=C:\projects\freq\features
+  - git submodule init
+  - git submodule update --depth 1 3rdparty\windows
+  - echo %PATH%
 build_script:
   - cd quick
-  - qmake -r
-#  - mingw32-make
+  - qmake -r -Wall -spec win32-g++
+  - mingw32-make

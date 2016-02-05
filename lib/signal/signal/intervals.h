@@ -61,7 +61,7 @@ public:
 };
 
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #pragma warning (push)
 // warning C4251: 'Signal::Intervals::base_' : class 'std::list<_Ty>' needs to
 // have dll-interface to be used by clients of class 'Signal::Intervals'
@@ -155,7 +155,7 @@ SignalDll Intervals  operator |  (const Interval& a, const Interval& b);
 
 } // namespace Signal
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #pragma warning (pop)
 #endif
 

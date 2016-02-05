@@ -24,7 +24,7 @@
 // Qt
 #include <QSettings>
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #include "msc_stdc.h"
 #endif
 

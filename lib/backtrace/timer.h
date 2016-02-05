@@ -1,7 +1,9 @@
 #ifndef TIMER_H
 #define TIMER_H
 
-#ifndef _MSC_VER
+#ifdef _WIN32
+#include <stdint.h>
+#else
 #include <chrono>
 #endif
 
@@ -20,8 +22,8 @@ public:
     double elapsedAndRestart();
 
 private:
-#ifdef _MSC_VER
-    __int64 start_;
+#ifdef _WIN32
+    int64_t start_; // _MSC_VER __int64 ?
 #else
     std::chrono::high_resolution_clock::time_point start_;
 #endif

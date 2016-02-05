@@ -1,6 +1,6 @@
 #include "redirectstdout.h"
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #include <io.h>
 #define dup _dup
 #define dup2 _dup2

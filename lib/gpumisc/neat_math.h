@@ -168,10 +168,10 @@ lpo2s(register unsigned int x)
 }
 
 
-#if defined(_MSC_VER) || !defined(DARWIN_NO_CARBON)
+#if defined(_WIN32) || !defined(DARWIN_NO_CARBON)
 static inline uint32_t log2(uint32_t x) {
   uint32_t y;
-#ifdef _MSC_VER
+#ifdef _WIN32
   __asm
   {
       bsr eax, x

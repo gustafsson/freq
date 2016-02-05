@@ -81,7 +81,7 @@ static inline vector<unsigned char> textradix(string s)
 
 
 unsigned long long X = 1;
-#ifndef _MSC_VER
+#ifndef _WIN32
 #define A 8433437992146984169LLU
 #define B 7905438737954111703LLU
 #else

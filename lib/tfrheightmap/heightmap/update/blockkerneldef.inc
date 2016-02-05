@@ -14,7 +14,7 @@
 // order of included headers matters because of FREQAXIS_CALL and RESAMPLE_CALL
 #include "blockkernel.h"
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #define _USE_MATH_DEFINES
 #include <math.h>
 #endif

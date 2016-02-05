@@ -10,11 +10,15 @@
 #include <stdio.h>
 #endif
 
-#ifndef _MSC_VER
+#if defined(_WIN32) && !defined(_MSC_VER)
+#define WIN_MINGW
+#endif
+
+#ifndef _WIN32
 #include <execinfo.h>
-#else
+#elif !defined(WIN_MINGW)
 #include <boost/thread/mutex.hpp>
-#include "StackWalker.h"
+#include "windows/StackWalker.h"
 #include "TlHelp32.h"
 #endif
 
@@ -49,7 +53,7 @@ void Backtrace::
 {
     fflush(stdout);
 
-#ifndef _MSC_VER
+#ifndef _WIN32
     static void *bt_array[256];
     static int array_size;
 
@@ -71,7 +75,23 @@ void Backtrace::
     fflush(stderr);
 }
 
-#if defined(_WIN32)
+#if defined(WIN_MINGW)
+
+Backtrace::info Backtrace::
+        make(int skipFrames)
+{
+    Backtrace b;
+    b.pretty_print_ = "";
+    return Backtrace::info(b);
+}
+
+string Backtrace::
+        to_string() const
+{
+    return pretty_print_;
+}
+
+#elif defined(_WIN32)
 
 class StackWalkerStringHelper: private StackWalker
 {
@@ -316,11 +336,15 @@ static void throwfunction()
 void Backtrace::
         test()
 {
+#ifdef WIN_MINGW
+    return;
+#endif
+
     // It should store a backtrace of the call stack in 1 ms,
     // except for windows where it should takes 30 ms but
     // include a backtrace from all threads.
     {
-#ifdef _MSC_VER
+#ifdef _WIN32
         {
             // Warmpup, load modules
             Backtrace::info backtrace = Backtrace::make ();
@@ -330,7 +354,7 @@ void Backtrace::
         Timer t;
         Backtrace::info backtrace = Backtrace::make ();
         double T = t.elapsed ();
-#ifdef _MSC_VER
+#ifdef _WIN32
         EXCEPTION_ASSERT_LESS( T, 0.030f );
 #else
         EXCEPTION_ASSERT_LESS( T, 0.001f );
@@ -354,17 +378,20 @@ void Backtrace::
             string s = diagnostic_information(x);
 
             try {
-#ifdef _MSC_VER
+#ifdef _WIN32
                 EXCEPTION_ASSERTX( s.find ("throwfunction") != string::npos, s );
                 EXCEPTION_ASSERTX( s.find ("backtrace.cpp(312)") != string::npos, s );
                 EXCEPTION_ASSERTX( s.find ("Backtrace::test") != string::npos, s );
                 EXCEPTION_ASSERTX( s.find ("main") != string::npos, s );
                 EXCEPTION_ASSERTX( s.find ("backtrace.cpp (312): throwfunction") != string::npos, s );
-                if(4==sizeof(void*) && !debug) // WoW64 w/ optimization behaves differently
-                    EXCEPTION_ASSERTX( s.find ("backtrace.cpp (352): Backtrace::test") != string::npos, s );
-                else
+                if(4==sizeof(void*))
+                {
+#ifdef _DEBUG // WoW64 w/ optimization behaves differently
                     EXCEPTION_ASSERTX( s.find ("backtrace.cpp (350): Backtrace::test") != string::npos, s );
 #else
+                    EXCEPTION_ASSERTX( s.find ("backtrace.cpp (352): Backtrace::test") != string::npos, s );
+#endif
+                }
                 EXCEPTION_ASSERTX( s.find ("throwfunction()") != string::npos, s );
                 EXCEPTION_ASSERTX( s.find ("Backtrace::test()") != string::npos, s );
                 EXCEPTION_ASSERTX( s.find ("start") != string::npos, s );

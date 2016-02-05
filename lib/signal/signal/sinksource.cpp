@@ -457,7 +457,7 @@ public:
         return t < b->getInterval().last;
     }
 
-#if defined(_MSC_VER) && defined(_DEBUG)
+#if defined(_WIN32) && defined(_DEBUG)
     // Integrity checks in windows debug mode
     bool operator()( const pBuffer& b, IntervalType t )
     {

@@ -11,9 +11,11 @@
 
 #include <sys/stat.h>
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
-#include <Windows.h> // gethostname
+#include <Windows.h> // CreateDirectory
+#include <Winsock2.h> // gethostname
+#pragma comment(lib, "Ws2_32.lib")
 #else
 #include <unistd.h> // gethostname
 #endif
@@ -184,9 +186,15 @@ void performance_traces::
     //boost::filesystem::create_directory("trace_perf");
     //boost::filesystem::create_directory("trace_perf/dump");
 
+#ifdef _WIN32
+    // ignore errors
+    CreateDirectory(L"trace_perf", NULL);
+    CreateDirectory(L"trace_perf/dump", NULL);
+#else
     // require posix
     mkdir("trace_perf", S_IRWXU|S_IRGRP|S_IXGRP);
     mkdir("trace_perf/dump", S_IRWXU|S_IRGRP|S_IXGRP);
+#endif
 
     int i=0;
     string filename;
@@ -248,7 +256,7 @@ vector<string> performance_traces::
 
 #if defined(__APPLE__)
     config.push_back ("-apple");
-#elif defined(_MSC_VER)
+#elif defined(_WIN32)
     config.push_back ("-windows");
 #endif
 
