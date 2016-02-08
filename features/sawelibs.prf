@@ -78,27 +78,53 @@ exists(/usr/local/lib): LIBS += -L/usr/local/lib
 
 win32 {
 INCLUDEPATH += \
-        $$SAWEROOT/lib/sonicawe-winlib/glut \
-        $$SAWEROOT/lib/sonicawe-winlib/glew/include \
-        $$SAWEROOT/lib/sonicawe-winlib/portaudio/include \
-        $$SAWEROOT/lib/sonicawe-winlib/libsndfile/include \
-        $$SAWEROOT/lib/sonicawe-winlib/hdf5lib/include \
-        $$SAWEROOT/lib/sonicawe-winlib/zlib/include \
-        $$SAWEROOT/lib/sonicawe-winlib/omp \
-        $$SAWEROOT/lib/sonicawe-winlib
+        $$SAWEROOT/3rdparty/windows/glut \
+        $$SAWEROOT/3rdparty/windows/glew/include \
+        $$SAWEROOT/3rdparty/windows/portaudio/include \
+        $$SAWEROOT/3rdparty/windows/libsndfile/include \
+        $$SAWEROOT/3rdparty/windows/hdf5lib/include \
+        $$SAWEROOT/3rdparty/windows/zlib/include \
+        $$SAWEROOT/3rdparty/windows/omp \
+        $$SAWEROOT/3rdparty/windows
 LIBS += \
-        -l$$SAWEROOT/lib/sonicawe-winlib/glut/glut32 \
-        -l$$SAWEROOT/lib/sonicawe-winlib/glew/lib/glew32 \
-        -l$$SAWEROOT/lib/sonicawe-winlib/libsndfile/libsndfile-1 \
-        -l$$SAWEROOT/lib/sonicawe-winlib/hdf5lib/dll/hdf5dll \
-        -l$$SAWEROOT/lib/sonicawe-winlib/hdf5lib/dll/hdf5_hldll \
-        -L$$SAWEROOT/lib/sonicawe-winlib/boostlib \
-        -L$$SAWEROOT/lib/sonicawe-winlib/omp \
-        $$SAWEROOT/lib/sonicawe-winlib/portaudio/portaudio.lib \
+        -l$$SAWEROOT/3rdparty/windows/glut/glut32 \
+        -l$$SAWEROOT/3rdparty/windows/glew/lib/glew32 \
+        -l$$SAWEROOT/3rdparty/windows/libsndfile/libsndfile-1 \
+        -l$$SAWEROOT/3rdparty/windows/hdf5lib/dll/hdf5dll \
+        -l$$SAWEROOT/3rdparty/windows/hdf5lib/dll/hdf5_hldll \
+        -L$$SAWEROOT/3rdparty/windows/boostlib \
+        -L$$SAWEROOT/3rdparty/windows/omp \
+        $$SAWEROOT/3rdparty/windows/portaudio/portaudio.lib \
 
+		
 CONFIG(debug, debug|release): LIBS += \
-        $$SAWEROOT/lib/sonicawe-winlib/portaudio/portaudiocpp_mt_gd.lib
+        $$SAWEROOT/3rdparty/windows/portaudio/portaudiocpp_mt_gd.lib
 else: LIBS += \
-        $$SAWEROOT/lib/sonicawe-winlib/portaudio/portaudiocpp_mt.lib
+        $$SAWEROOT/3rdparty/windows/portaudio/portaudiocpp_mt.lib
+
+#win32 {
+#INCLUDEPATH += \
+#        $$SAWEROOT/lib/sonicawe-winlib/glut \
+#        $$SAWEROOT/lib/sonicawe-winlib/glew/include \
+#        $$SAWEROOT/lib/sonicawe-winlib/portaudio/include \
+#        $$SAWEROOT/lib/sonicawe-winlib/libsndfile/include \
+#        $$SAWEROOT/lib/sonicawe-winlib/hdf5lib/include \
+#        $$SAWEROOT/lib/sonicawe-winlib/zlib/include \
+#        $$SAWEROOT/lib/sonicawe-winlib/omp \
+#        $$SAWEROOT/lib/sonicawe-winlib
+#LIBS += \
+#        -l$$SAWEROOT/lib/sonicawe-winlib/glut/glut32 \
+#        -l$$SAWEROOT/lib/sonicawe-winlib/glew/lib/glew32 \
+#        -l$$SAWEROOT/lib/sonicawe-winlib/libsndfile/libsndfile-1 \
+#        -l$$SAWEROOT/lib/sonicawe-winlib/hdf5lib/dll/hdf5dll \
+#        -l$$SAWEROOT/lib/sonicawe-winlib/hdf5lib/dll/hdf5_hldll \
+#        -L$$SAWEROOT/lib/sonicawe-winlib/boostlib \
+#        -L$$SAWEROOT/lib/sonicawe-winlib/omp \
+#        $$SAWEROOT/lib/sonicawe-winlib/portaudio/portaudio.lib \
+
+#CONFIG(debug, debug|release): LIBS += \
+#        $$SAWEROOT/lib/sonicawe-winlib/portaudio/portaudiocpp_mt_gd.lib
+#else: LIBS += \
+#        $$SAWEROOT/lib/sonicawe-winlib/portaudio/portaudiocpp_mt.lib
 
 }

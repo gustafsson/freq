@@ -16,7 +16,7 @@ QT += opengl
 SOURCES += *.cpp
 HEADERS += *.h
 
-win32: INCLUDEPATH += ../sonicawe-winlib
+win32: INCLUDEPATH += ../../3rdparty/windows
 win32: SOURCES += windows/*.cpp
 win32: SOURCES += windows/*.h
 

@@ -24,7 +24,7 @@ HEADERS += \
 PCH_HEADERS = $$PWD/tfr/*.h
 
 INCLUDEPATH += ../backtrace ../gpumisc ../signal
-win32: INCLUDEPATH += ../sonicawe-winlib
+win32: INCLUDEPATH += ../../3rdparty/windows
 
 macx:exists(/opt/local/include/): INCLUDEPATH += /opt/local/include/ # macports
 macx:exists(/usr/local/include/): INCLUDEPATH += /usr/local/include/ # homebrew
