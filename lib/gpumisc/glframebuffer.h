@@ -5,6 +5,7 @@ See class comment GlFrameBuffer.
 #pragma once
 
 #include "GlTexture.h"
+#include <QGLFunctions>
 
 /**
 GlFrameBuffer is a wrapper for an OpenGL frame buffer object (FBO) (refered to
@@ -108,7 +109,7 @@ private:
 
     int texture_width_ = 0, texture_height_ = 0, level_ = 0;
 
-    void init();
+    QOpenGLFunctions *glFuncs = 0;
 
 public:
     static void test();

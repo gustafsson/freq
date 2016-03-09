@@ -19,12 +19,11 @@ GlFrameBuffer::
             :
             own_texture_(new GlTexture),
             textureid_(own_texture_->getOpenGlTextureId ()),
-            enable_depth_component_(true)
+            enable_depth_component_(true),
+            glFuncs(QOpenGLContext::currentContext()->functions())
 {
     EXCEPTION_ASSERT_LESS(0, width);
     EXCEPTION_ASSERT_LESS(0, height);
-
-    init();
 
     try
     {
@@ -34,8 +33,8 @@ GlFrameBuffer::
     {
         TaskInfo("GlFrameBuffer exception\n%s", boost::current_exception_diagnostic_information ().c_str());
 
-        if (depth_stencil_buffer_) glDeleteRenderbuffers(1, &depth_stencil_buffer_);
-        if (fboId_) glDeleteFramebuffers(1, &fboId_);
+        if (depth_stencil_buffer_) glFuncs->glDeleteRenderbuffers(1, &depth_stencil_buffer_);
+        if (fboId_) glFuncs->glDeleteFramebuffers(1, &fboId_);
 
         throw;
     }
@@ -47,14 +46,13 @@ GlFrameBuffer::
     textureid_(textureid),
     texture_width_(width),
     texture_height_(height),
-    level_(level)
+    level_(level),
+    glFuncs(QOpenGLContext::currentContext()->functions())
 {
     EXCEPTION_ASSERT_LESS(0u, textureid);
     EXCEPTION_ASSERT_LESS(0, width);
     EXCEPTION_ASSERT_LESS(0, height);
     EXCEPTION_ASSERT_LESS_OR_EQUAL(0, level);
-
-    init();
 
     try
     {
@@ -63,8 +61,8 @@ GlFrameBuffer::
     catch(...)
     {
         TaskInfo("GlFrameBuffer() caught exception");
-        if (depth_stencil_buffer_) glDeleteRenderbuffers(1, &depth_stencil_buffer_);
-        if (fboId_) glDeleteFramebuffers(1, &fboId_);
+        if (depth_stencil_buffer_) glFuncs->glDeleteRenderbuffers(1, &depth_stencil_buffer_);
+        if (fboId_) glFuncs->glDeleteFramebuffers(1, &fboId_);
         unbindFrameBuffer ();
 
         throw;
@@ -103,10 +101,10 @@ GlFrameBuffer::
 
     DEBUG_INFO TaskInfo("glDeleteRenderbuffers");
     if (depth_stencil_buffer_)
-        glDeleteRenderbuffers(1, &depth_stencil_buffer_);
+        glFuncs->glDeleteRenderbuffers(1, &depth_stencil_buffer_);
 
     DEBUG_INFO TaskInfo("glDeleteFramebuffers");
-    glDeleteFramebuffers(1, &fboId_);
+    glFuncs->glDeleteFramebuffers(1, &fboId_);
 
     DEBUG_INFO TaskInfo("glGetError = %u", (unsigned)glGetError());
 
@@ -127,13 +125,13 @@ void GlFrameBuffer::
     GlException_SAFE_CALL( glGetIntegerv (GL_FRAMEBUFFER_BINDING, &prev_fbo_) );
     if (prev_fbo_!=0)
         Log("GlFrameBuffer: detected an existing binding to FBO %d. This requires a glGet which should be avoided") % prev_fbo_;
-    GlException_SAFE_CALL( glBindFramebuffer(GL_FRAMEBUFFER, fboId_));
+    GlException_SAFE_CALL( glFuncs->glBindFramebuffer(GL_FRAMEBUFFER, fboId_));
 }
 
 void GlFrameBuffer::
         unbindFrameBuffer()
 {
-    GlException_SAFE_CALL( glBindFramebuffer(GL_FRAMEBUFFER, prev_fbo_));
+    GlException_SAFE_CALL( glFuncs->glBindFramebuffer(GL_FRAMEBUFFER, prev_fbo_));
 }
 
 
@@ -158,24 +156,24 @@ void GlFrameBuffer::
 
     if (enable_depth_component_) {
         if (!depth_stencil_buffer_)
-            GlException_SAFE_CALL( glGenRenderbuffers(1, &depth_stencil_buffer_) );
+            GlException_SAFE_CALL( glFuncs->glGenRenderbuffers(1, &depth_stencil_buffer_) );
 
-        GlException_SAFE_CALL( glBindRenderbuffer(GL_RENDERBUFFER, depth_stencil_buffer_) );
+        GlException_SAFE_CALL( glFuncs->glBindRenderbuffer(GL_RENDERBUFFER, depth_stencil_buffer_) );
 #if !defined(GL_ES_VERSION_2_0) || defined(GL_ES_VERSION_3_0)
-        GlException_SAFE_CALL( glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height) );
+        GlException_SAFE_CALL( glFuncs->glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height) );
 #else
-        GlException_SAFE_CALL( glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8_OES, width, height) );
+        GlException_SAFE_CALL( glFuncs->glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8_OES, width, height) );
 #endif
-        GlException_SAFE_CALL( glBindRenderbuffer(GL_RENDERBUFFER, 0) );
+        GlException_SAFE_CALL( glFuncs->glBindRenderbuffer(GL_RENDERBUFFER, 0) );
     }
 
     {
         if (!fboId_)
-            GlException_SAFE_CALL( glGenFramebuffers(1, &fboId_) );
+            GlException_SAFE_CALL( glFuncs->glGenFramebuffers(1, &fboId_) );
 
         auto fbo_raii = getScopeBinding();
 
-        GlException_SAFE_CALL( glFramebufferTexture2D(
+        GlException_SAFE_CALL( glFuncs->glFramebufferTexture2D(
                                   GL_FRAMEBUFFER,
                                   GL_COLOR_ATTACHMENT0,
                                   GL_TEXTURE_2D,
@@ -185,18 +183,18 @@ void GlFrameBuffer::
         if (enable_depth_component_)
         {
 #ifndef GL_ES_VERSION_2_0
-            GlException_SAFE_CALL( glFramebufferRenderbuffer(
+            GlException_SAFE_CALL( glFuncs->glFramebufferRenderbuffer(
                                          GL_FRAMEBUFFER,
                                          GL_DEPTH_STENCIL_ATTACHMENT,
                                          GL_RENDERBUFFER,
                                          depth_stencil_buffer_));
 #else
-            GlException_SAFE_CALL( glFramebufferRenderbuffer(
+            GlException_SAFE_CALL( glFuncs->glFramebufferRenderbuffer(
                                          GL_FRAMEBUFFER,
                                          GL_DEPTH_ATTACHMENT,
                                          GL_RENDERBUFFER,
                                          depth_stencil_buffer_));
-            GlException_SAFE_CALL( glFramebufferRenderbuffer(
+            GlException_SAFE_CALL( glFuncs->glFramebufferRenderbuffer(
                                          GL_FRAMEBUFFER,
                                          GL_STENCIL_ATTACHMENT,
                                          GL_RENDERBUFFER,
@@ -209,7 +207,7 @@ void GlFrameBuffer::
         }
 
 #ifdef _DEBUG
-        int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        int status = glFuncs->glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
         if (GL_FRAMEBUFFER_UNSUPPORTED == status)
           {
@@ -227,29 +225,6 @@ void GlFrameBuffer::
     DEBUG_INFO TaskInfo("texture = %u", textureid_ );
 
     GlException_CHECK_ERROR();
-}
-
-
-void GlFrameBuffer::
-        init()
-{
-#ifndef __APPLE__ // glewInit is not needed on Mac
-    if (0==glGenRenderbuffers)
-    {
-        DEBUG_INFO TaskInfo("Initializing glew");
-
-        if (0 != glewInit() )
-            BOOST_THROW_EXCEPTION(GlFrameBufferException() << errinfo_format(boost::format(
-                    "Couldn't initialize \"glew\"")) << Backtrace::make ());
-
-        if (!glewIsSupported( "GL_framebuffer_object" )) {
-            BOOST_THROW_EXCEPTION(GlFrameBufferException() << errinfo_format(boost::format(
-                    "Failed to get minimal extensions\n"
-                    "Sonic AWE requires:\n"
-                    "  GL_framebuffer_object\n")) << Backtrace::make ());
-        }
-    }
-#endif
 }
 
 
