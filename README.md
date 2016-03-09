@@ -1,7 +1,11 @@
 # Freq source code
-/===================\
-|Scalograms are cool|
-\===================/
+```
+/=====================\
+| Scalograms are cool |
+\=====================/
+```
+
+<a href="https://ci.appveyor.com/project/gustafsson/freq"><img src="https://ci.appveyor.com/api/projects/status/github/gustafsson/freq?branch=appveyor&svg=true"></a>
 
 The intention of this document is to explain how to fetch the source code with all the dependencies, how to setup a functional development environment, how to build the source code, how to run Freq and eventually how to distribute an installer.
 
