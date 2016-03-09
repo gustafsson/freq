@@ -31,6 +31,8 @@ Info.plist
 build
 tmp
 *.vcproj
+*.vcxproj
+*.vcxproj.filters
 debug
 release
 *.idb

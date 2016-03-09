@@ -118,8 +118,8 @@ HEADERS += \
 
 
 win32: INCLUDEPATH += \
-    ../sonicawe-winlib \
-    ../sonicawe-winlib/glew/include
+    ../../3rdparty/windows \
+    ../../3rdparty/windows/glew/include
 
 macx:exists(/opt/local/include/): INCLUDEPATH += /opt/local/include/ # macports
 macx:exists(/usr/local/include/): INCLUDEPATH += /usr/local/include/ # homebrew
