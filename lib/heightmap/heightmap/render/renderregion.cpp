@@ -23,7 +23,7 @@ RenderRegion::
         ~RenderRegion()
 {
     if (!QOpenGLContext::currentContext ()) {
-        Log ("%s: destruction without gl context leaks vbos %d and %d") % __FILE__ % vbo_;
+        Log ("%s: destruction without gl context leaks vbos %d") % __FILE__ % vbo_;
         return;
     }
 

@@ -36,7 +36,7 @@ BlockInitializer::
 BlockInitializer::~BlockInitializer()
 {
     if (fbo_ &&  !QOpenGLContext::currentContext ()) {
-        Log ("%s: destruction without gl context leaks fbo %d and vbo %d") % __FILE__ % fbo_;
+        Log ("%s: destruction without gl context leaks fbo %d") % __FILE__ % fbo_;
         return;
     }
 
