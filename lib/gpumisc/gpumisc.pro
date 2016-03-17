@@ -45,7 +45,6 @@ SOURCES += \
     gluproject_ios.cpp \
     gluunproject.cpp \
     largememorypool.cpp \
-    mappedvbovoid.cpp \
     neat_math.cpp \
     redirectstdout.cpp \
     resampletexture.cpp \
@@ -89,8 +88,6 @@ HEADERS += \
     HasSingleton.h \
     InvokeOnDestruction.hpp \
     largememorypool.h \
-    mappedvbo.h \
-    mappedvbovoid.h \
     msc_stdc.h \
     neat_math.h \
     operate.h \
@@ -116,6 +113,12 @@ HEADERS += \
     unsignedf.h \
     vbo.h \
 
+!win32: HEADERS += \
+    mappedvbo.h \
+    mappedvbovoid.h \
+
+!win32: SOURCES += \
+    mappedvbovoid.cpp \
 
 win32: INCLUDEPATH += \
     ../../3rdparty/windows \

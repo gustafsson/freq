@@ -48,6 +48,8 @@ MappedVboVoid::
 void MappedVboVoid::
         map(DataStorageVoid* datap)
 {
+    EXCEPTION_ASSERT (false); // glMapBuffer is not used
+
     TIME_MAPPEDVBO_LOG _tt = new TaskTimer("Mapping vbo %u of size %s", (unsigned)*_vbo, DataStorageVoid::getMemorySizeText(datap->numberOfBytes()).c_str());
 
     TIME_MAPPEDVBOVOID TaskTimer tt("Mapping vbo %u of size %s", (unsigned)*_vbo, DataStorageVoid::getMemorySizeText(datap->numberOfBytes()).c_str());

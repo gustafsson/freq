@@ -3,6 +3,7 @@
 
 #include "datastorage.h"
 #include "vbo.h"
+#include "gl.h"
 
 typedef boost::shared_ptr<Vbo> pVbo;
 
