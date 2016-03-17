@@ -31,6 +31,13 @@ struct S {
     }
 } next, current;
 
+QOpenGLFunctions *glFuncs_ = 0;
+QOpenGLFunctions *glFuncs() {
+    if (!glFuncs_)
+        glFuncs_ = QOpenGLContext::currentContext()->functions();
+    return glFuncs_;
+}
+
 bool is_synced=true;
 
 
@@ -41,7 +48,7 @@ void glEnable (GLenum cap, bool now)
         if (current.caps.count (cap) == 0)
         {
             current.caps.insert (cap);
-            ::glEnable (cap);
+            glFuncs()->glEnable (cap);
         }
         next.caps.insert (cap);
     }
@@ -60,7 +67,7 @@ void glDisable (GLenum cap, bool now)
         if (current.caps.count (cap) == 1)
         {
             current.caps.erase (cap);
-            ::glDisable (cap);
+            glFuncs()->glDisable (cap);
         }
         next.caps.erase (cap);
     }
@@ -77,11 +84,11 @@ void glBindBuffer(GLenum target, GLuint buffer)
     if (target == GL_ARRAY_BUFFER)
     {
         if (current.arrayBufferBinding!=buffer && buffer != 0)
-            ::glBindBuffer (target, current.arrayBufferBinding=buffer);
+            glFuncs()->glBindBuffer (target, current.arrayBufferBinding=buffer);
     }
     else
     {
-        ::glBindBuffer (target, buffer);
+        glFuncs()->glBindBuffer (target, buffer);
     }
 }
 
@@ -89,20 +96,20 @@ void glDeleteBuffers(GLsizei n, const GLuint *buffers)
 {
     for (GLsizei i=0; i<n; i++)
         if (current.arrayBufferBinding==buffers[i])
-            ::glBindBuffer (GL_ARRAY_BUFFER, current.arrayBufferBinding=0);
-    ::glDeleteBuffers (n, buffers);
+            glFuncs()->glBindBuffer (GL_ARRAY_BUFFER, current.arrayBufferBinding=0);
+    glFuncs()->glDeleteBuffers (n, buffers);
 }
 
 void glUseProgram(GLuint program)
 {
     if (program != current.program && program != 0)
-        ::glUseProgram(current.program = program);
+        glFuncs()->glUseProgram(current.program = program);
 }
 
 void notifyDeletedProgram(GLuint program)
 {
     if (program == current.program)
-        ::glUseProgram(current.program = 0);
+        glFuncs()->glUseProgram(current.program = 0);
 }
 
 void glEnableVertexAttribArray (GLuint index)
@@ -114,7 +121,7 @@ void glEnableVertexAttribArray (GLuint index)
         next.enabledAttribArray[index] = true;
     }
     else
-        ::glEnableVertexAttribArray (index);
+        glFuncs()->glEnableVertexAttribArray (index);
 }
 
 void glDisableVertexAttribArray (GLuint index)
@@ -126,19 +133,19 @@ void glDisableVertexAttribArray (GLuint index)
         next.enabledAttribArray[index] = false;
     }
     else
-        ::glDisableVertexAttribArray (index);
+        glFuncs()->glDisableVertexAttribArray (index);
 }
 
 void glDrawElements (GLenum mode, GLsizei count, GLenum type, const GLvoid *indices)
 {
     sync();
-    ::glDrawElements (mode, count, type, indices);
+    glFuncs()->glDrawElements (mode, count, type, indices);
 }
 
 void glDrawArrays (GLenum mode, GLint first, GLsizei count)
 {
     sync();
-    ::glDrawArrays (mode, first, count);
+    glFuncs()->glDrawArrays (mode, first, count);
 }
 
 void sync ()
@@ -152,9 +159,9 @@ void sync ()
         {
             current.enabledAttribArray[i] = next.enabledAttribArray[i];
             if (next.enabledAttribArray[i])
-                ::glEnableVertexAttribArray (i);
+                glFuncs()->glEnableVertexAttribArray (i);
             else
-                ::glDisableVertexAttribArray (i);
+                glFuncs()->glDisableVertexAttribArray (i);
         }
 
     bool enabled_changed = false;
@@ -163,7 +170,7 @@ void sync ()
         if (!current.caps.count (v))
         {
             enabled_changed = true;
-            ::glEnable (v);
+            glFuncs()->glEnable (v);
         }
     }
 
@@ -172,7 +179,7 @@ void sync ()
         if (!next.caps.count (v))
         {
             enabled_changed = true;
-            ::glDisable (v);
+            glFuncs()->glDisable (v);
         }
     }
 
@@ -198,7 +205,7 @@ void set_default_gl_states_and_sync ()
     next.reset ();
     sync();
     if (current.arrayBufferBinding)
-        ::glBindBuffer(GL_ARRAY_BUFFER, current.arrayBufferBinding=0);
+        glFuncs()->glBindBuffer(GL_ARRAY_BUFFER, current.arrayBufferBinding=0);
 }
 
 void assume_default_qt_quick_states ()
