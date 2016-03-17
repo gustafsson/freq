@@ -27,11 +27,8 @@ typedef __int64 __int64_t;
 
 
 // integer division, rounded off upwards
-NEAT_MATH_CALL size_t int_div_ceil( const size_t& x, const unsigned& y ) {
-    return (x+y-1)/y;
-}
-
-NEAT_MATH_CALL int int_div_ceil( const int& x, const unsigned& y ) {
+template<typename T>
+NEAT_MATH_CALL T int_div_ceil( const T& x, const unsigned& y ) {
     return (x+y-1)/y;
 }
 
