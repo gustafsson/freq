@@ -168,29 +168,30 @@ lpo2s(register unsigned int x)
 }
 
 
-#if defined(_WIN32) || !defined(DARWIN_NO_CARBON)
+#if defined(_WIN32) && defined(_MSC_VER)
 static inline uint32_t log2(uint32_t x) {
-  uint32_t y;
-#ifdef _WIN32
-  __asm
-  {
-      bsr eax, x
-      mov y, eax
-  }
-//#elif defined(DARWIN_NO_CARBON)
- // Use <cmath> instead
-//  y = 0;
-//  while(x>>=1) y++;
-#else
-  asm ( "\tbsr %1, %0\n"
-      : "=r"(y)
-      : "r" (x)
-  );
-#endif
-  return y;
+    uint32_t y;
+    __asm
+    {
+        bsr eax, x
+        mov y, eax
+    }
+    return y;
+}
+#elif !defined(_WIN32) && !defined(DARWIN_NO_CARBON)
+static inline uint32_t log2(uint32_t x) {
+    uint32_t y;
+    asm ( "\tbsr %1, %0\n"
+        : "=r"(y)
+        : "r" (x)
+        );
+    return y;
 }
 #else
 static inline uint32_t log2(uint32_t x) {
+    // Use <cmath> instead?
+    //  y = 0;
+    //  while(x>>=1) y++;
     return log2(double(x));
 }
 #endif
