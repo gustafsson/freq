@@ -20,6 +20,7 @@
 #endif
 
 // std
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include <float.h>
 #include <limits>

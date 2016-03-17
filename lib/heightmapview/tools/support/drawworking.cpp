@@ -6,9 +6,7 @@
 #include "glstate.h"
 
 // std
-#if defined(_WIN32)
 #define _USE_MATH_DEFINES
-#endif
 #include <math.h> // cos, sin, M_PI
 #include <algorithm> // std::min, std::max
 

@@ -1,6 +1,7 @@
 // http://www.opengl.org/wiki/GluPerspective_code
 
 #include "gluperspective.h"
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include <string.h>
 

@@ -8,6 +8,9 @@
 
 #include <boost/format.hpp>
 
+#define _USE_MATH_DEFINES
+#include <cmath>
+
 namespace Tfr {
 
 StftDesc::

@@ -11,6 +11,9 @@
 #include "log.h"
 #include "GlException.h"
 
+#define _USE_MATH_DEFINES
+#include <cmath>
+
 //#define TIME_RENDERER
 #define TIME_RENDERER if(0)
 

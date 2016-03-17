@@ -8,6 +8,9 @@
 #include "heightmap/collection.h"
 #include "gluunproject.h"
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 namespace Tools {
 namespace Support {
 
