@@ -1,4 +1,3 @@
-#include "gl.h"
 #include "vbo.h"
 #include "tasktimer.h"
 #include "datastorage.h" // getMemorySizeText
@@ -116,9 +115,10 @@ void Vbo::
     GlException_CHECK_ERROR();
 
     // create buffer object
-    glGenBuffers(1, &_vbo);
+    QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
+    glFuncs->glGenBuffers(1, &_vbo);
     GlState::glBindBuffer(vbo_type, _vbo);
-    glBufferData(vbo_type, size, data, access_pattern);
+    glFuncs->glBufferData(vbo_type, size, data, access_pattern);
     GlState::glBindBuffer(vbo_type, 0);
 
     TIME_VBO TaskInfo("Got vbo %u", _vbo) ;
