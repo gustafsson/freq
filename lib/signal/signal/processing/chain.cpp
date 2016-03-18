@@ -458,7 +458,7 @@ void Chain::
 
         TargetNeeds::ptr needs = target->target_needs();
         needs->updateNeeds(Signal::Interval(4,6));
-        usleep(4000);
+        std::this_thread::sleep_for (std::chrono::milliseconds(4));
         //target->sleep();
 
         // This will remove the step used by invalidator
