@@ -166,7 +166,7 @@ class LockScheduleMock: public BlockScheduleMock {
 
 class BusyScheduleMock: public BlockScheduleMock {
     virtual void dont_return() const override {
-        for(;;) usleep(0); // Allow OS scheduling to kill the thread (just "for(;;);" would not)
+        for(;;) ::this_thread::sleep_for (std::chrono::microseconds(0)); // Allow OS scheduling to kill the thread (just "for(;;);" would not)
     }
 };
 

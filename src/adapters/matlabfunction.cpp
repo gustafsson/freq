@@ -450,13 +450,7 @@ string MatlabFunction::
 
     while (isReady().empty())
     {
-#ifdef __GNUC__
-        usleep(10 * 1000); // Sleep in microseconds
-#elif defined(_WIN32)
-        Sleep(10); // Sleep in ms
-#else
-#error Does not support this platform
-#endif
+        ::this_thread::sleep_for (std::chrono::milliseconds(10));
         time_duration d = second_clock::local_time()-start;
         if (timeout < d)
         {
