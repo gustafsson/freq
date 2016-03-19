@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #ifndef __CUDACC__
 
 template<typename T>
