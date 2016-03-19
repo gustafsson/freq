@@ -37,7 +37,7 @@ CvWorker::CvWorker(
 
     t = std::thread([=,p=std::move(p)]() mutable
     {
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(_WIN32)
         {
             stringstream ss;
             ss << "cvworker" << " " << (computing_engine?vartype(*computing_engine):"(null engine)");
