@@ -391,7 +391,7 @@ void QtEventWorker::
         EXCEPTION_ASSERT( worker.wait (1) );
         EXCEPTION_ASSERT( worker.caught_exception () );
 
-        EXPECT_EXCEPTION(segfault_sigill_exception, rethrow_exception(worker.caught_exception ()));
+        EXPECT_EXCEPTION(segfault_sigill_exception, std::rethrow_exception(worker.caught_exception ()));
 
         PrettifySegfault::EnableDirectPrint (true);
     }
@@ -421,7 +421,7 @@ void QtEventWorker::
         EXCEPTION_ASSERT( worker.caught_exception () );
 
         try {
-            rethrow_exception(worker.caught_exception ());
+            std::rethrow_exception(worker.caught_exception ());
             BOOST_THROW_EXCEPTION(boost::unknown_exception());
         } catch (const ExceptionAssert& x) {
             const std::string* message = boost::get_error_info<ExceptionAssert::ExceptionAssert_message>(x);
@@ -442,7 +442,7 @@ void QtEventWorker::
         worker.abort ();
         EXCEPTION_ASSERT( worker.wait (10) );
         EXCEPTION_ASSERT( worker.caught_exception () );
-        EXPECT_EXCEPTION(lock_failed, rethrow_exception(worker.caught_exception ()));
+        EXPECT_EXCEPTION(lock_failed, std::rethrow_exception(worker.caught_exception ()));
 
         EXCEPTION_ASSERT_EQUALS( 1, dynamic_cast<GetTaskMock*>(&*gettask)->get_task_count );
     }
@@ -477,7 +477,7 @@ void QtEventWorker::
         EXCEPTION_ASSERT( !worker.wait (1) );
         worker.terminate ();
         EXCEPTION_ASSERT( worker.wait (2) ); // Finish within 2 ms after terminate
-        EXPECT_EXCEPTION( TerminatedException, rethrow_exception(worker.caught_exception ()) );
+        EXPECT_EXCEPTION( TerminatedException, std::rethrow_exception(worker.caught_exception ()) );
     }
 
     // It should announce when tasks are finished.
