@@ -36,6 +36,7 @@ macx:exists(/opt/local/include/): INCLUDEPATH += /opt/local/include/ # macports
 macx:exists(/usr/local/include/): INCLUDEPATH += /usr/local/include/ # homebrew
 
 OTHER_FILES += \
+    README \
     *.pro \
 
 win32 { 

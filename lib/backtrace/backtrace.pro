@@ -25,6 +25,7 @@ macx:exists(/usr/local/include/): INCLUDEPATH += /usr/local/include/ # homebrew
 
 OTHER_FILES += \
     LICENSE \
+    README.md \
     *.pro \
 
 win32 { 
