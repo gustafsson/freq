@@ -44,7 +44,7 @@ void FrustumClip::
     top    = M[3] - M[1]*border_height;
     bottom = M[3] + M[1]*border_height;
     near   = M[3] + M[2];
-    far    = M[3] - M[2];
+    far_    = M[3] - M[2];
 
     DEBUGLOG
     {
@@ -53,7 +53,7 @@ void FrustumClip::
         NormalizePlane(top);
         NormalizePlane(bottom);
         NormalizePlane(near);
-        NormalizePlane(far);
+        NormalizePlane(far_);
     }
 
     // get camera position
@@ -135,7 +135,7 @@ std::vector<vectord> FrustumClip::
 
     float lr = rightMost(left, right);
     float tb = rightMost(top, bottom);
-    float nf = rightMost(near, far);
+    float nf = rightMost(near, far_);
     float T = std::min(std::min(lr, nf), tb);
 
     std::vector<vectord> corner=
