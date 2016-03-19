@@ -1,7 +1,7 @@
 #ifndef TFRDLL_H
 #define TFRDLL_H
 
-#if defined(TFR_NODLL) || !defined(_WIN32)
+#if defined(TFR_NODLL) || !defined(_MSC_VER)
  #define TfrDll
 #else
  #if defined(TFR_EXPORTDLL)

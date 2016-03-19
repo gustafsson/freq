@@ -1,7 +1,7 @@
 #ifndef SAWEDLL_H
 #define SAWEDLL_H
 
-#if defined(SAWE_NODLL) || !defined(_WIN32)
+#if defined(SAWE_NODLL) || !defined(_MSC_VER)
  #define SaweDll
 #else
  #if defined(SAWE_EXPORTDLL)
