@@ -19,7 +19,7 @@ public:
 
 private:
     vectord camera;
-    tvector<4,double> right, left, top, bottom, far_, near;
+    tvector<4,double> right, left, top, bottom, far_z, near_z;
 
     void update(const glProjecter& gl_projection, double w, double h);
 };
