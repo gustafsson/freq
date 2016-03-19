@@ -1,9 +1,7 @@
 #ifndef SIGNALDLL_H
 #define SIGNALDLL_H
 
-#define SIGNAL_NODLL // breaks Sonic AWE tests
-
-#if defined(SIGNAL_NODLL) || !defined(_WIN32)
+#if defined(SIGNAL_NODLL) || !defined(_MSC_VER)
  #define SignalDll
 #else
  #if defined(SIGNAL_EXPORTDLL)
