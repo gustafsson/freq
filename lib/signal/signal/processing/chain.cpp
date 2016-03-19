@@ -468,7 +468,7 @@ void Chain::
         // exception if OperationDescChainMock::affectedInterval was called)
         invalidator->deprecateCache(Signal::Interval(9,11));
 
-        usleep(4000);
+        std::this_thread::sleep_for (std::chrono::milliseconds(4));
         chain->workers()->rethrow_any_worker_exception();
 
         chain = Chain::ptr ();
