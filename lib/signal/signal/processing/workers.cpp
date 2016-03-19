@@ -297,6 +297,8 @@ void Workers::
 } // namespace Processing
 } // namespace Signal
 
+#include <atomic>
+
 namespace Signal {
 namespace Processing {
 
