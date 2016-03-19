@@ -450,7 +450,7 @@ string MatlabFunction::
 
     while (isReady().empty())
     {
-        ::this_thread::sleep_for (std::chrono::milliseconds(10));
+        std::this_thread::sleep_for (std::chrono::milliseconds(10));
         time_duration d = second_clock::local_time()-start;
         if (timeout < d)
         {
