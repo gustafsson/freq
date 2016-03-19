@@ -1,3 +1,5 @@
+#define _USE_MATH_DEFINES // cmath
+
 #include "stft.h"
 
 #include "computationkernel.h"
@@ -8,7 +10,6 @@
 
 #include <boost/format.hpp>
 
-#define _USE_MATH_DEFINES
 #include <cmath>
 
 namespace Tfr {
