@@ -359,7 +359,9 @@ Wave2Fbo::NewVbo Wave2Fbo::getVbo ()
 
     r.reset(new Vbo(N_ * sizeof(vertex_format_xy), GL_ARRAY_BUFFER, GL_STREAM_DRAW, NULL));
 #if GL_EXT_debug_label
+#ifdef __APPLE__
     GlException_SAFE_CALL( glLabelObjectEXT(GL_BUFFER_OBJECT_EXT, *r, 0, "Wave2Fbo") );
+#endif
 #endif
     vbos_.push_back (r);
     return NewVbo(true,r);

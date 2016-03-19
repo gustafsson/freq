@@ -35,7 +35,9 @@ Block::
     EXCEPTION_ASSERT_EQUALS(texture_->getHeight (), block_layout.texels_per_column ());
 
 #if GL_EXT_debug_label
+#ifdef __APPLE__
     glLabelObjectEXT(GL_TEXTURE, texture_->getOpenGlTextureId (), 0, (boost::format("%s") % getVisibleRegion ()).str().c_str());
+#endif
 #endif
 }
 
