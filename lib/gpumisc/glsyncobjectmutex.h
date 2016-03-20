@@ -1,7 +1,7 @@
 #ifndef GLSYNCOBJECTMUTEX_H
 #define GLSYNCOBJECTMUTEX_H
 
-#ifdef LEGACY_OPENGL
+#if defined(LEGACY_OPENGL) && !defined(_WIN32)
 
 /**
  * @brief The GlSyncObjectMutex class should provide a mutex mechanism for

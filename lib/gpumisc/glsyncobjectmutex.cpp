@@ -1,7 +1,7 @@
 #include "glsyncobjectmutex.h"
 #include "gl.h"
 
-#ifdef LEGACY_OPENGL
+#if defined(LEGACY_OPENGL) && !defined(_WIN32)
 
 #include "tasktimer.h"
 #include "log.h"
