@@ -54,6 +54,7 @@ Signal::Intervals BlockInitializer::
 #ifdef DO_MERGE
     return merger_->fillBlocksFromOthers (blocks);
 #else
+    QOpenGLFunctions::initializeOpenGLFunctions ();
     if (!fbo_)
         glGenFramebuffers(1, &fbo_);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_);

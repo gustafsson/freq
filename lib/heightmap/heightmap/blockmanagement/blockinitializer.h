@@ -5,6 +5,7 @@
 #include "heightmap/visualizationparams.h"
 #include "heightmap/block.h"
 #include "heightmap/blockcache.h"
+#include "gl.h"
 
 namespace Heightmap {
 namespace BlockManagement {
@@ -16,7 +17,7 @@ class MergerTexture;
 /**
  * @brief The BlockInstaller class should initialize new blocks with content from others.
  */
-class BlockInitializer
+class BlockInitializer: private QOpenGLFunctions
 {
 public:
     BlockInitializer(BlockLayout bl, VisualizationParams::const_ptr vp, BlockCache::const_ptr cache);

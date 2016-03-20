@@ -49,7 +49,9 @@ private:
     Heightmap::Update::UpdateQueue::ptr update_queue_;
     QPointer<QObject> update_consumer_thread_=0;
     std::unique_ptr<Heightmap::Update::UpdateConsumer> update_consumer_p;
+#ifndef LEGACY_OPENGL
     unsigned vertexArray_ = 0;
+#endif
 
     LogTickFrequency ltf;
     Timer start_timer;
