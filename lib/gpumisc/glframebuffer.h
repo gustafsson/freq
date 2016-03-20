@@ -14,7 +14,7 @@ as just "frame buffer") to manage the frame buffer in an object oriented manner
 
 @author johan.b.gustafsson@gmail.com
 */
-class GlFrameBuffer: public boost::noncopyable
+class GlFrameBuffer: public boost::noncopyable, private QOpenGLFunctions
 {
 public:
     typedef ReleaseAfterContext<GlFrameBuffer> TextureBinding;
@@ -108,8 +108,6 @@ private:
     bool enable_depth_component_ = false;
 
     int texture_width_ = 0, texture_height_ = 0, level_ = 0;
-
-    QOpenGLFunctions *glFuncs = 0;
 
 public:
     static void test();
