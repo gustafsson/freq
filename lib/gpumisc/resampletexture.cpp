@@ -8,6 +8,7 @@
 #include "gltextureread.h"
 #include "GlException.h"
 #include "datastoragestring.h"
+#include "glstate.h"
 
 #include <QtWidgets> // QApplication
 #include <QtOpenGL> // QGLWidget
