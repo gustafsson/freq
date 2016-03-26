@@ -40,6 +40,7 @@ ResampleTexture::
       fbo(dest, width, height),
       destarea(0,0,0,0)
 {
+    QOpenGLFunctions::initializeOpenGLFunctions ();
     glGenBuffers (1, &vbo); // Generate 1 buffer
 }
 
@@ -49,6 +50,7 @@ ResampleTexture::
     :
       ResampleTexture(dest.getOpenGlTextureId (), dest.getWidth (), dest.getHeight ())
 {
+    QOpenGLFunctions::initializeOpenGLFunctions ();
 }
 
 

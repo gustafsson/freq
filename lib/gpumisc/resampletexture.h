@@ -3,11 +3,12 @@
 
 #include "glframebuffer.h"
 #include "GlTexture.h"
+#include <QGLFunctions>
 
 /**
  * @brief The ResampleTexture class should paint a texture on top of another texture.
  */
-class ResampleTexture: boost::noncopyable
+class ResampleTexture: boost::noncopyable, QOpenGLFunctions
 {
 #ifdef LEGACY_OPENGL
 public:
