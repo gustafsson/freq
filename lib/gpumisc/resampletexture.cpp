@@ -215,14 +215,15 @@ void ResampleTexture::
         testInContext()
 {
 #ifdef LEGACY_OPENGL
+    // There must be a current OpenGL context
+    EXCEPTION_ASSERT(QGLContext::currentContext ());
+    QOpenGLFunctions* glf = QOpenGLContext::currentContext ()->functions ();
+
     GlState::glEnable(GL_TEXTURE_2D);
 
     // It should paint a texture on top of another texture. (with GL_UNSIGNED_BYTE)
     {
-        // There must be a current OpenGL context
-        EXCEPTION_ASSERT(QGLContext::currentContext ());
-
-        const char* extensions = (const char*)glGetString(GL_EXTENSIONS);
+        const char* extensions = (const char*)glf->glGetString(GL_EXTENSIONS);
         EXCEPTION_ASSERT(extensions);
 
         bool hasTextureFloat = 0 != strstr( extensions, "GL_ARB_texture_float" );
@@ -329,10 +330,7 @@ void ResampleTexture::
 
     // It should paint a texture on top of another texture. (with GL_FLOAT)
     {
-        // There must be a current OpenGL context
-        EXCEPTION_ASSERT(QGLContext::currentContext ());
-
-        const char* extensions = (const char*)glGetString(GL_EXTENSIONS);
+        const char* extensions = (const char*)glf->glGetString(GL_EXTENSIONS);
         EXCEPTION_ASSERT(extensions);
 
         bool hasTextureFloat = 0 != strstr( extensions, "GL_ARB_texture_float" );
