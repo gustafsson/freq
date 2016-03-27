@@ -48,7 +48,7 @@ int UnitTest::
         RUNTEST(GlFrameBuffer);
         RUNTEST(glinfo);
         RUNTEST(glProjection);
-#ifdef LEGACY_OPENGL
+#if defined(LEGACY_OPENGL) && !defined(_WIN32)
         RUNTEST(GlSyncObjectMutex);
 #endif
         RUNTEST(GlTextureRead);
