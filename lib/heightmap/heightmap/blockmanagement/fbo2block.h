@@ -9,7 +9,7 @@
 namespace Heightmap {
 namespace BlockManagement {
 
-class Fbo2Block {
+class Fbo2Block: private QOpenGLFunctions {
 public:
     typedef ReleaseAfterContext<Fbo2Block> ScopeBinding;
 
@@ -43,6 +43,13 @@ private:
     unsigned readFbo = 0; // only used if srcTexture!=drawTexture
 #endif
     unsigned drawFbo = 0;
+
+#ifdef GL_ES_VERSION_2_0
+    void texture2texture(GlTexture::ptr src, GlTexture::ptr dst);
+#else
+    void fbo2Texture(unsigned fbo, GlTexture::ptr dst);
+    void blitTexture(GlTexture::ptr src, unsigned& copyfbo);
+#endif
 };
 
 

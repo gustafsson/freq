@@ -11,12 +11,12 @@ namespace Heightmap {
 namespace BlockManagement {
 
 #ifdef GL_ES_VERSION_2_0
-void texture2texture(GlTexture::ptr src, GlTexture::ptr dst)
+void Fbo2Block::texture2texture(GlTexture::ptr src, GlTexture::ptr dst)
 {
     GlException_SAFE_CALL( glCopyTextureLevelsAPPLE(dst->getOpenGlTextureId (), src->getOpenGlTextureId (), 0, 1) );
 }
 #else
-void fbo2Texture(unsigned fbo, GlTexture::ptr dst)
+void Fbo2Block::fbo2Texture(unsigned fbo, GlTexture::ptr dst)
 {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
     glBindTexture(GL_TEXTURE_2D, dst->getOpenGlTextureId ());
@@ -24,7 +24,7 @@ void fbo2Texture(unsigned fbo, GlTexture::ptr dst)
     glBindFramebuffer(GL_READ_FRAMEBUFFER, QOpenGLContext::currentContext ()->defaultFramebufferObject ());
 }
 
-void blitTexture(GlTexture::ptr src, unsigned& copyfbo)
+void Fbo2Block::blitTexture(GlTexture::ptr src, unsigned& copyfbo)
 {
     // OpenGL ES doesn't have GL_READ_FRAMEBUFFER/GL_DRAW_FRAMEBUFFER
 
@@ -55,6 +55,8 @@ void blitTexture(GlTexture::ptr src, unsigned& copyfbo)
 
 Fbo2Block::Fbo2Block ()
 {
+    QOpenGLFunctions::initializeOpenGLFunctions ();
+
     glGenFramebuffers(1, &drawFbo);
 #ifndef GL_ES_VERSION_2_0
     glGenFramebuffers(1, &readFbo);
