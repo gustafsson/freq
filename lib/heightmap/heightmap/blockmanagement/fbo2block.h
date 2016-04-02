@@ -46,8 +46,9 @@ private:
 
 #ifdef GL_ES_VERSION_2_0
     void texture2texture(GlTexture::ptr src, GlTexture::ptr dst);
+#elif defined(_WIN32)
+    void texture2texture(GlTexture::ptr src, GlTexture::ptr dst, unsigned copyfbo);
 #else
-    void fbo2Texture(unsigned fbo, GlTexture::ptr dst);
     void blitTexture(GlTexture::ptr src, unsigned& copyfbo);
 #endif
 };

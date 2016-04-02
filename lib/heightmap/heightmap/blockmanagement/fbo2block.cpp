@@ -15,15 +15,20 @@ void Fbo2Block::texture2texture(GlTexture::ptr src, GlTexture::ptr dst)
 {
     GlException_SAFE_CALL( glCopyTextureLevelsAPPLE(dst->getOpenGlTextureId (), src->getOpenGlTextureId (), 0, 1) );
 }
-#else
-void Fbo2Block::fbo2Texture(unsigned fbo, GlTexture::ptr dst)
+#elif defined(_WIN32)
+void Fbo2Block::texture2texture(GlTexture::ptr src, GlTexture::ptr dst, unsigned copyfbo)
 {
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+    // Assumes dst and src have the same size and the same pixel format
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, readFbo);
+    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, src->getOpenGlTextureId (), 0);
     glBindTexture(GL_TEXTURE_2D, dst->getOpenGlTextureId ());
     glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, dst->getWidth (), dst->getHeight ());
+    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, 0, 0);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, QOpenGLContext::currentContext ()->defaultFramebufferObject ());
 }
-
+#else
 void Fbo2Block::blitTexture(GlTexture::ptr src, unsigned& copyfbo)
 {
     // OpenGL ES doesn't have GL_READ_FRAMEBUFFER/GL_DRAW_FRAMEBUFFER
@@ -40,16 +45,6 @@ void Fbo2Block::blitTexture(GlTexture::ptr src, unsigned& copyfbo)
                            GL_TEXTURE_2D, 0, 0);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, QOpenGLContext::currentContext ()->defaultFramebufferObject ());
 }
-
-//void texture2texture(GlTexture::ptr src, GlTexture::ptr dst, unsigned copyfbo)
-//{
-//    // Assumes dst and src have the same size and the same pixel format
-//    glBindFramebuffer(GL_READ_FRAMEBUFFER, copyfbo);
-//    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-//                           GL_TEXTURE_2D, src->getOpenGlTextureId (), 0);
-//    glBindFramebuffer(GL_READ_FRAMEBUFFER, QOpenGLContext::currentContext ()->defaultFramebufferObject ());
-//    fbo2Texture(copyfbo, dst);
-//}
 #endif
 
 
@@ -118,6 +113,16 @@ Fbo2Block::ScopeBinding Fbo2Block::
         glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                GL_TEXTURE_2D, drawTexture->getOpenGlTextureId (), 0);
     #endif
+#elif defined(_WIN32)
+    if (srcTexture!=drawTexture)
+    {
+        texture2texture(srcTexture, drawTexture, drawFbo);
+
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawFbo);
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                               GL_TEXTURE_2D, drawTexture->getOpenGlTextureId (), 0);
+    }
+
 #else
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawFbo);
     glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
