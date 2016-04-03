@@ -435,7 +435,7 @@ void MipmapBuilder::
                                 11.6796876022, 13.6562495911 };
             float sum = 0;
             for (int i=0; i<16; i++) sum +=srcdata[i]*srcdata[i];
-            float expected2[]={ std::sqrtf(sum/16.f) - 0.00547695f }; // error due to mediump. 9.66406286102
+            float expected2[]={ std::sqrt(sum/16.f) - 0.00547695f }; // error due to mediump. 9.66406286102
             data0 = GlTextureRead(*tex).readFloat (0, GL_RED);
             level1 = GlTextureRead(*tex).readFloat (1, GL_RED);
             level2 = GlTextureRead(*tex).readFloat (2, GL_RED);
