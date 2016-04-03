@@ -3,6 +3,7 @@
 
 #include "GlTexture.h"
 #include "heightmap/render/shaderresource.h"
+#include <QGLFunctions>
 
 namespace Heightmap {
 namespace BlockManagement {
@@ -13,7 +14,7 @@ namespace BlockManagement {
  * It uses a framebuffer object and custom shader to build mipmaps on the GPU,
  * i.e without transferring the texture over to the CPU and back.
  */
-class MipmapBuilder final
+class MipmapBuilder final: private QOpenGLFunctions
 {
 public:
     MipmapBuilder();

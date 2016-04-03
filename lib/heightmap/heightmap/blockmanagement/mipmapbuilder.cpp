@@ -14,7 +14,7 @@ MipmapBuilder::
       fbo_(0),
       vbo_(0)
 {
-
+    QOpenGLFunctions::initializeOpenGLFunctions ();
 }
 
 
