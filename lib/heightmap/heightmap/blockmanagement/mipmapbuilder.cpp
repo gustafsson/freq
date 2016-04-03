@@ -314,7 +314,7 @@ void MipmapBuilder::
     GlException_SAFE_CALL( glBindVertexArray(VertexArrayID) );
 #endif
     GlState::assume_default_gl_states ();
-    QOpenGLFunctions* glf = QOpenGLContext::functions ();
+    QOpenGLFunctions* glf = QOpenGLContext::currentContext ()->functions ();
 
     // It should build custom mipmaps fast
     {
