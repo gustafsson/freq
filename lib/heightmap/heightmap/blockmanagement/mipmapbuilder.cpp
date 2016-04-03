@@ -314,6 +314,7 @@ void MipmapBuilder::
     GlException_SAFE_CALL( glBindVertexArray(VertexArrayID) );
 #endif
     GlState::assume_default_gl_states ();
+    QOpenGLFunctions* glf = QOpenGLContext::functions ();
 
     // It should build custom mipmaps fast
     {
@@ -333,7 +334,7 @@ void MipmapBuilder::
                               13, 14, 15, 16};
 
             tex->bindTexture ();
-            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+            GlException_SAFE_CALL( glf->glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             GlException_SAFE_CALL( MipmapBuilder().generateMipmap (*tex, MipmapOperator_ArithmeticMean) );
 
@@ -355,7 +356,7 @@ void MipmapBuilder::
             tex->bindTexture ();
 
             // it should be identical to glGenerateMipmap
-            glGenerateMipmap (GL_TEXTURE_2D);
+            glf->glGenerateMipmap (GL_TEXTURE_2D);
             data0 = GlTextureRead(*tex).readFloat (0, GL_RED);
             level1 = GlTextureRead(*tex).readFloat (1, GL_RED);
             level2 = GlTextureRead(*tex).readFloat (2, GL_RED);
@@ -371,7 +372,7 @@ void MipmapBuilder::
                               13, 14, 15, 16};
 
             tex->bindTexture ();
-            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+            GlException_SAFE_CALL( glf->glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             GlException_SAFE_CALL( MipmapBuilder().generateMipmap (*tex, MipmapOperator_GeometricMean) );
 
@@ -400,7 +401,7 @@ void MipmapBuilder::
                               13, 14, 15, 16};
 
             tex->bindTexture ();
-            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+            GlException_SAFE_CALL( glf->glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             GlException_SAFE_CALL( MipmapBuilder().generateMipmap (*tex, MipmapOperator_HarmonicMean) );
 
@@ -427,7 +428,7 @@ void MipmapBuilder::
                               13, 14, 15, 16};
 
             tex->bindTexture ();
-            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+            GlException_SAFE_CALL( glf->glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             GlException_SAFE_CALL( MipmapBuilder().generateMipmap (*tex, MipmapOperator_QuadraticMean) );
 
@@ -456,7 +457,7 @@ void MipmapBuilder::
                               13, 14, 15, 16};
 
             tex->bindTexture ();
-            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+            GlException_SAFE_CALL( glf->glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             GlException_SAFE_CALL( MipmapBuilder().generateMipmap (*tex, MipmapOperator_CubicMean) );
 
@@ -485,7 +486,7 @@ void MipmapBuilder::
                               13, 14, 15, 16};
 
             tex->bindTexture ();
-            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+            GlException_SAFE_CALL( glf->glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             GlException_SAFE_CALL( MipmapBuilder().generateMipmap (*tex, MipmapOperator_Max) );
 
@@ -512,7 +513,7 @@ void MipmapBuilder::
                               4,  3,  2,  1};
 
             tex->bindTexture ();
-            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+            GlException_SAFE_CALL( glf->glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             GlException_SAFE_CALL( MipmapBuilder().generateMipmap (*tex, MipmapOperator_Max) );
 
@@ -539,7 +540,7 @@ void MipmapBuilder::
                               13, 14, 15, 16};
 
             tex->bindTexture ();
-            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+            GlException_SAFE_CALL( glf->glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             GlException_SAFE_CALL( MipmapBuilder().generateMipmap (*tex, MipmapOperator_Min) );
 
@@ -566,7 +567,7 @@ void MipmapBuilder::
                               13, 14128, 16496, 16};
 
             tex->bindTexture ();
-            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+            GlException_SAFE_CALL( glf->glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             GlException_SAFE_CALL( MipmapBuilder().generateMipmap (*tex, MipmapOperator_OTA) );
 
@@ -590,7 +591,7 @@ void MipmapBuilder::
             GLuint utex2;
             int w = Render::BlockTextures::getWidth ()/2;
             int h = Render::BlockTextures::getHeight ()/2;
-            glGenTextures (1, &utex2); // GlTexture becomes responsible for glDeleteTextures
+            glf->glGenTextures (1, &utex2); // GlTexture becomes responsible for glDeleteTextures
             GlTexture::ptr tex2 (new GlTexture(utex2, w, h, true));
             Render::BlockTextures::setupTexture(utex2, w, h, 1000);
 
