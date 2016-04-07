@@ -30,28 +30,6 @@
 using namespace Signal;
 using namespace std;
 
-void printUniformInfo(int program)
-{
-    int n_uniforms = 0;
-    int len_uniform = 0;
-    glGetProgramiv (program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &len_uniform);
-    glGetProgramiv (program, GL_ACTIVE_UNIFORMS, &n_uniforms);
-    string name(len_uniform+1, '\0');
-    Log("Found %d uniforms in program") % n_uniforms;
-    for (int i=0; i<n_uniforms; i++) {
-        GLint size;
-        GLenum type;
-        glGetActiveUniform(program,
-            i,
-            len_uniform,
-            0,
-            &size,
-            &type,
-            &name[0]);
-        Log("%d: %s, size=%d, type=%d") % i % name % size % type;
-    }
-}
-
 namespace Heightmap {
 namespace BlockManagement {
 namespace Merge {
@@ -495,6 +473,31 @@ void MergerTexture::
     glBindTexture( GL_TEXTURE_2D, texture);
     GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // Paint new contents over it
 }
+
+
+void MergerTexture::
+        printUniformInfo(int program)
+{
+    int n_uniforms = 0;
+    int len_uniform = 0;
+    glGetProgramiv (program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &len_uniform);
+    glGetProgramiv (program, GL_ACTIVE_UNIFORMS, &n_uniforms);
+    string name(len_uniform+1, '\0');
+    Log("Found %d uniforms in program") % n_uniforms;
+    for (int i=0; i<n_uniforms; i++) {
+        GLint size;
+        GLenum type;
+        glGetActiveUniform(program,
+            i,
+            len_uniform,
+            0,
+            &size,
+            &type,
+            &name[0]);
+        Log("%d: %s, size=%d, type=%d") % i % name % size % type;
+    }
+}
+
 
 } // namespace Merge
 } // namespace BlockManagement

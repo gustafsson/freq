@@ -67,6 +67,12 @@ private:
      */
     void clearBlock( const Region& ri );
 
+    /**
+     * @brief printUniformInfo prints debug info.
+     * @param program
+     */
+    void printUniformInfo(int program);
+
 public:
     static void test();
 };
