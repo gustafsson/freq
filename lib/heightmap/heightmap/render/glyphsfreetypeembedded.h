@@ -3,11 +3,12 @@
 
 #include "glyphs.h"
 #include "tvector.h"
+#include <QGLFunctions>
 
 namespace Heightmap {
 namespace Render {
 
-class GlyphsFreetypeEmbedded : public Heightmap::Render::IGlyphs
+class GlyphsFreetypeEmbedded : public Heightmap::Render::IGlyphs, private QOpenGLFunctions
 {
 public:
     GlyphsFreetypeEmbedded();
