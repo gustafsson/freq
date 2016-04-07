@@ -542,6 +542,7 @@ void MergerTexture::
     GlException_SAFE_CALL( glBindVertexArray(VertexArrayID) );
 #endif
     GlState::assume_default_gl_states ();
+    QOpenGLFunctions* glf = QOpenGLContext::currentContext ()->functions ();
 
     testRegionBlockOperator();
 
@@ -584,7 +585,7 @@ void MergerTexture::
             //Log("Inserting overlapping %s, visible %s") % block->getOverlappingRegion () % block->getVisibleRegion ();
             GlTexture::ptr tex = block->texture ();
             tex->bindTexture ();
-            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+            GlException_SAFE_CALL( glf->glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             cache->insert(block);
             MergerTexture(cache, bl, 2).fillBlockFromOthers(target_block);
@@ -612,7 +613,7 @@ void MergerTexture::
             pBlock block(new Block(ref.right (),bl,vp,0));
             GlTexture::ptr tex = block->texture ();
             tex->bindTexture ();
-            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+            GlException_SAFE_CALL( glf->glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
             tex->setMinFilter (GL_NEAREST_MIPMAP_NEAREST);
             MipmapBuilder().generateMipmap (*tex, MipmapBuilder::MipmapOperator_Max);
 
@@ -643,7 +644,7 @@ void MergerTexture::
             pBlock block(new Block(ref.right (),bl,vp,0));
             GlTexture::ptr tex = block->texture ();
             tex->bindTexture ();
-            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+            GlException_SAFE_CALL( glf->glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             cache->insert(block);
             MergerTexture(cache, bl, 2).fillBlockFromOthers(target_block);
@@ -672,7 +673,7 @@ void MergerTexture::
             pBlock block(new Block(ref.left (),bl,vp,0));
             GlTexture::ptr tex = block->texture ();
             tex->bindTexture ();
-            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+            GlException_SAFE_CALL( glf->glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             cache->insert(block);
             MergerTexture(cache, bl, 2).fillBlockFromOthers(target_block);
@@ -701,7 +702,7 @@ void MergerTexture::
             pBlock block(new Block(ref.bottom (),bl,vp,0));
             GlTexture::ptr tex = block->texture ();
             tex->bindTexture ();
-            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+            GlException_SAFE_CALL( glf->glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             cache->insert(block);
             MergerTexture(cache, bl, 2).fillBlockFromOthers(target_block);
@@ -730,7 +731,7 @@ void MergerTexture::
             pBlock block(new Block(ref.top (),bl,vp,0));
             GlTexture::ptr tex = block->texture ();
             tex->bindTexture ();
-            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
+            GlException_SAFE_CALL( glf->glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             cache->insert(block);
             MergerTexture(cache, bl, 2).fillBlockFromOthers(target_block);
