@@ -178,6 +178,8 @@ MergerTexture::
     EXCEPTION_ASSERT(cache_);
     EXCEPTION_ASSERT_LESS_OR_EQUAL(0, quality);
     EXCEPTION_ASSERT_LESS_OR_EQUAL(quality,2);
+
+    QOpenGLFunctions::initializeOpenGLFunctions ();
 }
 
 

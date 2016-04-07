@@ -5,6 +5,7 @@
 #include "heightmap/block.h"
 #include "GlTexture.h"
 #include "heightmap/render/shaderresource.h"
+#include <QGLFunctions>
 
 namespace Heightmap {
 namespace BlockManagement {
@@ -20,7 +21,7 @@ namespace Merge {
  * If quality: 1 MergerTexture will rely on mipmaps "one level down", i.e take the max out of four neightbours.
  * If quality: 2 MergerTexture will examine all individual texels underlying a target texel.
  */
-class MergerTexture
+class MergerTexture: private QOpenGLFunctions
 {
 public:
     MergerTexture(BlockCache::const_ptr cache, BlockLayout block_layout, int quality=1);
