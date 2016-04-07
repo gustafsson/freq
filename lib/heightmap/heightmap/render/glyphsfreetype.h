@@ -2,6 +2,7 @@
 #define HEIGHTMAP_RENDER_GLYPHSFREETYPE_H
 
 #include "glyphs.h"
+#include <memory>
 
 namespace Heightmap {
 namespace Render {
