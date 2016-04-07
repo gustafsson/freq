@@ -25,6 +25,8 @@ RenderAxes::
     :
       glyphs_(0)
 {
+    QOpenGLFunctions::initializeOpenGLFunctions ();
+
     GlException_SAFE_CALL( glyphs_ = GlyphFactory::makeIGlyphs () );
 }
 

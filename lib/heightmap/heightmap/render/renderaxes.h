@@ -10,6 +10,8 @@
 #include "glprojection.h"
 
 #include <vector>
+#include <memory>
+#include <QGLFunctions>
 
 namespace Heightmap {
 namespace Render {
@@ -17,7 +19,7 @@ namespace Render {
 /**
  * @brief The RenderAxes class should compute which glyphs to draw along the frustum edges, and then ask IGlyphs to draw them.
  */
-class RenderAxes
+class RenderAxes: private QOpenGLFunctions
 {
 public:
     struct Vertex {
