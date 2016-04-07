@@ -4,6 +4,7 @@
 #include "glyphs.h"
 #include "tvector.h"
 #include <QGLFunctions>
+#include <memory>
 
 namespace Heightmap {
 namespace Render {
