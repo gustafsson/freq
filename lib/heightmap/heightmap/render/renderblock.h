@@ -9,13 +9,14 @@
 #include "renderinfo.h"
 #include "shaderresource.h"
 #include "renderregion.h"
+#include <QOpenGLFunctions>
 
 typedef boost::shared_ptr<Vbo> pVbo;
 
 namespace Heightmap {
 namespace Render {
 
-class RenderBlock
+class RenderBlock: private QOpenGLFunctions
 {
 public:
     class Renderer : boost::noncopyable {

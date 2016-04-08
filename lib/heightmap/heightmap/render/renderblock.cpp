@@ -152,6 +152,7 @@ RenderBlock::
       _mesh_width(0),
       _mesh_height(0)
 {
+    QOpenGLFunctions::initializeOpenGLFunctions ();
 }
 
 
