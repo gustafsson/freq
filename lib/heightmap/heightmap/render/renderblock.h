@@ -16,10 +16,10 @@ typedef boost::shared_ptr<Vbo> pVbo;
 namespace Heightmap {
 namespace Render {
 
-class RenderBlock: private QOpenGLFunctions
+class RenderBlock: QOpenGLFunctions
 {
 public:
-    class Renderer : boost::noncopyable {
+    class Renderer : boost::noncopyable, QOpenGLFunctions {
     public:
         Renderer(RenderBlock* render_block, BlockLayout block_size, glProjecter gl_projecter);
         ~Renderer();
@@ -74,8 +74,9 @@ private:
     pVbo _mesh_position;
     RenderRegion _render_region;
 
-    struct ShaderData
+    class ShaderData: QOpenGLFunctions
     {
+    public:
         ShaderData();
         ShaderData(const char* defines);
 

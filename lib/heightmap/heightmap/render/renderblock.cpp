@@ -47,6 +47,7 @@ RenderBlock::Renderer::Renderer(RenderBlock* render_block, BlockLayout block_siz
       render_block(render_block),
       gl_projecter(gl_projecter)
 {
+    QOpenGLFunctions::initializeOpenGLFunctions ();
     render_block->beginVboRendering(block_size);
 }
 
@@ -164,6 +165,7 @@ RenderBlock::
 
 RenderBlock::ShaderData::ShaderData()
 {
+    QOpenGLFunctions::initializeOpenGLFunctions ();
 }
 
 
