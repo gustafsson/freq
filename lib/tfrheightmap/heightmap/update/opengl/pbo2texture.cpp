@@ -35,6 +35,7 @@ Shader::Shader(ShaderPtr&& programp)
       programp_(std::move(programp))
 {
     EXCEPTION_ASSERT( program );
+    QOpenGLFunctions::initializeOpenGLFunctions ();
 
     int mytex = -1;
 

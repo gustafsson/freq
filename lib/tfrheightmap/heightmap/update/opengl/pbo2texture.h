@@ -5,6 +5,7 @@
 #include "tfr/chunk.h"
 #include "glprojection.h"
 #include "heightmap/render/shaderresource.h"
+#include <QOpenGLFunctions>
 
 namespace Heightmap {
 namespace Update {
@@ -12,7 +13,7 @@ namespace OpenGL {
 
 class Shaders;
 
-class Shader {
+class Shader: QOpenGLFunctions {
 public:
     Shader(ShaderPtr&& programp);
     Shader(const Shader&)=delete;
