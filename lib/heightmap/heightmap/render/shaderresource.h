@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <QOpenGLShaderProgram>
+#include <memory>
 
 namespace Heightmap {
 
