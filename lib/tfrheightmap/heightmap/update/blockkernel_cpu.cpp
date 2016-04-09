@@ -1,5 +1,9 @@
 #ifndef USE_CUDA
 
+#ifdef _WIN32
+#define _USE_MATH_DEFINES
+#endif
+
 #if defined(_WIN32) && defined(FREQAXIS_CALL)
 // defined in precompiled header
 #undef FREQAXIS_CALL
