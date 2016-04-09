@@ -12,6 +12,8 @@ namespace Render {
 RenderFrustum::
         RenderFrustum(const glProjection& gl_projection)
 {
+    QOpenGLFunctions::initializeOpenGLFunctions ();
+
     Render::FrustumClip frustum(gl_projection);
     clippedFrustum = frustum.visibleXZ ();
     camera = frustum.getCamera ();

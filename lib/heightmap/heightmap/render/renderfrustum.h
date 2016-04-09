@@ -2,11 +2,12 @@
 #define HEIGHTMAP_RENDER_RENDERFRUSTUM_H
 
 #include "glprojection.h"
+#include <QOpenGLFunctions>
 
 namespace Heightmap {
 namespace Render {
 
-class RenderFrustum
+class RenderFrustum: QOpenGLFunctions
 {
 public:
     RenderFrustum(const glProjection& gl_projection);
