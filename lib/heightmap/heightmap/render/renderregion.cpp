@@ -16,6 +16,7 @@ RenderRegion::
     :
       vbo_(0)
 {
+    QOpenGLFunctions::initializeOpenGLFunctions ();
 }
 
 

@@ -4,13 +4,14 @@
 #include "heightmap/position.h"
 #include "shaderresource.h"
 #include "glprojection.h"
+#include <QOpenGLFunctions>
 
 class QOpenGLShaderProgram;
 
 namespace Heightmap {
 namespace Render {
 
-class RenderRegion
+class RenderRegion: QOpenGLFunctions
 {
 public:
     RenderRegion();
