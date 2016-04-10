@@ -25,6 +25,7 @@ Source2Pbo::Source2Pbo(
         chunk_pbo_(0)
 {
     EXCEPTION_ASSERT (chunk);
+    QOpenGLFunctions::initializeOpenGLFunctions ();
 
     setupPbo ();
 

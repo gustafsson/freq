@@ -5,6 +5,7 @@
 #include "tfr/chunk.h"
 
 #include <future>
+#include <QOpenGLFunctions>
 
 // PBOs are not supported on OpenGL ES (< 3.0)
 #ifdef LEGACY_OPENGL
@@ -12,7 +13,7 @@ namespace Heightmap {
 namespace Update {
 namespace OpenGL {
 
-class Source2Pbo
+class Source2Pbo: QOpenGLFunctions
 {
 public:
     Source2Pbo(Tfr::pChunk chunk, bool f32);
