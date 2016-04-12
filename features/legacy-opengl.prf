@@ -4,4 +4,4 @@
 # most backwards compatibility
 #!macx-ios*: DEFINES += LEGACY_OPENGL
 
-!macx*: DEFINES += LEGACY_OPENGL
+#!macx*: DEFINES += LEGACY_OPENGL
