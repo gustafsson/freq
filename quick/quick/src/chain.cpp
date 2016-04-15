@@ -144,7 +144,7 @@ void Chain::clearOpenGlBackground()
 
     render_timer.restart ();
 
-#ifndef LEGACY_OPENGL
+#if !defined(LEGACY_OPENGL) && !defined(_WIN32)
     if (!vertexArray_)
         GlException_SAFE_CALL( glGenVertexArrays(1, &vertexArray_) );
     GlException_SAFE_CALL( glBindVertexArray(vertexArray_) );

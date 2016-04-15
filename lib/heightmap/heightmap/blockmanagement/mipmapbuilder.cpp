@@ -308,7 +308,7 @@ void MipmapBuilder::
 #endif
     QGLWidget w;
     w.makeCurrent ();
-#ifndef LEGACY_OPENGL
+#if !defined(LEGACY_OPENGL) && !defined(_WIN32)
     GLuint VertexArrayID;
     GlException_SAFE_CALL( glGenVertexArrays(1, &VertexArrayID) );
     GlException_SAFE_CALL( glBindVertexArray(VertexArrayID) );

@@ -103,7 +103,7 @@ Application::
     shared_glwidget_ = new QGLWidget(glformat);
     shared_glwidget_->makeCurrent();
 
-#ifndef LEGACY_OPENGL
+#if !defined(LEGACY_OPENGL) && !defined(_WIN32)
     GlException_SAFE_CALL( glGenVertexArrays(1, &VertexArrayID) );
     GlException_SAFE_CALL( glBindVertexArray(VertexArrayID) );
 #endif
