@@ -11,7 +11,7 @@
 #include "zero_on_move.h"
 
 #include <functional>
-
+#include <QGLFunctions>
 
 namespace Heightmap {
 namespace Update {
@@ -27,7 +27,7 @@ public:
     /**
      * @brief The Params class should be fast and cheap to create
      */
-    class Params {
+    class Params: QOpenGLFunctions {
     public:
         Params(Tfr::pChunk chunk,
                Heightmap::Region region,

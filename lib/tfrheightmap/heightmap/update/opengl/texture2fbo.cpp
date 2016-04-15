@@ -29,6 +29,8 @@ Texture2Fbo::Params::
       chunk_scale(chunk->freqAxis)
 {
     EXCEPTION_ASSERT(chunk);
+    QOpenGLFunctions::initializeOpenGLFunctions ();
+
     nScales = chunk->nScales ();
     nSamples = chunk->nSamples ();
     nValidSamples = chunk->n_valid_samples;
