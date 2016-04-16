@@ -5,9 +5,14 @@
 #include "tasktimer.h"
 #include "glgroupmarker.h"
 #include "log.h"
+#include <vector>
 
 //#define INFO
 #define INFO if(0)
+
+#ifdef _WIN32
+#define NO_MAP_BUFFER
+#endif
 
 namespace Heightmap {
 namespace Update {
@@ -75,7 +80,7 @@ int Texture2Fbo::Params::
     const Tfr::FreqAxis chunk_scale = this->chunk_scale;
     const Heightmap::FreqAxis display_scale = this->display_scale;
 
-    // Build VBO contents
+    // Build VBO contents            
     if (vbo)
       {
         GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo) );
@@ -87,7 +92,10 @@ int Texture2Fbo::Params::
         GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_format)*Y*2, 0, GL_STATIC_DRAW) );
       }
 
-#if !defined(LEGACY_OPENGL) || defined(GL_ES_VERSION_3_0)
+#ifdef NO_MAP_BUFFER
+    std::vector<vertex_format> cpu_data_(Y*2);
+    vertex_format* vertices = &cpu_data_[0];
+#elif !defined(LEGACY_OPENGL) || defined(GL_ES_VERSION_3_0)
     vertex_format* vertices = (vertex_format*)glMapBufferRange(GL_ARRAY_BUFFER, 0, Y*2*sizeof(vertex_format), GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_WRITE_BIT);
 #else
     vertex_format* vertices = (vertex_format*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
@@ -133,7 +141,11 @@ int Texture2Fbo::Params::
         }
       }
 
+#ifdef NO_MAP_BUFFER
+    GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_format)*Y*2, &cpu_data_[0], GL_STATIC_DRAW) );
+#else
     glUnmapBuffer(GL_ARRAY_BUFFER);
+#endif
     GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, 0) );
 
     return vbo;
