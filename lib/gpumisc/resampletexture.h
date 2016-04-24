@@ -3,7 +3,7 @@
 
 #include "glframebuffer.h"
 #include "GlTexture.h"
-#include <QGLFunctions>
+#include <QOpenGLFunctions>
 
 /**
  * @brief The ResampleTexture class should paint a texture on top of another texture.

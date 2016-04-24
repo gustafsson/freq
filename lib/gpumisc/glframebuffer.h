@@ -5,7 +5,7 @@ See class comment GlFrameBuffer.
 #pragma once
 
 #include "GlTexture.h"
-#include <QGLFunctions>
+#include <QOpenGLFunctions>
 
 /**
 GlFrameBuffer is a wrapper for an OpenGL frame buffer object (FBO) (refered to

@@ -3,7 +3,7 @@
 
 #include "glyphs.h"
 #include "tvector.h"
-#include <QGLFunctions>
+#include <QOpenGLFunctions>
 #include <memory>
 
 namespace Heightmap {

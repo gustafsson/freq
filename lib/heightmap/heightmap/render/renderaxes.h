@@ -11,7 +11,7 @@
 
 #include <vector>
 #include <memory>
-#include <QGLFunctions>
+#include <QOpenGLFunctions>
 
 namespace Heightmap {
 namespace Render {

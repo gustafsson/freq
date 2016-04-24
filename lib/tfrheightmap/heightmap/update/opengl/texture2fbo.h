@@ -11,7 +11,7 @@
 #include "zero_on_move.h"
 
 #include <functional>
-#include <QGLFunctions>
+#include <QOpenGLFunctions>
 
 namespace Heightmap {
 namespace Update {

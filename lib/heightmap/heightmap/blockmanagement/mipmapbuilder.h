@@ -3,7 +3,7 @@
 
 #include "GlTexture.h"
 #include "heightmap/render/shaderresource.h"
-#include <QGLFunctions>
+#include <QOpenGLFunctions>
 
 namespace Heightmap {
 namespace BlockManagement {
