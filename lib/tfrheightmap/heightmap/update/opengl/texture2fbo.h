@@ -21,7 +21,7 @@ namespace OpenGL {
  * @brief The Texture2Fbo class just draws a VBO. It has nothing to do with any FBO nor any
  * texture.
  */
-class Texture2Fbo
+class Texture2Fbo: QOpenGLFunctions
 {
 public:
     /**

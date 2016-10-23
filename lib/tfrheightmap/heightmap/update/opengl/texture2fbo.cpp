@@ -87,9 +87,10 @@ int Texture2Fbo::Params::
       }
     else
       {
-        GlException_SAFE_CALL( glGenBuffers (1, &vbo) ); // Generate 1 buffer
+        auto gl = (QOpenGLFunctions*)const_cast<Texture2Fbo::Params*>(this);
+        GlException_SAFE_CALL( gl->glGenBuffers (1, &vbo) ); // Generate 1 buffer
         GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo) );
-        GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_format)*Y*2, 0, GL_STATIC_DRAW) );
+        GlException_SAFE_CALL( gl->glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_format)*Y*2, 0, GL_STATIC_DRAW) );
       }
 
 #ifdef NO_MAP_BUFFER
@@ -158,6 +159,8 @@ Texture2Fbo::Texture2Fbo(
     :
       normalization_factor_(normalization_factor)
 {
+    QOpenGLFunctions::initializeOpenGLFunctions ();
+
     vbo_ = p.createVbo (num_elements_);
 
     //    sync_ = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
@@ -190,8 +193,9 @@ void Texture2Fbo::
 
     GlState::glEnableVertexAttribArray (vertex_attrib);
     GlState::glEnableVertexAttribArray (tex_attrib);
-    glVertexAttribPointer (vertex_attrib, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), 0);
-    glVertexAttribPointer (tex_attrib, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), (float*)0 + 2);
+    auto gl = (QOpenGLFunctions*)const_cast<Texture2Fbo*>(this);
+    gl->glVertexAttribPointer (vertex_attrib, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), 0);
+    gl->glVertexAttribPointer (tex_attrib, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), (float*)0 + 2);
 
     GlException_CHECK_ERROR();
 
